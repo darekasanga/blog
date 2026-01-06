@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Blog | トップ</title>
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="inner">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true"></div>
+        <div>
+          <p class="brand-kicker">BLOG</p>
+          <p class="brand-title">クリエイティブスタジオ</p>
+        </div>
+      </div>
+      <nav class="nav-links" aria-label="メインナビゲーション">
+        <a href="index.html" class="nav-link active">トップ</a>
+        <a href="admin/index.html" class="nav-link">管理</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="inner hero-grid">
+        <div>
+          <p class="kicker">最新を届けるブログ</p>
+          <h1>インサイトとストーリーを横スワイプでチェック</h1>
+          <p class="lead">統一したサイズのカードを横スワイプで滑らかに閲覧できます。新規投稿は管理ページに移動しました。</p>
+          <div class="hero-actions">
+            <a class="btn primary" href="#featured">記事を見る</a>
+            <a class="btn ghost" href="admin/index.html">管理ページへ</a>
+          </div>
+        </div>
+        <div class="hero-visual" aria-hidden="true">
+          <div class="floating-card">
+            <p class="kicker">ダイジェスト</p>
+            <h2>新しい記事カード</h2>
+            <p>統一した高さと幅で整った印象に。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="featured" class="section">
+      <div class="inner section-header">
+        <div>
+          <p class="kicker">Featured</p>
+          <h2>注目の記事</h2>
+        </div>
+        <div class="slider-actions" aria-label="カルーセル操作">
+          <button class="btn icon" type="button" data-action="prev" aria-label="前へ">&#x2039;</button>
+          <button class="btn icon" type="button" data-action="next" aria-label="次へ">&#x203A;</button>
+        </div>
+      </div>
+
+      <div class="slider">
+        <div class="card-track" id="card-track" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <section class="section muted">
+      <div class="inner info-grid">
+        <div>
+          <p class="kicker">運用のヒント</p>
+          <h3>投稿は管理ページでまとめて操作</h3>
+          <p>投稿フォームは管理ページに統合しました。新規記事の追加や既存記事の確認は「管理」メニューから行ってください。</p>
+        </div>
+        <div class="info-card">
+          <p class="kicker">次のアクション</p>
+          <ul>
+            <li>管理ページで記事を投稿</li>
+            <li>トップのスワイプで表示確認</li>
+            <li>統一されたボタンとカードで印象をアップ</li>
+          </ul>
+          <a class="btn primary full" href="admin/index.html">管理ページを開く</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="inner footer-grid">
+      <div>
+        <p class="brand-title">クリエイティブスタジオ</p>
+        <p class="muted-text">シンプルで統一感のあるブログ体験を届けます。</p>
+      </div>
+      <div class="footer-actions">
+        <a class="btn ghost" href="admin/index.html">管理ページ</a>
+        <a class="btn ghost" href="#featured">記事一覧</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="assets/app.js"></script>
+</body>
+</html>
