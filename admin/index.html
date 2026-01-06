@@ -133,6 +133,7 @@
           <div>
             <p class="kicker">投稿一覧</p>
             <h2>保存済みの記事</h2>
+            <p class="muted-text" style="margin-top:4px;">トップとダイジェストの表示設定や順番を管理できます。</p>
           </div>
           <p class="muted-text" id="post-count"></p>
         </div>
@@ -199,7 +200,7 @@
     previewDate.textContent = today;
 
     let resizedImageData = '';
-    let posts = readPosts();
+    let posts = readPosts().sort((a, b) => (a.order || 0) - (b.order || 0));
     let editingId = null;
     let siteThemeKey = readSiteTheme();
     let siteTheme = applyThemeToDocument(siteThemeKey);
@@ -286,6 +287,39 @@
 
     removeLongVacationButtons();
 
+    function persistPosts(nextPosts) {
+      posts = nextPosts.map((post, index) => ({ ...post, order: index }));
+      savePosts(posts);
+    }
+
+    function movePost(id, offset) {
+      const index = posts.findIndex((post) => post.id === id);
+      if (index < 0) return;
+      const targetIndex = index + offset;
+      if (targetIndex < 0 || targetIndex >= posts.length) return;
+      const updated = [...posts];
+      const [item] = updated.splice(index, 1);
+      updated.splice(targetIndex, 0, item);
+      persistPosts(updated);
+      renderPostList();
+    }
+
+    function movePostToTop(id) {
+      const index = posts.findIndex((post) => post.id === id);
+      if (index < 0) return;
+      const updated = [...posts];
+      const [item] = updated.splice(index, 1);
+      updated.unshift(item);
+      persistPosts(updated);
+      renderPostList();
+    }
+
+    function updatePostFlag(id, key, value) {
+      const updated = posts.map((post) => (post.id === id ? { ...post, [key]: value } : post));
+      persistPosts(updated);
+      renderPostList();
+    }
+
     function updatePreview() {
       previewTitle.textContent = titleEl.value || '無題の投稿';
       previewDate.textContent = dateEl.value || today;
@@ -356,7 +390,7 @@
 
       postCount.textContent = `${posts.length}件の投稿`;
       postList.innerHTML = posts
-        .map((post) => {
+        .map((post, index) => {
           const theme = resolveTheme(post.theme);
           return `
             <article class=\"manage-card\" data-id=\"${post.id}\" style=\"--accent:${theme.accent};--accent-2:${theme.accent2};\">
@@ -368,9 +402,36 @@
                   <span class=\"swatch\"></span>
                   <strong>${escapeHtml(theme.name)}</strong>
                 </div>
+                <div class=\"status-row\">
+                  <span class=\"pill ${post.hidden ? 'pill-muted' : 'pill-positive'}\">${post.hidden ? '非表示' : '表示中'}</span>
+                  <span class=\"pill pill-accent ${post.isFeatured ? '' : 'pill-muted'}\">トップ</span>
+                  <span class=\"pill pill-accent ${post.isDigest ? '' : 'pill-muted'}\">ダイジェスト</span>
+                  <span class=\"pill pill-outline\">順番 ${index + 1}</span>
+                </div>
                 <div class=\"tag-row\">${(post.tags || []).map((tag) => `<span class=\"chip\">#${escapeHtml(tag)}</span>`).join('')}</div>
               </div>
+              <div class=\"manage-flags\">
+                <label class=\"flag-toggle\">
+                  <input type=\"checkbox\" data-action=\"toggle\" data-field=\"isFeatured\" ${post.isFeatured ? 'checked' : ''} />
+                  <span>トップに表示</span>
+                </label>
+                <label class=\"flag-toggle\">
+                  <input type=\"checkbox\" data-action=\"toggle\" data-field=\"isDigest\" ${post.isDigest ? 'checked' : ''} />
+                  <span>ダイジェストに表示</span>
+                </label>
+                <label class=\"flag-toggle\">
+                  <input type=\"checkbox\" data-action=\"toggle\" data-field=\"hidden\" ${post.hidden ? 'checked' : ''} />
+                  <span>非表示にする</span>
+                </label>
+              </div>
               <div class=\"manage-actions\">
+                <div class=\"order-controls\" aria-label=\"表示順の操作\">
+                  <button class=\"btn ghost\" type=\"button\" data-action=\"move-top\">一番上へ</button>
+                  <div class=\"order-stack\">
+                    <button class=\"btn ghost\" type=\"button\" data-action=\"move-up\">▲</button>
+                    <button class=\"btn ghost\" type=\"button\" data-action=\"move-down\">▼</button>
+                  </div>
+                </div>
                 <a class=\"btn ghost\" href=\"../article.html?id=${encodeURIComponent(post.id)}\">記事を表示</a>
                 <button class=\"btn primary\" type=\"button\" data-action=\"edit\">編集</button>
                 <button class=\"btn danger\" type=\"button\" data-action=\"delete\">削除</button>
@@ -394,6 +455,43 @@
           const postId = button.closest('[data-id]')?.dataset.id;
           if (postId) {
             deletePost(postId);
+          }
+        });
+      });
+
+      postList.querySelectorAll('input[data-action=\"toggle\"]').forEach((input) => {
+        input.addEventListener('change', () => {
+          const postId = input.closest('[data-id]')?.dataset.id;
+          if (!postId) return;
+          const field = input.dataset.field;
+          const value = input.checked;
+          updatePostFlag(postId, field, value);
+        });
+      });
+
+      postList.querySelectorAll('button[data-action=\"move-up\"]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const postId = button.closest('[data-id]')?.dataset.id;
+          if (postId) {
+            movePost(postId, -1);
+          }
+        });
+      });
+
+      postList.querySelectorAll('button[data-action=\"move-down\"]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const postId = button.closest('[data-id]')?.dataset.id;
+          if (postId) {
+            movePost(postId, 1);
+          }
+        });
+      });
+
+      postList.querySelectorAll('button[data-action=\"move-top\"]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const postId = button.closest('[data-id]')?.dataset.id;
+          if (postId) {
+            movePostToTop(postId);
           }
         });
       });
@@ -447,8 +545,8 @@
       if (!target) return;
       const confirmed = window.confirm(`「${target.title}」を削除しますか？`);
       if (!confirmed) return;
-      posts = posts.filter((post) => post.id !== id);
-      savePosts(posts);
+      const remaining = posts.filter((post) => post.id !== id);
+      persistPosts(remaining);
       if (editingId === id) {
         resetForm();
       }
@@ -545,13 +643,8 @@
         posts.length
       );
 
-      if (editingId) {
-        posts = posts.map((post) => (post.id === editingId ? preparedPost : post));
-      } else {
-        posts = [preparedPost, ...posts];
-      }
-
-      savePosts(posts);
+      const nextPosts = editingId ? posts.map((post) => (post.id === editingId ? preparedPost : post)) : [preparedPost, ...posts];
+      persistPosts(nextPosts);
       renderPostList();
       alert(editingId ? '変更を保存しました。' : '投稿を保存しました。トップページで確認できます。');
       resetForm();
