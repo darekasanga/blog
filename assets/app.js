@@ -1,4 +1,4 @@
-const posts = [
+const defaultPosts = [
   {
     title: 'デザインシステムで統一感を作る',
     date: '2024-05-28',
@@ -31,6 +31,16 @@ const posts = [
   },
 ];
 
+const savedPosts = (() => {
+  try {
+    return JSON.parse(localStorage.getItem('posts') || '[]');
+  } catch (e) {
+    console.warn('投稿の読み込みに失敗しました。', e);
+    return [];
+  }
+})();
+
+const posts = [...savedPosts, ...defaultPosts];
 const track = document.getElementById('card-track');
 const buttons = document.querySelectorAll('[data-action]');
 
@@ -39,6 +49,11 @@ function renderCards() {
     .map(
       (post) => `
         <article class="card">
+          ${
+            post.image
+              ? `<div class="card-thumb"><img src="${post.image}" alt="${post.title}の画像" /></div>`
+              : `<div class="card-thumb placeholder" aria-hidden="true"></div>`
+          }
           <div class="meta">
             <span>${post.date}</span>
             <span>•</span>
@@ -47,8 +62,7 @@ function renderCards() {
           <h3>${post.title}</h3>
           <p>${post.excerpt}</p>
           <div class="actions">
-            <a class="btn primary" href="admin/index.html">読む</a>
-            <button class="btn ghost" type="button">共有</button>
+            <a class="btn primary full" href="admin/index.html">記事を読む</a>
           </div>
         </article>
       `
