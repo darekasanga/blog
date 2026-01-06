@@ -103,7 +103,7 @@
 
   <script src="assets/data.js"></script>
   <script>
-    const { readPosts } = window.BlogData;
+    const { readPosts, resolveTheme } = window.BlogData;
     const params = new URLSearchParams(window.location.search);
     const postId = params.get('id');
 
@@ -142,8 +142,12 @@
       });
     }
 
-    function setThumb(image, altText, position) {
+    function setThumb(image, altText, position, focus) {
       thumbEl.innerHTML = '';
+      const focusStart = focus?.start ?? 0;
+      const focusEnd = focus?.end ?? 100;
+      thumbEl.style.setProperty('--focus-start', `${focusStart}%`);
+      thumbEl.style.setProperty('--focus-end', `${focusEnd}%`);
       if (image) {
         const img = document.createElement('img');
         img.src = image;
@@ -151,12 +155,20 @@
         img.style.objectPosition = `center ${(position ?? 50)}%`;
         thumbEl.classList.remove('placeholder');
         thumbEl.removeAttribute('aria-hidden');
+        const focusGuide = document.createElement('div');
+        focusGuide.className = 'focus-range';
+        focusGuide.setAttribute('aria-hidden', 'true');
+        thumbEl.appendChild(focusGuide);
         thumbEl.appendChild(img);
         img.addEventListener('click', () => openLightbox(image, altText));
         return;
       }
 
-      thumbEl.textContent = '画像未設定';
+      const focusGuide = document.createElement('div');
+      focusGuide.className = 'focus-range';
+      focusGuide.setAttribute('aria-hidden', 'true');
+      thumbEl.appendChild(focusGuide);
+      thumbEl.appendChild(document.createTextNode('画像未設定'));
       thumbEl.classList.add('placeholder');
       thumbEl.setAttribute('aria-hidden', 'true');
     }
@@ -176,7 +188,10 @@
       titleEl.textContent = post.title;
       metaEl.textContent = `${post.date} • ${post.read}`;
       renderContent(post.content || post.excerpt);
-      setThumb(post.image, post.title, post.imagePosition);
+      setThumb(post.image, post.title, post.imagePosition, post.imageFocus);
+      const theme = resolveTheme(post.theme);
+      document.documentElement.style.setProperty('--accent', theme.accent);
+      document.documentElement.style.setProperty('--accent-2', theme.accent2);
       renderTags(post.tags || []);
     }
 

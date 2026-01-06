@@ -48,6 +48,11 @@
         <p class="kicker">投稿管理</p>
         <h1>新規投稿とプレビュー</h1>
         <p class="lead">投稿機能をこの管理ページへ移動しました。入力内容は下のプレビューカードに反映されます。</p>
+        <div class="theme-pill" id="current-theme-pill">
+          <span>表示カラー</span>
+          <span class="swatch"></span>
+          <strong id="current-theme-label">バイオレット</strong>
+        </div>
 
         <div class="info-grid" style="align-items: stretch;">
           <form class="info-card" id="post-form">
@@ -62,7 +67,8 @@
               </div>
               <div class="field">
                 <label for="read">読了時間</label>
-                <input id="read" name="read" type="text" placeholder="5 min" required />
+                <input id="read" name="read" type="text" placeholder="5 min" required readonly />
+                <p class="muted-text" style="margin: 4px 0 0;">本文の長さから自動計算されます。</p>
               </div>
             </div>
             <div class="field">
@@ -75,11 +81,6 @@
                 <input id="tags" name="tags" type="text" placeholder="例）デザイン, UI" />
                 <p class="muted-text" style="margin: 6px 0 0;">トップと記事ページに表示されます。</p>
               </div>
-              <div class="field">
-                <label for="image-position">画像の表示位置（0-100）</label>
-                <input id="image-position" name="image-position" type="range" min="0" max="100" value="50" />
-                <p class="muted-text" style="margin: 6px 0 0;">プレビュー画像の縦位置を調整します。</p>
-              </div>
             </div>
             <div class="field">
               <label for="content">本文</label>
@@ -89,6 +90,24 @@
               <label for="image">記事画像</label>
               <input id="image" name="image" type="file" accept="image/*" />
               <p class="muted-text" style="margin: 6px 0 0;">アップロード後、自動でリサイズして保存します。</p>
+            </div>
+            <div class="field">
+              <label>投稿カラー（10種類）</label>
+              <div class="theme-grid" id="theme-options"></div>
+            </div>
+            <div class="field">
+              <label>プレビュー範囲（%）</label>
+              <div class="focus-controls">
+                <label class="field">
+                  <span>開始位置</span>
+                  <input id="focus-start" type="range" min="0" max="95" value="20" />
+                </label>
+                <label class="field">
+                  <span>終了位置</span>
+                  <input id="focus-end" type="range" min="5" max="100" value="80" />
+                </label>
+              </div>
+              <p class="muted-text" style="margin: 6px 0 0;">フォーカスしたい縦の範囲を指定できます。選択範囲がプレビューに表示されます。</p>
             </div>
             <div class="form-actions">
               <button class="btn primary" type="submit" id="submit-button">記事を登録</button>
@@ -100,7 +119,9 @@
           <div class="info-card">
             <p class="kicker">プレビュー</p>
             <article class="card" id="preview-card">
-              <div class="card-thumb placeholder" id="preview-thumb" aria-hidden="true"></div>
+              <div class="card-thumb placeholder" id="preview-thumb" aria-hidden="true" style="--focus-start:20%;--focus-end:80%;">
+                <div class="focus-range" aria-hidden="true"></div>
+              </div>
               <div class="meta">
                 <span id="preview-date">2024-05-28</span>
                 <span>•</span>
@@ -150,6 +171,7 @@
   <script src="../assets/data.js"></script>
   <script>
     const { readPosts, savePosts, normalizePost, escapeHtml } = window.BlogData;
+    const { themes, resolveTheme, estimateReadMinutes, formatReadTime, normalizeFocus } = window.BlogData;
 
     const form = document.getElementById('post-form');
     const titleEl = document.getElementById('title');
@@ -159,17 +181,22 @@
     const contentEl = document.getElementById('content');
     const imageEl = document.getElementById('image');
     const tagsEl = document.getElementById('tags');
-    const imagePositionEl = document.getElementById('image-position');
+    const focusStartEl = document.getElementById('focus-start');
+    const focusEndEl = document.getElementById('focus-end');
     const postList = document.getElementById('post-list');
     const postCount = document.getElementById('post-count');
     const cancelEditButton = document.getElementById('cancel-edit');
     const submitButton = document.getElementById('submit-button');
+    const themeOptionsEl = document.getElementById('theme-options');
+    const currentThemeLabel = document.getElementById('current-theme-label');
+    const currentThemePill = document.getElementById('current-theme-pill');
 
     const previewTitle = document.getElementById('preview-title');
     const previewDate = document.getElementById('preview-date');
     const previewRead = document.getElementById('preview-read');
     const previewExcerpt = document.getElementById('preview-excerpt');
     const previewThumb = document.getElementById('preview-thumb');
+    const previewCard = document.getElementById('preview-card');
     const previewTags = document.createElement('div');
     previewTags.className = 'tag-row';
     previewThumb.insertAdjacentElement('afterend', previewTags);
@@ -181,6 +208,43 @@
     let resizedImageData = '';
     let posts = readPosts();
     let editingId = null;
+    let selectedTheme = themes[0];
+
+    function setTheme(themeKey) {
+      selectedTheme = resolveTheme(themeKey);
+      const { accent, accent2, name } = selectedTheme;
+      previewCard.style.setProperty('--accent', accent);
+      previewCard.style.setProperty('--accent-2', accent2);
+      currentThemePill.style.setProperty('--accent', accent);
+      currentThemePill.style.setProperty('--accent-2', accent2);
+      currentThemeLabel.textContent = name;
+    }
+
+    function renderThemeOptions() {
+      themeOptionsEl.innerHTML = themes
+        .map(
+          (theme, index) => `
+            <label class="theme-option" style="--accent:${theme.accent};--accent-2:${theme.accent2};">
+              <input type="radio" name="theme" value="${theme.key}" ${index === 0 ? 'checked' : ''} />
+              <span class="swatch"></span>
+              <div>
+                <strong>${theme.name}</strong>
+                <small>${theme.accent} → ${theme.accent2}</small>
+              </div>
+            </label>
+          `
+        )
+        .join('');
+
+      themeOptionsEl.querySelectorAll('input[name="theme"]').forEach((input) => {
+        input.addEventListener('change', () => {
+          setTheme(input.value);
+          updatePreview();
+        });
+      });
+
+      setTheme(themes[0].key);
+    }
 
     function removeLongVacationButtons() {
       document.querySelectorAll('button').forEach((button) => {
@@ -199,16 +263,27 @@
       previewExcerpt.textContent = excerptEl.value || '概要を入力するとここに表示されます。';
       const tags = window.BlogData.normalizeTags(tagsEl.value.split(','));
       previewTags.innerHTML = tags.map((tag) => `<span class=\"chip\">#${window.BlogData.escapeHtml(tag)}</span>`).join('');
+      const focus = normalizeFocus({ start: Number(focusStartEl.value), end: Number(focusEndEl.value) });
+      const focusCenter = Math.round((focus.start + focus.end) / 2);
+      previewThumb.style.setProperty('--focus-start', `${focus.start}%`);
+      previewThumb.style.setProperty('--focus-end', `${focus.end}%`);
 
       if (resizedImageData) {
-        previewThumb.innerHTML = `<img src=\"${resizedImageData}\" alt=\"${escapeHtml(previewTitle.textContent)}の画像\" style=\"object-position:center ${imagePositionEl.value}%\" />`;
+        previewThumb.innerHTML = `<div class=\"focus-range\" aria-hidden=\"true\"></div><img src=\"${resizedImageData}\" alt=\"${escapeHtml(previewTitle.textContent)}の画像\" style=\"object-position:center ${focusCenter}%\" />`;
         previewThumb.classList.remove('placeholder');
         previewThumb.removeAttribute('aria-hidden');
       } else {
-        previewThumb.innerHTML = '';
+        previewThumb.innerHTML = '<div class=\"focus-range\" aria-hidden=\"true\"></div><span class=\"muted-text\">画像未設定</span>';
         previewThumb.classList.add('placeholder');
         previewThumb.setAttribute('aria-hidden', 'true');
       }
+    }
+
+    function updateReadTime() {
+      const minutes = estimateReadMinutes(`${titleEl.value}\n${excerptEl.value}\n${contentEl.value}`);
+      const label = formatReadTime(minutes);
+      readEl.value = label;
+      previewRead.textContent = label;
     }
 
     function downscaleImage(file) {
@@ -248,11 +323,15 @@
       postList.innerHTML = posts
         .map(
           (post) => `
-            <article class=\"manage-card\" data-id=\"${post.id}\">
+            <article class=\"manage-card\" data-id=\"${post.id}\" style=\"--accent:${resolveTheme(post.theme).accent};--accent-2:${resolveTheme(post.theme).accent2};\">
               <div class=\"manage-summary\">
                 <p class=\"meta\"><span>${escapeHtml(post.date)}</span><span>•</span><span>${escapeHtml(post.read)}</span></p>
                 <h3>${escapeHtml(post.title)}</h3>
                 <p class=\"muted-text\">${escapeHtml(post.excerpt)}</p>
+                <div class=\"theme-pill\" aria-label=\"テーマ ${escapeHtml(resolveTheme(post.theme).name)}\">
+                  <span class=\"swatch\"></span>
+                  <strong>${escapeHtml(resolveTheme(post.theme).name)}</strong>
+                </div>
                 <div class=\"tag-row\">${(post.tags || []).map((tag) => `<span class=\"chip\">#${escapeHtml(tag)}</span>`).join('')}</div>
               </div>
               <div class=\"manage-actions\">
@@ -322,8 +401,11 @@
       cancelEditButton.hidden = true;
       dateEl.value = today;
       tagsEl.value = '';
-      imagePositionEl.value = '50';
+      focusStartEl.value = '20';
+      focusEndEl.value = '80';
+      themeOptionsEl.querySelector('input[name="theme"]')?.click();
       updatePreview();
+      updateReadTime();
     }
 
     function startEdit(id) {
@@ -340,10 +422,16 @@
       contentEl.value = target.content || '';
       resizedImageData = target.image || '';
       tagsEl.value = (target.tags || []).join(', ');
-      imagePositionEl.value = target.imagePosition ?? 50;
+      const focus = normalizeFocus(target.imageFocus, target.imagePosition);
+      focusStartEl.value = focus.start;
+      focusEndEl.value = focus.end;
+      const themeInput = themeOptionsEl.querySelector(`input[value=\"${target.theme}\"]`);
+      (themeInput || themeOptionsEl.querySelector('input[name=\"theme\"]')).checked = true;
+      setTheme(target.theme);
       submitButton.textContent = '変更を保存';
       cancelEditButton.hidden = false;
       updatePreview();
+      updateReadTime();
       form.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
@@ -360,8 +448,26 @@
       renderPostList();
     }
 
-    [titleEl, dateEl, readEl, excerptEl, contentEl, tagsEl, imagePositionEl].forEach((el) => {
-      el.addEventListener('input', updatePreview);
+    [titleEl, dateEl, excerptEl, contentEl, tagsEl].forEach((el) => {
+      el.addEventListener('input', () => {
+        updateReadTime();
+        updatePreview();
+      });
+    });
+
+    [focusStartEl, focusEndEl].forEach((el) => {
+      el.addEventListener('input', () => {
+        const start = Number(focusStartEl.value);
+        const end = Number(focusEndEl.value);
+        if (end - start < 5) {
+          if (el === focusStartEl) {
+            focusEndEl.value = Math.min(100, start + 5);
+          } else {
+            focusStartEl.value = Math.max(0, end - 5);
+          }
+        }
+        updatePreview();
+      });
     });
 
     imageEl.addEventListener('change', async (event) => {
@@ -393,6 +499,7 @@
 
     form.addEventListener('submit', (e) => {
       e.preventDefault();
+      updateReadTime();
       updatePreview();
 
       const title = previewTitle.textContent.trim();
@@ -403,7 +510,9 @@
       const existing = editingId ? posts.find((post) => post.id === editingId) : null;
       const image = resizedImageData || existing?.image || '';
       const tags = window.BlogData.normalizeTags(tagsEl.value.split(','));
-      const imagePosition = Number(imagePositionEl.value || 50);
+      const focus = normalizeFocus({ start: Number(focusStartEl.value), end: Number(focusEndEl.value) });
+      const imagePosition = Math.round((focus.start + focus.end) / 2);
+      const theme = selectedTheme.key;
 
       const preparedPost = normalizePost(
         {
@@ -417,6 +526,8 @@
           image,
           tags,
           imagePosition,
+          imageFocus: focus,
+          theme,
         },
         posts.length
       );
@@ -433,7 +544,9 @@
       resetForm();
     });
 
+    renderThemeOptions();
     renderPostList();
+    updateReadTime();
     updatePreview();
   </script>
 </body>
