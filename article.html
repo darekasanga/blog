@@ -6,7 +6,7 @@
   <title>EMPEROR.NEWS | 記事</title>
   <link rel="stylesheet" href="assets/styles.css" />
 </head>
-<body>
+<body class="article-page">
   <header class="site-header">
     <div class="inner">
       <div class="brand">
@@ -27,50 +27,52 @@
 
   <main>
     <section class="section">
-      <div class="inner article-layout">
-        <article class="article-card" id="article">
-          <p class="kicker">Article</p>
-          <h1 id="article-title">記事が見つかりません</h1>
-          <div class="meta" id="article-meta"></div>
-          <div class="article-thumb placeholder" id="article-thumb" aria-hidden="true"></div>
-          <div class="article-body" id="article-body">
-            <p>指定された記事を読み込めませんでした。トップに戻って別の記事をお選びください。</p>
-          </div>
-          <div id="article-tags" class="tag-row"></div>
-          <div class="article-actions">
-            <a class="btn ghost" href="index.html">トップへ戻る</a>
-            <a class="btn ghost" href="admin/index.html">管理ページ</a>
-          </div>
-        </article>
-
-        <aside class="info-card comments-card">
-          <div class="section-header">
-            <div>
-              <p class="kicker">コメント</p>
-              <h3>感想を残す</h3>
+      <div class="inner">
+        <div class="article-layout">
+          <article class="article-card" id="article">
+            <p class="kicker">Article</p>
+            <h1 id="article-title">記事が見つかりません</h1>
+            <div class="meta" id="article-meta"></div>
+            <div class="article-thumb placeholder" id="article-thumb" aria-hidden="true"></div>
+            <div class="article-body" id="article-body">
+              <p>指定された記事を読み込めませんでした。トップに戻って別の記事をお選びください。</p>
             </div>
-            <p class="muted-text" id="comment-count"></p>
-          </div>
-
-          <form id="comment-form" class="comment-form">
-            <label class="field">
-              <span>お名前</span>
-              <input id="commenter" name="commenter" type="text" placeholder="ペンネームでOK" required />
-            </label>
-            <label class="field">
-              <span>コメント</span>
-              <textarea id="comment-body" name="comment-body" rows="4" placeholder="記事の感想や質問をどうぞ" required></textarea>
-            </label>
-            <button class="btn primary full" type="submit">コメントを投稿</button>
-          </form>
-
-          <div id="comment-list" class="comment-list" aria-live="polite">
-            <p id="comment-empty" class="muted-text">最初のコメントを投稿しませんか？</p>
-          </div>
-        </aside>
+            <div id="article-tags" class="tag-row"></div>
+            <div class="article-actions">
+              <a class="btn ghost" href="index.html">トップへ戻る</a>
+              <a class="btn ghost" href="admin/index.html">管理ページ</a>
+            </div>
+          </article>
+        </div>
       </div>
     </section>
   </main>
+
+  <aside class="info-card comments-card floating-comments" aria-label="コメントフォーム">
+    <div class="section-header">
+      <div>
+        <p class="kicker">コメント</p>
+        <h3>感想を残す</h3>
+      </div>
+      <p class="muted-text" id="comment-count"></p>
+    </div>
+
+    <form id="comment-form" class="comment-form">
+      <label class="field">
+        <span>お名前</span>
+        <input id="commenter" name="commenter" type="text" placeholder="ペンネームでOK" required />
+      </label>
+      <label class="field">
+        <span>コメント</span>
+        <textarea id="comment-body" name="comment-body" rows="4" placeholder="記事の感想や質問をどうぞ" required></textarea>
+      </label>
+      <button class="btn primary full" type="submit">コメントを投稿</button>
+    </form>
+
+    <div id="comment-list" class="comment-list" aria-live="polite">
+      <p id="comment-empty" class="muted-text">最初のコメントを投稿しませんか？</p>
+    </div>
+  </aside>
 
   <footer class="site-footer">
     <div class="inner footer-grid">
