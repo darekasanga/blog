@@ -50,6 +50,18 @@
               <label for="excerpt">概要</label>
               <textarea id="excerpt" name="excerpt" rows="4" placeholder="概要を入力" required></textarea>
             </div>
+            <div class="field-grid">
+              <div class="field">
+                <label for="tags">タグ（最大2つ・カンマ区切り）</label>
+                <input id="tags" name="tags" type="text" placeholder="例）デザイン, UI" />
+                <p class="muted-text" style="margin: 6px 0 0;">トップと記事ページに表示されます。</p>
+              </div>
+              <div class="field">
+                <label for="image-position">画像の表示位置（0-100）</label>
+                <input id="image-position" name="image-position" type="range" min="0" max="100" value="50" />
+                <p class="muted-text" style="margin: 6px 0 0;">プレビュー画像の縦位置を調整します。</p>
+              </div>
+            </div>
             <div class="field">
               <label for="content">本文</label>
               <textarea id="content" name="content" rows="6" placeholder="本文を入力。改行も反映されます。" required></textarea>
@@ -123,6 +135,8 @@
     const excerptEl = document.getElementById('excerpt');
     const contentEl = document.getElementById('content');
     const imageEl = document.getElementById('image');
+    const tagsEl = document.getElementById('tags');
+    const imagePositionEl = document.getElementById('image-position');
     const postList = document.getElementById('post-list');
     const postCount = document.getElementById('post-count');
     const cancelEditButton = document.getElementById('cancel-edit');
@@ -133,6 +147,9 @@
     const previewRead = document.getElementById('preview-read');
     const previewExcerpt = document.getElementById('preview-excerpt');
     const previewThumb = document.getElementById('preview-thumb');
+    const previewTags = document.createElement('div');
+    previewTags.className = 'tag-row';
+    previewThumb.insertAdjacentElement('afterend', previewTags);
 
     const today = new Date().toISOString().slice(0, 10);
     dateEl.value = today;
@@ -147,9 +164,11 @@
       previewDate.textContent = dateEl.value || today;
       previewRead.textContent = readEl.value || '5 min';
       previewExcerpt.textContent = excerptEl.value || '概要を入力するとここに表示されます。';
+      const tags = window.BlogData.normalizeTags(tagsEl.value.split(','));
+      previewTags.innerHTML = tags.map((tag) => `<span class=\"chip\">#${window.BlogData.escapeHtml(tag)}</span>`).join('');
 
       if (resizedImageData) {
-        previewThumb.innerHTML = `<img src=\"${resizedImageData}\" alt=\"${escapeHtml(previewTitle.textContent)}の画像\" />`;
+        previewThumb.innerHTML = `<img src=\"${resizedImageData}\" alt=\"${escapeHtml(previewTitle.textContent)}の画像\" style=\"object-position:center ${imagePositionEl.value}%\" />`;
         previewThumb.classList.remove('placeholder');
         previewThumb.removeAttribute('aria-hidden');
       } else {
@@ -201,6 +220,7 @@
                 <p class=\"meta\"><span>${escapeHtml(post.date)}</span><span>•</span><span>${escapeHtml(post.read)}</span></p>
                 <h3>${escapeHtml(post.title)}</h3>
                 <p class=\"muted-text\">${escapeHtml(post.excerpt)}</p>
+                <div class=\"tag-row\">${(post.tags || []).map((tag) => `<span class=\"chip\">#${escapeHtml(tag)}</span>`).join('')}</div>
               </div>
               <div class=\"manage-actions\">
                 <a class=\"btn ghost\" href=\"../article.html?id=${encodeURIComponent(post.id)}\">記事を表示</a>
@@ -229,6 +249,36 @@
           }
         });
       });
+
+      attachSwipeHandlers();
+    }
+
+    function attachSwipeHandlers() {
+      const threshold = 40;
+      postList.querySelectorAll('.manage-card').forEach((card) => {
+        let startX = null;
+        card.addEventListener('pointerdown', (event) => {
+          startX = event.clientX;
+          card.setPointerCapture(event.pointerId);
+        });
+
+        card.addEventListener('pointermove', (event) => {
+          if (startX === null) return;
+          const deltaX = event.clientX - startX;
+          if (deltaX < -threshold) {
+            card.classList.add('show-actions');
+          } else if (deltaX > threshold) {
+            card.classList.remove('show-actions');
+          }
+        });
+
+        const clearSwipe = () => {
+          startX = null;
+        };
+
+        card.addEventListener('pointerup', clearSwipe);
+        card.addEventListener('pointercancel', clearSwipe);
+      });
     }
 
     function resetForm() {
@@ -238,6 +288,8 @@
       submitButton.textContent = '記事を登録';
       cancelEditButton.hidden = true;
       dateEl.value = today;
+      tagsEl.value = '';
+      imagePositionEl.value = '50';
       updatePreview();
     }
 
@@ -254,6 +306,8 @@
       excerptEl.value = target.excerpt;
       contentEl.value = target.content || '';
       resizedImageData = target.image || '';
+      tagsEl.value = (target.tags || []).join(', ');
+      imagePositionEl.value = target.imagePosition ?? 50;
       submitButton.textContent = '変更を保存';
       cancelEditButton.hidden = false;
       updatePreview();
@@ -273,7 +327,7 @@
       renderPostList();
     }
 
-    [titleEl, dateEl, readEl, excerptEl, contentEl].forEach((el) => {
+    [titleEl, dateEl, readEl, excerptEl, contentEl, tagsEl, imagePositionEl].forEach((el) => {
       el.addEventListener('input', updatePreview);
     });
 
@@ -315,6 +369,8 @@
       const content = contentEl.value.trim();
       const existing = editingId ? posts.find((post) => post.id === editingId) : null;
       const image = resizedImageData || existing?.image || '';
+      const tags = window.BlogData.normalizeTags(tagsEl.value.split(','));
+      const imagePosition = Number(imagePositionEl.value || 50);
 
       const preparedPost = normalizePost(
         {
@@ -326,6 +382,8 @@
           excerpt,
           content,
           image,
+          tags,
+          imagePosition,
         },
         posts.length
       );

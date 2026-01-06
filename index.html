@@ -62,22 +62,16 @@
       </div>
     </section>
 
-    <section class="section muted">
-      <div class="inner info-grid">
-        <div>
-          <p class="kicker">運用のヒント</p>
-          <h3>投稿は管理ページでまとめて操作</h3>
-          <p>投稿フォームは管理ページに統合しました。新規記事の追加や既存記事の確認は「管理」メニューから行ってください。</p>
+    <section class="scroll-section muted">
+      <div class="inner">
+        <div class="section-header" style="flex-direction: column; align-items: flex-start; gap: 12px;">
+          <div>
+            <p class="kicker">記事一覧</p>
+            <h2>縦スクロールでチェック</h2>
+          </div>
+          <div id="tag-marquee" class="tag-marquee" aria-label="タグ一覧"></div>
         </div>
-        <div class="info-card">
-          <p class="kicker">次のアクション</p>
-          <ul>
-            <li>管理ページで記事を投稿</li>
-            <li>トップのスワイプで表示確認</li>
-            <li>統一されたボタンとカードで印象をアップ</li>
-          </ul>
-          <a class="btn primary full" href="admin/index.html">管理ページを開く</a>
-        </div>
+        <div id="scroll-list" class="scroll-list" aria-live="polite"></div>
       </div>
     </section>
   </main>
