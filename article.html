@@ -164,12 +164,13 @@
       });
     }
 
-    function setThumb(image, altText, position, focus) {
+    function setThumb(image, altText, position, focus, scale = 1) {
       thumbEl.innerHTML = '';
       const focusStart = focus?.start ?? 0;
       const focusEnd = focus?.end ?? 100;
       thumbEl.style.setProperty('--focus-start', `${focusStart}%`);
       thumbEl.style.setProperty('--focus-end', `${focusEnd}%`);
+      thumbEl.style.setProperty('--image-scale', `${scale}`);
       if (image) {
         const img = document.createElement('img');
         img.src = image;
@@ -216,7 +217,7 @@
       titleEl.textContent = post.title;
       metaEl.textContent = `${post.date} • ${post.read}`;
       renderContent(post.content || post.excerpt);
-      setThumb(post.image, post.title, post.imagePosition, post.imageFocus);
+      setThumb(post.image, post.title, post.imagePosition, post.imageFocus, post.imageScale);
       renderTags(post.tags || []);
     }
 

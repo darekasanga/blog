@@ -112,6 +112,11 @@
               <p class="muted-text" style="margin: 6px 0 0;">プレビュー下のバーで画像の見せたい範囲を調整できます。</p>
             </div>
             <div class="field">
+              <label for="image-scale">画像の拡大率</label>
+              <input id="image-scale" type="range" min="0.5" max="2" step="0.05" value="1" />
+              <p class="muted-text" style="margin: 6px 0 0;">0.5x 〜 2x で拡大率を調整します。現在: <strong id="image-scale-label">1.00x</strong></p>
+            </div>
+            <div class="field">
               <label>記事テーマ</label>
               <p class="muted-text" style="margin: 0;">この記事だけに適用されるカラーを選択できます。</p>
               <div class="theme-grid" id="theme-options"></div>
@@ -156,7 +161,7 @@
   <script src="../assets/data.js"></script>
   <script>
     const { readPosts, savePosts, normalizePost, escapeHtml, readSiteTheme, resolveTheme, applyThemeToDocument, saveSiteTheme } = window.BlogData;
-    const { themes, estimateReadMinutes, formatReadTime, normalizeFocus } = window.BlogData;
+    const { themes, estimateReadMinutes, formatReadTime, normalizeFocus, normalizeScale } = window.BlogData;
 
     const form = document.getElementById('post-form');
     const titleEl = document.getElementById('title');
@@ -184,6 +189,8 @@
     const previewTags = document.createElement('div');
     const imageEl = document.getElementById('image');
     const siteThemePicker = document.getElementById('site-theme-picker');
+    const imageScaleEl = document.getElementById('image-scale');
+    const imageScaleLabel = document.getElementById('image-scale-label');
     previewTags.className = 'tag-row';
     previewThumb.insertAdjacentElement('afterend', previewTags);
 
@@ -290,6 +297,11 @@
       const focusCenter = Math.round((focus.start + focus.end) / 2);
       previewThumb.style.setProperty('--focus-start', `${focus.start}%`);
       previewThumb.style.setProperty('--focus-end', `${focus.end}%`);
+      const scale = normalizeScale(Number(imageScaleEl.value));
+      previewThumb.style.setProperty('--image-scale', scale);
+      if (imageScaleLabel) {
+        imageScaleLabel.textContent = `${scale.toFixed(2)}x`;
+      }
 
       if (resizedImageData) {
         previewThumb.innerHTML = `<div class=\"focus-range\" aria-hidden=\"true\"></div><img src=\"${resizedImageData}\" alt=\"${escapeHtml(previewTitle.textContent)}の画像\" style=\"object-position:center ${focusCenter}%\" />`;
@@ -398,6 +410,7 @@
       tagsEl.value = '';
       focusStartEl.value = '20';
       focusEndEl.value = '80';
+      imageScaleEl.value = '1';
       applyArticleTheme(siteThemeKey);
       updatePreview();
       updateReadTime();
@@ -420,6 +433,7 @@
       const focus = normalizeFocus(target.imageFocus, target.imagePosition);
       focusStartEl.value = focus.start;
       focusEndEl.value = focus.end;
+      imageScaleEl.value = normalizeScale(target.imageScale);
       applyArticleTheme(target.theme || selectedTheme.key);
       submitButton.textContent = '変更を保存';
       cancelEditButton.hidden = false;
@@ -461,6 +475,10 @@
         }
         updatePreview();
       });
+    });
+
+    imageScaleEl.addEventListener('input', () => {
+      updatePreview();
     });
 
     imageEl.addEventListener('change', async (event) => {
@@ -506,6 +524,7 @@
       const focus = normalizeFocus({ start: Number(focusStartEl.value), end: Number(focusEndEl.value) });
       const imagePosition = Math.round((focus.start + focus.end) / 2);
       const theme = selectedTheme.key;
+      const imageScale = normalizeScale(Number(imageScaleEl.value));
 
       const preparedPost = normalizePost(
         {
@@ -520,6 +539,7 @@
           tags,
           imagePosition,
           imageFocus: focus,
+          imageScale,
           theme,
         },
         posts.length
