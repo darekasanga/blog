@@ -453,7 +453,7 @@ h2 {
 
 .scroll-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
   width: 100%;
 }
@@ -513,6 +513,12 @@ h2 {
 .scroll-card:hover {
   transform: translateY(-2px);
   border-color: var(--accent);
+}
+
+@media (max-width: 900px) {
+  .scroll-list {
+    grid-template-columns: 1fr;
+  }
 }
 
 .scroll-body h3 {
@@ -725,11 +731,87 @@ h2 {
   transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
+.status-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.pill-accent {
+  background: linear-gradient(135deg, rgba(108, 99, 255, 0.15), rgba(79, 195, 247, 0.12));
+  border-color: var(--accent);
+  color: var(--fg);
+}
+
+.pill-outline {
+  border-style: dashed;
+}
+
+.pill-positive {
+  border-color: rgba(94, 214, 146, 0.6);
+  color: #c8f7dc;
+  background: rgba(94, 214, 146, 0.12);
+}
+
+.pill-muted {
+  opacity: 0.6;
+}
+
 .manage-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   justify-content: flex-end;
+}
+
+.manage-flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+
+.flag-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  user-select: none;
+}
+
+.flag-toggle input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}
+
+.order-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.order-stack {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(44px, auto));
+  gap: 6px;
 }
 
 .btn.danger {

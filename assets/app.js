@@ -7,6 +7,18 @@ const tagMarquee = document.getElementById('tag-marquee');
 const siteThemePicker = document.getElementById('site-theme-picker');
 let siteThemeKey = readSiteTheme();
 let siteTheme = applyThemeToDocument(siteThemeKey);
+const sortedVisiblePosts = () =>
+  [...posts].filter((post) => !post.hidden).sort((a, b) => (a.order || 0) - (b.order || 0));
+const featuredPosts = () => {
+  const visible = sortedVisiblePosts();
+  const featured = visible.filter((post) => post.isFeatured);
+  return featured.length ? featured : visible;
+};
+const digestPosts = () => {
+  const visible = sortedVisiblePosts();
+  const digest = visible.filter((post) => post.isDigest);
+  return digest.length ? digest : visible;
+};
 
 function applySiteTheme(themeKey) {
   siteThemeKey = saveSiteTheme(themeKey);
@@ -23,9 +35,10 @@ document.body.appendChild(lightbox);
 
 function renderTags(tags = []) {
   if (!tagMarquee) return;
+  const visible = sortedVisiblePosts();
   const allTags = Array.from(
     new Set(
-      posts
+      visible
         .map((post) => post.tags || [])
         .flat()
         .filter(Boolean)
@@ -56,7 +69,13 @@ function themeStyle(post) {
 
 function renderCards() {
   if (!track) return;
-  track.innerHTML = posts
+  const items = featuredPosts();
+  if (!items.length) {
+    track.innerHTML = '<p class="muted-text">表示できる記事がありません。</p>';
+    return;
+  }
+
+  track.innerHTML = items
     .map(
       (post) => `
         <article class="card" style="${themeStyle(post)}">
@@ -84,7 +103,13 @@ function renderCards() {
 
 function renderScrollList() {
   if (!scrollList) return;
-  scrollList.innerHTML = posts
+  const items = digestPosts();
+  if (!items.length) {
+    scrollList.innerHTML = '<p class="muted-text">表示できる記事がありません。</p>';
+    return;
+  }
+
+  scrollList.innerHTML = items
     .map(
       (post) => `
         <article class="scroll-card" style="${themeStyle(post)}">

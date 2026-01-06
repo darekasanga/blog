@@ -133,6 +133,10 @@
       imagePosition: 50,
       imageFocus: DEFAULT_FOCUS,
       theme: 'violet-ice',
+      isFeatured: true,
+      isDigest: true,
+      hidden: false,
+      order: 0,
     },
     {
       id: 'post-jamstack',
@@ -146,6 +150,10 @@
       imagePosition: 50,
       imageFocus: { start: 16, end: 84 },
       theme: 'sunset',
+      isFeatured: true,
+      isDigest: true,
+      hidden: false,
+      order: 1,
     },
     {
       id: 'post-microcopy',
@@ -159,6 +167,10 @@
       imagePosition: 50,
       imageFocus: { start: 24, end: 88 },
       theme: 'forest',
+      isFeatured: true,
+      isDigest: true,
+      hidden: false,
+      order: 2,
     },
     {
       id: 'post-ui-motion',
@@ -172,6 +184,10 @@
       imagePosition: 50,
       imageFocus: { start: 12, end: 82 },
       theme: 'amber-night',
+      isFeatured: true,
+      isDigest: true,
+      hidden: false,
+      order: 3,
     },
     {
       id: 'post-accessibility',
@@ -185,6 +201,10 @@
       imagePosition: 50,
       imageFocus: { start: 18, end: 86 },
       theme: 'aqua',
+      isFeatured: true,
+      isDigest: true,
+      hidden: false,
+      order: 4,
     },
   ];
 
@@ -264,6 +284,10 @@
     const imagePosition = Number.isFinite(Number(post.imagePosition)) ? Math.min(Math.max(Number(post.imagePosition), 0), 100) : focusCenter;
     const imageScale = normalizeScale(post.imageScale);
     const theme = resolveTheme(post.theme || readSiteTheme() || DEFAULT_THEME).key;
+    const isFeatured = post.isFeatured !== false;
+    const isDigest = post.isDigest !== false;
+    const hidden = post.hidden === true;
+    const order = Number.isFinite(Number(post.order)) ? Number(post.order) : index;
     return {
       id,
       title: post.title || '無題の投稿',
@@ -277,6 +301,10 @@
       imageFocus,
       imageScale,
       theme,
+      isFeatured,
+      isDigest,
+      hidden,
+      order,
     };
   }
 
@@ -300,7 +328,7 @@
       return normalizedDefaults;
     }
 
-    const normalized = stored.map((post, index) => normalizePost(post, index));
+    const normalized = stored.map((post, index) => normalizePost(post, index)).sort((a, b) => (a.order || 0) - (b.order || 0));
     savePosts(normalized);
     return normalized;
   }
