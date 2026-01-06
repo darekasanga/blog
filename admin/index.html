@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Blog | 管理ページ</title>
+  <title>EMPEROR.NEWS | 管理ページ</title>
   <link rel="stylesheet" href="../assets/styles.css" />
 </head>
 <body>
@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true"></div>
         <div>
           <p class="brand-kicker">BLOG</p>
-          <p class="brand-title">クリエイティブスタジオ</p>
+          <p class="brand-title">EMPEROR.NEWS</p>
         </div>
       </div>
       <nav class="nav-links" aria-label="メインナビゲーション">
@@ -50,6 +50,11 @@
               <label for="excerpt">概要</label>
               <textarea id="excerpt" name="excerpt" rows="4" placeholder="概要を入力" required></textarea>
             </div>
+            <div class="field">
+              <label for="image">記事画像</label>
+              <input id="image" name="image" type="file" accept="image/*" />
+              <p class="muted-text" style="margin: 6px 0 0;">アップロード後、自動でリサイズして保存します。</p>
+            </div>
             <div class="form-actions">
               <button class="btn primary" type="submit">記事を登録</button>
               <a class="btn ghost" href="../index.html">トップで確認</a>
@@ -59,6 +64,7 @@
           <div class="info-card">
             <p class="kicker">プレビュー</p>
             <article class="card" id="preview-card">
+              <div class="card-thumb placeholder" id="preview-thumb" aria-hidden="true"></div>
               <div class="meta">
                 <span id="preview-date">2024-05-28</span>
                 <span>•</span>
@@ -67,8 +73,7 @@
               <h3 id="preview-title">デザインシステムで統一感を作る</h3>
               <p id="preview-excerpt">色・余白・コンポーネントを揃え、プロダクト全体の体験を向上させる方法をまとめました。</p>
               <div class="actions">
-                <button class="btn primary" type="button">保存済み</button>
-                <button class="btn ghost" type="button">共有</button>
+                <button class="btn primary full" type="button">記事を読む</button>
               </div>
             </article>
           </div>
@@ -80,7 +85,7 @@
   <footer class="site-footer">
     <div class="inner footer-grid">
       <div>
-        <p class="brand-title">クリエイティブスタジオ</p>
+        <p class="brand-title">EMPEROR.NEWS</p>
         <p class="muted-text">投稿は管理ページから行えます。</p>
       </div>
       <div class="footer-actions">
@@ -95,31 +100,112 @@
     const dateEl = document.getElementById('date');
     const readEl = document.getElementById('read');
     const excerptEl = document.getElementById('excerpt');
+    const imageEl = document.getElementById('image');
 
     const previewTitle = document.getElementById('preview-title');
     const previewDate = document.getElementById('preview-date');
     const previewRead = document.getElementById('preview-read');
     const previewExcerpt = document.getElementById('preview-excerpt');
+    const previewThumb = document.getElementById('preview-thumb');
 
     const today = new Date().toISOString().slice(0, 10);
     dateEl.value = today;
     previewDate.textContent = today;
+
+    let resizedImageData = '';
 
     function updatePreview() {
       previewTitle.textContent = titleEl.value || '無題の投稿';
       previewDate.textContent = dateEl.value || today;
       previewRead.textContent = readEl.value || '5 min';
       previewExcerpt.textContent = excerptEl.value || '概要を入力するとここに表示されます。';
+
+      if (resizedImageData) {
+        previewThumb.innerHTML = `<img src="${resizedImageData}" alt="${previewTitle.textContent}の画像" />`;
+        previewThumb.classList.remove('placeholder');
+        previewThumb.removeAttribute('aria-hidden');
+      } else {
+        previewThumb.innerHTML = '';
+        previewThumb.classList.add('placeholder');
+        previewThumb.setAttribute('aria-hidden', 'true');
+      }
+    }
+
+    function downscaleImage(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const maxWidth = 1200;
+            const maxHeight = 1200;
+            const scale = Math.min(maxWidth / img.width, maxHeight / img.height, 1);
+            const width = Math.round(img.width * scale);
+            const height = Math.round(img.height * scale);
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL('image/jpeg', 0.9));
+          };
+          img.onerror = reject;
+          img.src = reader.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
     }
 
     [titleEl, dateEl, readEl, excerptEl].forEach((el) => {
       el.addEventListener('input', updatePreview);
     });
 
+    imageEl.addEventListener('change', async (event) => {
+      const file = event.target.files?.[0];
+      if (!file) {
+        resizedImageData = '';
+        updatePreview();
+        return;
+      }
+
+      if (!file.type.startsWith('image/')) {
+        alert('画像ファイルを選択してください。');
+        imageEl.value = '';
+        return;
+      }
+
+      try {
+        resizedImageData = await downscaleImage(file);
+        updatePreview();
+      } catch (error) {
+        console.error(error);
+        alert('画像の読み込みに失敗しました。別のファイルでお試しください。');
+        resizedImageData = '';
+        updatePreview();
+      }
+    });
+
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       updatePreview();
-      alert('投稿は管理ページで受け付けました（デモ）。');
+
+      const newPost = {
+        title: previewTitle.textContent,
+        date: previewDate.textContent,
+        read: previewRead.textContent,
+        excerpt: previewExcerpt.textContent,
+        image: resizedImageData,
+      };
+
+      const current = JSON.parse(localStorage.getItem('posts') || '[]');
+      localStorage.setItem('posts', JSON.stringify([newPost, ...current]));
+
+      alert('投稿を保存しました。トップページで確認できます。');
+      form.reset();
+      resizedImageData = '';
+      dateEl.value = today;
+      updatePreview();
     });
   </script>
 </body>
