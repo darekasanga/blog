@@ -1,4 +1,4 @@
-const { readPosts, escapeHtml } = window.BlogData;
+const { readPosts, escapeHtml, resolveTheme } = window.BlogData;
 const posts = readPosts();
 const track = document.getElementById('card-track');
 const buttons = document.querySelectorAll('[data-action]');
@@ -38,16 +38,21 @@ function renderTags(tags = []) {
   tagMarquee.innerHTML = `<div class="marquee-track">${chips}</div>`;
 }
 
+function themeStyle(post) {
+  const theme = resolveTheme(post.theme);
+  return `--accent:${theme.accent};--accent-2:${theme.accent2};--focus-start:${post.imageFocus?.start ?? 0}%;--focus-end:${post.imageFocus?.end ?? 100}%;`;
+}
+
 function renderCards() {
   if (!track) return;
   track.innerHTML = posts
     .map(
       (post) => `
-        <article class="card">
+        <article class="card" style="${themeStyle(post)}">
           ${
             post.image
-              ? `<div class="card-thumb"><img src="${post.image}" alt="${escapeHtml(post.title)}の画像" style="object-position:center ${post.imagePosition ?? 50}%;" /></div>`
-              : `<div class="card-thumb placeholder" aria-hidden="true"></div>`
+              ? `<div class="card-thumb"><div class="focus-range" aria-hidden="true"></div><img src="${post.image}" alt="${escapeHtml(post.title)}の画像" style="object-position:center ${post.imagePosition ?? 50}%;" /></div>`
+              : `<div class="card-thumb placeholder" aria-hidden="true"><div class="focus-range" aria-hidden="true"></div></div>`
           }
           <div class="meta">
             <span>${escapeHtml(post.date)}</span>
@@ -71,12 +76,12 @@ function renderScrollList() {
   scrollList.innerHTML = posts
     .map(
       (post) => `
-        <article class="scroll-card">
-          <div class="scroll-thumb ${post.image ? '' : 'placeholder'}" style="--image-pos:${post.imagePosition ?? 50}%;">
+        <article class="scroll-card" style="${themeStyle(post)}">
+          <div class="scroll-thumb ${post.image ? '' : 'placeholder'}" style="--image-pos:${post.imagePosition ?? 50}%;--focus-start:${post.imageFocus?.start ?? 0}%;--focus-end:${post.imageFocus?.end ?? 100}%;">
             ${
               post.image
-                ? `<img src="${post.image}" alt="${escapeHtml(post.title)}の画像" />`
-                : '<span class="muted-text">画像未設定</span>'
+                ? `<div class="focus-range" aria-hidden="true"></div><img src="${post.image}" alt="${escapeHtml(post.title)}の画像" />`
+                : '<div class="focus-range" aria-hidden="true"></div><span class="muted-text">画像未設定</span>'
             }
           </div>
           <div class="scroll-body">

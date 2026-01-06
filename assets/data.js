@@ -1,6 +1,23 @@
 (function () {
   const STORAGE_KEY = 'posts';
 
+  const themePresets = [
+    { key: 'violet-ice', name: 'バイオレット', accent: '#6c63ff', accent2: '#4fc3f7' },
+    { key: 'sunset', name: 'サンセット', accent: '#ff6b6b', accent2: '#ffb347' },
+    { key: 'forest', name: 'フォレスト', accent: '#5ad07a', accent2: '#1fa47a' },
+    { key: 'amber-night', name: 'アンバー', accent: '#f2c14e', accent2: '#f08c42' },
+    { key: 'aqua', name: 'アクア', accent: '#4ef2c7', accent2: '#4fc3f7' },
+    { key: 'blush', name: 'ブラッシュ', accent: '#f285b9', accent2: '#ffb3d1' },
+    { key: 'citrus', name: 'シトラス', accent: '#ffe66d', accent2: '#ff9f1c' },
+    { key: 'slate', name: 'スレート', accent: '#7f8c8d', accent2: '#5d6d7e' },
+    { key: 'emerald', name: 'エメラルド', accent: '#2ecc71', accent2: '#1abc9c' },
+    { key: 'firefly', name: 'ファイアフライ', accent: '#a29bfe', accent2: '#ff9ff3' },
+  ];
+
+  const DEFAULT_THEME = themePresets[0].key;
+  const DEFAULT_FOCUS = { start: 20, end: 80 };
+  const CHARS_PER_MINUTE = 500;
+
   const defaultPosts = [
     {
       id: 'post-design-system',
@@ -12,6 +29,8 @@
       image: '',
       tags: ['デザイン', 'UI'],
       imagePosition: 50,
+      imageFocus: DEFAULT_FOCUS,
+      theme: 'violet-ice',
     },
     {
       id: 'post-jamstack',
@@ -23,6 +42,8 @@
       image: '',
       tags: ['Jamstack', 'パフォーマンス'],
       imagePosition: 50,
+      imageFocus: { start: 16, end: 84 },
+      theme: 'sunset',
     },
     {
       id: 'post-microcopy',
@@ -34,6 +55,8 @@
       image: '',
       tags: ['ライティング', 'UX'],
       imagePosition: 50,
+      imageFocus: { start: 24, end: 88 },
+      theme: 'forest',
     },
     {
       id: 'post-ui-motion',
@@ -45,6 +68,8 @@
       image: '',
       tags: ['アニメーション', 'UI'],
       imagePosition: 50,
+      imageFocus: { start: 12, end: 82 },
+      theme: 'amber-night',
     },
     {
       id: 'post-accessibility',
@@ -56,8 +81,39 @@
       image: '',
       tags: ['アクセシビリティ', 'チェックリスト'],
       imagePosition: 50,
+      imageFocus: { start: 18, end: 86 },
+      theme: 'aqua',
     },
   ];
+
+  function resolveTheme(key = DEFAULT_THEME) {
+    return themePresets.find((theme) => theme.key === key) || themePresets[0];
+  }
+
+  function normalizeFocus(input = null, fallbackPosition = 50) {
+    if (input && Number.isFinite(input.start) && Number.isFinite(input.end)) {
+      const start = Math.min(Math.max(Number(input.start), 0), 100);
+      const end = Math.min(Math.max(Number(input.end), start + 5), 100);
+      return { start, end };
+    }
+
+    const center = Number.isFinite(Number(fallbackPosition)) ? Math.min(Math.max(Number(fallbackPosition), 0), 100) : 50;
+    const start = Math.max(center - 30, 0);
+    const end = Math.min(center + 30, 100);
+    return { start, end };
+  }
+
+  function formatReadTime(minutes = 1) {
+    const min = Math.max(1, Math.round(minutes));
+    return `${min} min`;
+  }
+
+  function estimateReadMinutes(text = '') {
+    const normalized = String(text || '').replace(/\s+/g, ' ').trim();
+    if (!normalized.length) return 1;
+    const minutes = normalized.length / CHARS_PER_MINUTE;
+    return Math.max(1, Math.ceil(minutes));
+  }
 
   function normalizeTags(rawTags = []) {
     return (Array.isArray(rawTags) ? rawTags : String(rawTags || '').split(',')).map((tag) => String(tag || '').trim()).filter(Boolean).slice(0, 2);
@@ -66,10 +122,14 @@
   function normalizePost(post = {}, index = 0) {
     const id = post.id || `post-${Date.now()}-${index}`;
     const date = post.date || new Date().toISOString().slice(0, 10);
-    const read = post.read || '5 min';
+    const textForRead = `${post.excerpt || ''}\n${post.content || ''}\n${post.title || ''}`;
+    const read = post.read || formatReadTime(estimateReadMinutes(textForRead));
     const excerpt = post.excerpt || '';
     const content = post.content || excerpt || '本文がまだ登録されていません。';
-    const imagePosition = Number.isFinite(Number(post.imagePosition)) ? Math.min(Math.max(Number(post.imagePosition), 0), 100) : 50;
+    const imageFocus = normalizeFocus(post.imageFocus, post.imagePosition);
+    const focusCenter = Math.round((imageFocus.start + imageFocus.end) / 2);
+    const imagePosition = Number.isFinite(Number(post.imagePosition)) ? Math.min(Math.max(Number(post.imagePosition), 0), 100) : focusCenter;
+    const theme = resolveTheme(post.theme || DEFAULT_THEME).key;
     return {
       id,
       title: post.title || '無題の投稿',
@@ -80,6 +140,8 @@
       image: post.image || '',
       tags: normalizeTags(post.tags),
       imagePosition,
+      imageFocus,
+      theme,
     };
   }
 
@@ -124,5 +186,10 @@
     normalizePost,
     escapeHtml,
     normalizeTags,
+    themes: themePresets,
+    resolveTheme,
+    estimateReadMinutes,
+    formatReadTime,
+    normalizeFocus,
   };
 })();
