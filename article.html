@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EMPEROR.NEWS | 記事</title>
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="inner">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true"></div>
+        <div>
+          <p class="brand-kicker">BLOG</p>
+          <p class="brand-title">EMPEROR.NEWS</p>
+        </div>
+      </div>
+      <nav class="nav-links" aria-label="メインナビゲーション">
+        <a href="index.html" class="nav-link">トップ</a>
+        <a href="admin/index.html" class="nav-link">管理</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="section">
+      <div class="inner article-layout">
+        <article class="article-card" id="article">
+          <p class="kicker">Article</p>
+          <h1 id="article-title">記事が見つかりません</h1>
+          <div class="meta" id="article-meta"></div>
+          <div class="article-thumb placeholder" id="article-thumb" aria-hidden="true"></div>
+          <div class="article-body" id="article-body">
+            <p>指定された記事を読み込めませんでした。トップに戻って別の記事をお選びください。</p>
+          </div>
+          <div class="article-actions">
+            <a class="btn ghost" href="index.html">トップへ戻る</a>
+            <a class="btn ghost" href="admin/index.html">管理ページ</a>
+          </div>
+        </article>
+
+        <aside class="info-card comments-card">
+          <div class="section-header">
+            <div>
+              <p class="kicker">コメント</p>
+              <h3>感想を残す</h3>
+            </div>
+            <p class="muted-text" id="comment-count"></p>
+          </div>
+
+          <form id="comment-form" class="comment-form">
+            <label class="field">
+              <span>お名前</span>
+              <input id="commenter" name="commenter" type="text" placeholder="ペンネームでOK" required />
+            </label>
+            <label class="field">
+              <span>コメント</span>
+              <textarea id="comment-body" name="comment-body" rows="4" placeholder="記事の感想や質問をどうぞ" required></textarea>
+            </label>
+            <button class="btn primary full" type="submit">コメントを投稿</button>
+          </form>
+
+          <div id="comment-list" class="comment-list" aria-live="polite">
+            <p id="comment-empty" class="muted-text">最初のコメントを投稿しませんか？</p>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="inner footer-grid">
+      <div>
+        <p class="brand-title">EMPEROR.NEWS</p>
+        <p class="muted-text">記事へのフィードバックをお待ちしています。</p>
+      </div>
+      <div class="footer-actions">
+        <a class="btn ghost" href="index.html">トップへ</a>
+        <a class="btn ghost" href="admin/index.html">管理ページ</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="assets/data.js"></script>
+  <script>
+    const { readPosts } = window.BlogData;
+    const params = new URLSearchParams(window.location.search);
+    const postId = params.get('id');
+
+    const titleEl = document.getElementById('article-title');
+    const metaEl = document.getElementById('article-meta');
+    const bodyEl = document.getElementById('article-body');
+    const thumbEl = document.getElementById('article-thumb');
+    const commentList = document.getElementById('comment-list');
+    const commentCount = document.getElementById('comment-count');
+    const emptyState = document.getElementById('comment-empty');
+    const commentForm = document.getElementById('comment-form');
+    const commenterEl = document.getElementById('commenter');
+    const commentBodyEl = document.getElementById('comment-body');
+
+    const posts = readPosts();
+    const post = posts.find((item) => item.id === postId);
+
+    function renderContent(text) {
+      bodyEl.innerHTML = '';
+      const lines = (text || '').split('\n').filter((line) => line.trim().length > 0);
+      if (!lines.length) {
+        const p = document.createElement('p');
+        p.textContent = '本文がまだ登録されていません。';
+        bodyEl.appendChild(p);
+        return;
+      }
+
+      lines.forEach((line) => {
+        const p = document.createElement('p');
+        p.textContent = line.trim();
+        bodyEl.appendChild(p);
+      });
+    }
+
+    function setThumb(image, altText) {
+      thumbEl.innerHTML = '';
+      if (image) {
+        const img = document.createElement('img');
+        img.src = image;
+        img.alt = `${altText}の画像`;
+        thumbEl.classList.remove('placeholder');
+        thumbEl.removeAttribute('aria-hidden');
+        thumbEl.appendChild(img);
+        return;
+      }
+
+      thumbEl.textContent = '画像未設定';
+      thumbEl.classList.add('placeholder');
+      thumbEl.setAttribute('aria-hidden', 'true');
+    }
+
+    function renderArticle() {
+      if (!post) {
+        titleEl.textContent = '記事が見つかりません';
+        metaEl.textContent = '';
+        renderContent('記事が見つかりませんでした。トップへ戻って別の記事をお試しください。');
+        setThumb('', '');
+        commentForm.hidden = true;
+        commentCount.textContent = '';
+        return;
+      }
+
+      commentForm.hidden = false;
+      titleEl.textContent = post.title;
+      metaEl.textContent = `${post.date} • ${post.read}`;
+      renderContent(post.content || post.excerpt);
+      setThumb(post.image, post.title);
+    }
+
+    function commentStorageKey(id) {
+      return `comments:${id}`;
+    }
+
+    function loadComments(id) {
+      try {
+        const saved = JSON.parse(localStorage.getItem(commentStorageKey(id)) || '[]');
+        if (Array.isArray(saved)) {
+          return saved;
+        }
+        return [];
+      } catch (error) {
+        console.warn('コメントの読み込みに失敗しました。', error);
+        return [];
+      }
+    }
+
+    function saveComments(id, comments) {
+      localStorage.setItem(commentStorageKey(id), JSON.stringify(comments));
+    }
+
+    function renderComments(comments) {
+      commentList.innerHTML = '';
+      if (!comments.length) {
+        emptyState.hidden = false;
+        commentCount.textContent = '0件のコメント';
+        commentList.appendChild(emptyState);
+        return;
+      }
+
+      emptyState.hidden = true;
+      commentCount.textContent = `${comments.length}件のコメント`;
+
+      comments.forEach((comment) => {
+        const article = document.createElement('article');
+        article.className = 'comment-card';
+
+        const header = document.createElement('div');
+        header.className = 'comment-header';
+        const name = document.createElement('strong');
+        name.textContent = comment.name;
+        const time = document.createElement('span');
+        const date = new Date(comment.createdAt || Date.now());
+        time.textContent = date.toLocaleString('ja-JP');
+        header.appendChild(name);
+        header.appendChild(time);
+
+        const body = document.createElement('p');
+        body.textContent = comment.body;
+
+        article.appendChild(header);
+        article.appendChild(body);
+        commentList.appendChild(article);
+      });
+    }
+
+    function handleCommentSubmit(event) {
+      event.preventDefault();
+      if (!post) return;
+
+      const name = commenterEl.value.trim() || '名無しさん';
+      const body = commentBodyEl.value.trim();
+      if (!body) {
+        alert('コメントを入力してください。');
+        return;
+      }
+
+      const current = loadComments(post.id);
+      const newComment = {
+        id: `comment-${Date.now()}`,
+        name,
+        body,
+        createdAt: new Date().toISOString(),
+      };
+      const updated = [newComment, ...current].slice(0, 100);
+      saveComments(post.id, updated);
+      renderComments(updated);
+      commentForm.reset();
+    }
+
+    renderArticle();
+
+    if (post) {
+      const initialComments = loadComments(post.id);
+      renderComments(initialComments);
+      commentForm.addEventListener('submit', handleCommentSubmit);
+    } else {
+      commentList.innerHTML = '';
+      emptyState.hidden = false;
+      commentList.appendChild(emptyState);
+    }
+  </script>
+</body>
+</html>

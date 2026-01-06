@@ -51,12 +51,17 @@
               <textarea id="excerpt" name="excerpt" rows="4" placeholder="概要を入力" required></textarea>
             </div>
             <div class="field">
+              <label for="content">本文</label>
+              <textarea id="content" name="content" rows="6" placeholder="本文を入力。改行も反映されます。" required></textarea>
+            </div>
+            <div class="field">
               <label for="image">記事画像</label>
               <input id="image" name="image" type="file" accept="image/*" />
               <p class="muted-text" style="margin: 6px 0 0;">アップロード後、自動でリサイズして保存します。</p>
             </div>
             <div class="form-actions">
-              <button class="btn primary" type="submit">記事を登録</button>
+              <button class="btn primary" type="submit" id="submit-button">記事を登録</button>
+              <button class="btn ghost" type="button" id="cancel-edit" aria-live="polite" hidden>編集をやめる</button>
               <a class="btn ghost" href="../index.html">トップで確認</a>
             </div>
           </form>
@@ -80,6 +85,19 @@
         </div>
       </div>
     </section>
+
+    <section class="section muted">
+      <div class="inner">
+        <div class="section-header">
+          <div>
+            <p class="kicker">投稿一覧</p>
+            <h2>保存済みの記事</h2>
+          </div>
+          <p class="muted-text" id="post-count"></p>
+        </div>
+        <div id="post-list" class="management-list" aria-live="polite"></div>
+      </div>
+    </section>
   </main>
 
   <footer class="site-footer">
@@ -94,13 +112,21 @@
     </div>
   </footer>
 
+  <script src="../assets/data.js"></script>
   <script>
+    const { readPosts, savePosts, normalizePost, escapeHtml } = window.BlogData;
+
     const form = document.getElementById('post-form');
     const titleEl = document.getElementById('title');
     const dateEl = document.getElementById('date');
     const readEl = document.getElementById('read');
     const excerptEl = document.getElementById('excerpt');
+    const contentEl = document.getElementById('content');
     const imageEl = document.getElementById('image');
+    const postList = document.getElementById('post-list');
+    const postCount = document.getElementById('post-count');
+    const cancelEditButton = document.getElementById('cancel-edit');
+    const submitButton = document.getElementById('submit-button');
 
     const previewTitle = document.getElementById('preview-title');
     const previewDate = document.getElementById('preview-date');
@@ -113,6 +139,8 @@
     previewDate.textContent = today;
 
     let resizedImageData = '';
+    let posts = readPosts();
+    let editingId = null;
 
     function updatePreview() {
       previewTitle.textContent = titleEl.value || '無題の投稿';
@@ -121,7 +149,7 @@
       previewExcerpt.textContent = excerptEl.value || '概要を入力するとここに表示されます。';
 
       if (resizedImageData) {
-        previewThumb.innerHTML = `<img src="${resizedImageData}" alt="${previewTitle.textContent}の画像" />`;
+        previewThumb.innerHTML = `<img src=\"${resizedImageData}\" alt=\"${escapeHtml(previewTitle.textContent)}の画像\" />`;
         previewThumb.classList.remove('placeholder');
         previewThumb.removeAttribute('aria-hidden');
       } else {
@@ -157,14 +185,102 @@
       });
     }
 
-    [titleEl, dateEl, readEl, excerptEl].forEach((el) => {
+    function renderPostList() {
+      if (!posts.length) {
+        postCount.textContent = 'まだ投稿がありません。';
+        postList.innerHTML = '<p class=\"muted-text\">投稿を追加するとここに表示されます。</p>';
+        return;
+      }
+
+      postCount.textContent = `${posts.length}件の投稿`;
+      postList.innerHTML = posts
+        .map(
+          (post) => `
+            <article class=\"manage-card\" data-id=\"${post.id}\">
+              <div class=\"manage-summary\">
+                <p class=\"meta\"><span>${escapeHtml(post.date)}</span><span>•</span><span>${escapeHtml(post.read)}</span></p>
+                <h3>${escapeHtml(post.title)}</h3>
+                <p class=\"muted-text\">${escapeHtml(post.excerpt)}</p>
+              </div>
+              <div class=\"manage-actions\">
+                <a class=\"btn ghost\" href=\"../article.html?id=${encodeURIComponent(post.id)}\">記事を表示</a>
+                <button class=\"btn primary\" type=\"button\" data-action=\"edit\">編集</button>
+                <button class=\"btn danger\" type=\"button\" data-action=\"delete\">削除</button>
+              </div>
+            </article>
+          `
+        )
+        .join('');
+
+      postList.querySelectorAll('button[data-action=\"edit\"]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const postId = button.closest('[data-id]')?.dataset.id;
+          if (postId) {
+            startEdit(postId);
+          }
+        });
+      });
+
+      postList.querySelectorAll('button[data-action=\"delete\"]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const postId = button.closest('[data-id]')?.dataset.id;
+          if (postId) {
+            deletePost(postId);
+          }
+        });
+      });
+    }
+
+    function resetForm() {
+      form.reset();
+      resizedImageData = '';
+      editingId = null;
+      submitButton.textContent = '記事を登録';
+      cancelEditButton.hidden = true;
+      dateEl.value = today;
+      updatePreview();
+    }
+
+    function startEdit(id) {
+      const target = posts.find((post) => post.id === id);
+      if (!target) {
+        return;
+      }
+
+      editingId = id;
+      titleEl.value = target.title;
+      dateEl.value = target.date;
+      readEl.value = target.read;
+      excerptEl.value = target.excerpt;
+      contentEl.value = target.content || '';
+      resizedImageData = target.image || '';
+      submitButton.textContent = '変更を保存';
+      cancelEditButton.hidden = false;
+      updatePreview();
+      form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function deletePost(id) {
+      const target = posts.find((post) => post.id === id);
+      if (!target) return;
+      const confirmed = window.confirm(`「${target.title}」を削除しますか？`);
+      if (!confirmed) return;
+      posts = posts.filter((post) => post.id !== id);
+      savePosts(posts);
+      if (editingId === id) {
+        resetForm();
+      }
+      renderPostList();
+    }
+
+    [titleEl, dateEl, readEl, excerptEl, contentEl].forEach((el) => {
       el.addEventListener('input', updatePreview);
     });
 
     imageEl.addEventListener('change', async (event) => {
       const file = event.target.files?.[0];
       if (!file) {
-        resizedImageData = '';
+        resizedImageData = editingId ? posts.find((p) => p.id === editingId)?.image || '' : '';
         updatePreview();
         return;
       }
@@ -181,32 +297,53 @@
       } catch (error) {
         console.error(error);
         alert('画像の読み込みに失敗しました。別のファイルでお試しください。');
-        resizedImageData = '';
+        resizedImageData = editingId ? posts.find((p) => p.id === editingId)?.image || '' : '';
         updatePreview();
       }
     });
+
+    cancelEditButton.addEventListener('click', resetForm);
 
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       updatePreview();
 
-      const newPost = {
-        title: previewTitle.textContent,
-        date: previewDate.textContent,
-        read: previewRead.textContent,
-        excerpt: previewExcerpt.textContent,
-        image: resizedImageData,
-      };
+      const title = previewTitle.textContent.trim();
+      const date = previewDate.textContent.trim();
+      const read = previewRead.textContent.trim();
+      const excerpt = previewExcerpt.textContent.trim();
+      const content = contentEl.value.trim();
+      const existing = editingId ? posts.find((post) => post.id === editingId) : null;
+      const image = resizedImageData || existing?.image || '';
 
-      const current = JSON.parse(localStorage.getItem('posts') || '[]');
-      localStorage.setItem('posts', JSON.stringify([newPost, ...current]));
+      const preparedPost = normalizePost(
+        {
+          ...(existing || {}),
+          id: editingId || `post-${Date.now()}`,
+          title,
+          date,
+          read,
+          excerpt,
+          content,
+          image,
+        },
+        posts.length
+      );
 
-      alert('投稿を保存しました。トップページで確認できます。');
-      form.reset();
-      resizedImageData = '';
-      dateEl.value = today;
-      updatePreview();
+      if (editingId) {
+        posts = posts.map((post) => (post.id === editingId ? preparedPost : post));
+      } else {
+        posts = [preparedPost, ...posts];
+      }
+
+      savePosts(posts);
+      renderPostList();
+      alert(editingId ? '変更を保存しました。' : '投稿を保存しました。トップページで確認できます。');
+      resetForm();
     });
+
+    renderPostList();
+    updatePreview();
   </script>
 </body>
 </html>
