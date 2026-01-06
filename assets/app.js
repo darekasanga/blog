@@ -50,7 +50,8 @@ function renderTags(tags = []) {
 
 function themeStyle(post) {
   const theme = resolveTheme(post.theme || siteThemeKey);
-  return `--accent:${theme.accent};--accent-2:${theme.accent2};--focus-start:${post.imageFocus?.start ?? 0}%;--focus-end:${post.imageFocus?.end ?? 100}%;`;
+  const scale = post.imageScale ?? 1;
+  return `--accent:${theme.accent};--accent-2:${theme.accent2};--focus-start:${post.imageFocus?.start ?? 0}%;--focus-end:${post.imageFocus?.end ?? 100}%;--image-scale:${scale};`;
 }
 
 function renderCards() {
@@ -87,7 +88,7 @@ function renderScrollList() {
     .map(
       (post) => `
         <article class="scroll-card" style="${themeStyle(post)}">
-          <div class="scroll-thumb ${post.image ? '' : 'placeholder'}" style="--image-pos:${post.imagePosition ?? 50}%;--focus-start:${post.imageFocus?.start ?? 0}%;--focus-end:${post.imageFocus?.end ?? 100}%;">
+          <div class="scroll-thumb ${post.image ? '' : 'placeholder'}" style="--image-pos:${post.imagePosition ?? 50}%;--focus-start:${post.imageFocus?.start ?? 0}%;--focus-end:${post.imageFocus?.end ?? 100}%;--image-scale:${post.imageScale ?? 1};">
             ${
               post.image
                 ? `<div class="focus-range" aria-hidden="true"></div><img src="${post.image}" alt="${escapeHtml(post.title)}の画像" />`

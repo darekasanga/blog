@@ -117,6 +117,7 @@
 
   const DEFAULT_THEME = themePresets[0].key;
   const DEFAULT_FOCUS = { start: 20, end: 80 };
+  const DEFAULT_SCALE = 1;
   const CHARS_PER_MINUTE = 500;
 
   const defaultPosts = [
@@ -245,6 +246,12 @@
     return (Array.isArray(rawTags) ? rawTags : String(rawTags || '').split(',')).map((tag) => String(tag || '').trim()).filter(Boolean).slice(0, 2);
   }
 
+  function normalizeScale(input = DEFAULT_SCALE) {
+    const value = Number(input);
+    if (!Number.isFinite(value)) return DEFAULT_SCALE;
+    return Math.min(Math.max(value, 0.5), 2);
+  }
+
   function normalizePost(post = {}, index = 0) {
     const id = post.id || `post-${Date.now()}-${index}`;
     const date = post.date || new Date().toISOString().slice(0, 10);
@@ -255,6 +262,7 @@
     const imageFocus = normalizeFocus(post.imageFocus, post.imagePosition);
     const focusCenter = Math.round((imageFocus.start + imageFocus.end) / 2);
     const imagePosition = Number.isFinite(Number(post.imagePosition)) ? Math.min(Math.max(Number(post.imagePosition), 0), 100) : focusCenter;
+    const imageScale = normalizeScale(post.imageScale);
     const theme = resolveTheme(post.theme || readSiteTheme() || DEFAULT_THEME).key;
     return {
       id,
@@ -267,6 +275,7 @@
       tags: normalizeTags(post.tags),
       imagePosition,
       imageFocus,
+      imageScale,
       theme,
     };
   }
@@ -286,8 +295,9 @@
     }
 
     if (!Array.isArray(stored) || stored.length === 0) {
-      savePosts(defaultPosts);
-      return [...defaultPosts];
+      const normalizedDefaults = defaultPosts.map((post, index) => normalizePost(post, index));
+      savePosts(normalizedDefaults);
+      return normalizedDefaults;
     }
 
     const normalized = stored.map((post, index) => normalizePost(post, index));
@@ -320,5 +330,6 @@
     estimateReadMinutes,
     formatReadTime,
     normalizeFocus,
+    normalizeScale,
   };
 })();
