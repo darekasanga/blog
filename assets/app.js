@@ -2,15 +2,51 @@ const { readPosts, escapeHtml } = window.BlogData;
 const posts = readPosts();
 const track = document.getElementById('card-track');
 const buttons = document.querySelectorAll('[data-action]');
+const scrollList = document.getElementById('scroll-list');
+const tagMarquee = document.getElementById('tag-marquee');
+
+const tagPalette = ['#6c63ff', '#4fc3f7', '#ffb347', '#ff6b6b', '#9b72ff', '#4ef2c7', '#f2c14e'];
+const lightbox = document.createElement('div');
+lightbox.className = 'lightbox hidden';
+lightbox.innerHTML = '<img alt=\"拡大画像\" />';
+document.body.appendChild(lightbox);
+
+function renderTags(tags = []) {
+  if (!tagMarquee) return;
+  const allTags = Array.from(
+    new Set(
+      posts
+        .map((post) => post.tags || [])
+        .flat()
+        .filter(Boolean)
+    )
+  );
+
+  if (!allTags.length) {
+    tagMarquee.innerHTML = '<span class="muted-text">タグがまだありません</span>';
+    return;
+  }
+
+  const repeated = [...allTags, ...allTags];
+  const chips = repeated
+    .map((tag, index) => {
+      const color = tagPalette[index % tagPalette.length];
+      return `<span class="chip" style="--chip-bg:${color}1a;--chip-fg:${color};">#${escapeHtml(tag)}</span>`;
+    })
+    .join('');
+
+  tagMarquee.innerHTML = `<div class="marquee-track">${chips}</div>`;
+}
 
 function renderCards() {
+  if (!track) return;
   track.innerHTML = posts
     .map(
       (post) => `
         <article class="card">
           ${
             post.image
-              ? `<div class="card-thumb"><img src="${post.image}" alt="${escapeHtml(post.title)}の画像" /></div>`
+              ? `<div class="card-thumb"><img src="${post.image}" alt="${escapeHtml(post.title)}の画像" style="object-position:center ${post.imagePosition ?? 50}%;" /></div>`
               : `<div class="card-thumb placeholder" aria-hidden="true"></div>`
           }
           <div class="meta">
@@ -23,6 +59,33 @@ function renderCards() {
           <div class="actions">
             <a class="btn primary full" href="article.html?id=${encodeURIComponent(post.id)}">記事を読む</a>
           </div>
+          <div class="tag-row">${(post.tags || []).map((tag) => `<span class="chip">#${escapeHtml(tag)}</span>`).join('')}</div>
+        </article>
+      `
+    )
+    .join('');
+}
+
+function renderScrollList() {
+  if (!scrollList) return;
+  scrollList.innerHTML = posts
+    .map(
+      (post) => `
+        <article class="scroll-card">
+          <div class="scroll-thumb ${post.image ? '' : 'placeholder'}" style="--image-pos:${post.imagePosition ?? 50}%;">
+            ${
+              post.image
+                ? `<img src="${post.image}" alt="${escapeHtml(post.title)}の画像" />`
+                : '<span class="muted-text">画像未設定</span>'
+            }
+          </div>
+          <div class="scroll-body">
+            <p class="meta"><span>${escapeHtml(post.date)}</span><span>•</span><span>${escapeHtml(post.read)}</span></p>
+            <h3>${escapeHtml(post.title)}</h3>
+            <p class="muted-text">${escapeHtml(post.excerpt)}</p>
+            <div class="tag-row">${(post.tags || []).map((tag) => `<span class="chip">#${escapeHtml(tag)}</span>`).join('')}</div>
+          </div>
+          <a class="stretched-link" href="article.html?id=${encodeURIComponent(post.id)}" aria-label="${escapeHtml(post.title)}を読む"></a>
         </article>
       `
     )
@@ -30,6 +93,7 @@ function renderCards() {
 }
 
 function scrollByAmount(direction) {
+  if (!track) return;
   const cardWidth = track.firstElementChild?.getBoundingClientRect().width || 280;
   track.scrollBy({ left: direction * (cardWidth + 16), behavior: 'smooth' });
 }
@@ -41,5 +105,34 @@ function setupButtons() {
   });
 }
 
+function openLightbox(src, alt) {
+  const img = lightbox.querySelector('img');
+  img.src = src;
+  img.alt = alt || '拡大画像';
+  lightbox.classList.remove('hidden');
+}
+
+function setupLightbox() {
+  lightbox.addEventListener('click', () => {
+    lightbox.classList.add('hidden');
+  });
+
+  function bindImages(selector) {
+    document.querySelectorAll(selector).forEach((img) => {
+      img.style.cursor = 'zoom-in';
+      img.addEventListener('click', (event) => {
+        event.preventDefault();
+        openLightbox(img.src, img.alt);
+      });
+    });
+  }
+
+  bindImages('.card-thumb img');
+  bindImages('.scroll-thumb img');
+}
+
 renderCards();
 setupButtons();
+renderScrollList();
+renderTags();
+setupLightbox();

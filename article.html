@@ -34,6 +34,7 @@
           <div class="article-body" id="article-body">
             <p>指定された記事を読み込めませんでした。トップに戻って別の記事をお選びください。</p>
           </div>
+          <div id="article-tags" class="tag-row"></div>
           <div class="article-actions">
             <a class="btn ghost" href="index.html">トップへ戻る</a>
             <a class="btn ghost" href="admin/index.html">管理ページ</a>
@@ -101,6 +102,10 @@
 
     const posts = readPosts();
     const post = posts.find((item) => item.id === postId);
+    const lightbox = document.createElement('div');
+    lightbox.className = 'lightbox hidden';
+    lightbox.innerHTML = '<img alt="拡大画像" />';
+    document.body.appendChild(lightbox);
 
     function renderContent(text) {
       bodyEl.innerHTML = '';
@@ -119,15 +124,17 @@
       });
     }
 
-    function setThumb(image, altText) {
+    function setThumb(image, altText, position) {
       thumbEl.innerHTML = '';
       if (image) {
         const img = document.createElement('img');
         img.src = image;
         img.alt = `${altText}の画像`;
+        img.style.objectPosition = `center ${(position ?? 50)}%`;
         thumbEl.classList.remove('placeholder');
         thumbEl.removeAttribute('aria-hidden');
         thumbEl.appendChild(img);
+        img.addEventListener('click', () => openLightbox(image, altText));
         return;
       }
 
@@ -151,8 +158,32 @@
       titleEl.textContent = post.title;
       metaEl.textContent = `${post.date} • ${post.read}`;
       renderContent(post.content || post.excerpt);
-      setThumb(post.image, post.title);
+      setThumb(post.image, post.title, post.imagePosition);
+      renderTags(post.tags || []);
     }
+
+    function renderTags(tags = []) {
+      const container = document.getElementById('article-tags');
+      container.innerHTML = '';
+      if (!tags.length) return;
+      tags.forEach((tag) => {
+        const span = document.createElement('span');
+        span.className = 'chip';
+        span.textContent = `#${tag}`;
+        container.appendChild(span);
+      });
+    }
+
+    function openLightbox(src, alt) {
+      const img = lightbox.querySelector('img');
+      img.src = src;
+      img.alt = alt || '拡大画像';
+      lightbox.classList.remove('hidden');
+    }
+
+    lightbox.addEventListener('click', () => {
+      lightbox.classList.add('hidden');
+    });
 
     function commentStorageKey(id) {
       return `comments:${id}`;
