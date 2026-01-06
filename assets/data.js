@@ -3,16 +3,116 @@
   const THEME_STORAGE_KEY = 'site-theme';
 
   const themePresets = [
-    { key: 'violet-ice', name: 'バイオレット', accent: '#6c63ff', accent2: '#4fc3f7' },
-    { key: 'sunset', name: 'サンセット', accent: '#ff6b6b', accent2: '#ffb347' },
-    { key: 'forest', name: 'フォレスト', accent: '#5ad07a', accent2: '#1fa47a' },
-    { key: 'amber-night', name: 'アンバー', accent: '#f2c14e', accent2: '#f08c42' },
-    { key: 'aqua', name: 'アクア', accent: '#4ef2c7', accent2: '#4fc3f7' },
-    { key: 'blush', name: 'ブラッシュ', accent: '#f285b9', accent2: '#ffb3d1' },
-    { key: 'citrus', name: 'シトラス', accent: '#ffe66d', accent2: '#ff9f1c' },
-    { key: 'slate', name: 'スレート', accent: '#7f8c8d', accent2: '#5d6d7e' },
-    { key: 'emerald', name: 'エメラルド', accent: '#2ecc71', accent2: '#1abc9c' },
-    { key: 'firefly', name: 'ファイアフライ', accent: '#a29bfe', accent2: '#ff9ff3' },
+    {
+      key: 'violet-ice',
+      name: 'バイオレット',
+      accent: '#6c63ff',
+      accent2: '#4fc3f7',
+      background: '#0b0c10',
+      surface: '#11131a',
+      panel: '#0f1119',
+      border: '#1e2230',
+      muted: '#c7ced9',
+    },
+    {
+      key: 'sunset',
+      name: 'サンセット',
+      accent: '#ff6b6b',
+      accent2: '#ffb347',
+      background: '#1a0f14',
+      surface: '#221218',
+      panel: '#1c0f15',
+      border: '#2f1b20',
+      muted: '#f4c7bd',
+    },
+    {
+      key: 'forest',
+      name: 'フォレスト',
+      accent: '#5ad07a',
+      accent2: '#1fa47a',
+      background: '#0c130f',
+      surface: '#121b14',
+      panel: '#0e1611',
+      border: '#1b2a1f',
+      muted: '#c1d6c7',
+    },
+    {
+      key: 'amber-night',
+      name: 'アンバー',
+      accent: '#f2c14e',
+      accent2: '#f08c42',
+      background: '#14100a',
+      surface: '#1c140b',
+      panel: '#171009',
+      border: '#2a1d0f',
+      muted: '#e6d5b8',
+    },
+    {
+      key: 'aqua',
+      name: 'アクア',
+      accent: '#4ef2c7',
+      accent2: '#4fc3f7',
+      background: '#071412',
+      surface: '#0d1d19',
+      panel: '#0a1815',
+      border: '#12302a',
+      muted: '#c0dedd',
+    },
+    {
+      key: 'blush',
+      name: 'ブラッシュ',
+      accent: '#f285b9',
+      accent2: '#ffb3d1',
+      background: '#140c12',
+      surface: '#1c1018',
+      panel: '#170d14',
+      border: '#2a1a24',
+      muted: '#f0cadf',
+    },
+    {
+      key: 'citrus',
+      name: 'シトラス',
+      accent: '#ffe66d',
+      accent2: '#ff9f1c',
+      background: '#121009',
+      surface: '#1b160c',
+      panel: '#151009',
+      border: '#2c200f',
+      muted: '#eadbb5',
+    },
+    {
+      key: 'slate',
+      name: 'スレート',
+      accent: '#7f8c8d',
+      accent2: '#5d6d7e',
+      background: '#0c0d10',
+      surface: '#14161b',
+      panel: '#101217',
+      border: '#1f2229',
+      muted: '#c7ced9',
+    },
+    {
+      key: 'emerald',
+      name: 'エメラルド',
+      accent: '#2ecc71',
+      accent2: '#1abc9c',
+      background: '#08130e',
+      surface: '#0f1c15',
+      panel: '#0c1812',
+      border: '#123124',
+      muted: '#c0e1d2',
+    },
+    {
+      key: 'firefly',
+      name: 'ファイアフライ',
+      accent: '#a29bfe',
+      accent2: '#ff9ff3',
+      background: '#0b0a13',
+      surface: '#141124',
+      panel: '#100e1c',
+      border: '#1f1b32',
+      muted: '#d4cff6',
+    },
   ];
 
   const DEFAULT_THEME = themePresets[0].key;
@@ -102,6 +202,18 @@
     const theme = resolveTheme(themeKey);
     localStorage.setItem(THEME_STORAGE_KEY, theme.key);
     return theme.key;
+  }
+
+  function applyThemeToDocument(themeKey = DEFAULT_THEME) {
+    const theme = resolveTheme(themeKey);
+    document.documentElement.style.setProperty('--accent', theme.accent);
+    document.documentElement.style.setProperty('--accent-2', theme.accent2);
+    document.documentElement.style.setProperty('--bg', theme.background || '#0b0c10');
+    document.documentElement.style.setProperty('--card', theme.surface || '#11131a');
+    document.documentElement.style.setProperty('--panel', theme.panel || theme.surface || '#0f1119');
+    document.documentElement.style.setProperty('--border', theme.border || '#1e2230');
+    document.documentElement.style.setProperty('--muted', theme.muted || '#c7ced9');
+    return theme;
   }
 
   function normalizeFocus(input = null, fallbackPosition = 50) {
@@ -204,6 +316,7 @@
     resolveTheme,
     readSiteTheme,
     saveSiteTheme,
+    applyThemeToDocument,
     estimateReadMinutes,
     formatReadTime,
     normalizeFocus,
