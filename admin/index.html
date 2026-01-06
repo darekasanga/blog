@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Blog | 管理ページ</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="inner">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true"></div>
+        <div>
+          <p class="brand-kicker">BLOG</p>
+          <p class="brand-title">クリエイティブスタジオ</p>
+        </div>
+      </div>
+      <nav class="nav-links" aria-label="メインナビゲーション">
+        <a href="../index.html" class="nav-link">トップ</a>
+        <a href="index.html" class="nav-link active">管理</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="section">
+      <div class="inner">
+        <p class="kicker">投稿管理</p>
+        <h1>新規投稿とプレビュー</h1>
+        <p class="lead">投稿機能をこの管理ページへ移動しました。入力内容は下のプレビューカードに反映されます。</p>
+
+        <div class="info-grid" style="align-items: stretch;">
+          <form class="info-card" id="post-form">
+            <div class="field">
+              <label for="title">タイトル</label>
+              <input id="title" name="title" type="text" placeholder="例）統一感のあるUIの作り方" required />
+            </div>
+            <div class="field-grid">
+              <div class="field">
+                <label for="date">日付</label>
+                <input id="date" name="date" type="date" required />
+              </div>
+              <div class="field">
+                <label for="read">読了時間</label>
+                <input id="read" name="read" type="text" placeholder="5 min" required />
+              </div>
+            </div>
+            <div class="field">
+              <label for="excerpt">概要</label>
+              <textarea id="excerpt" name="excerpt" rows="4" placeholder="概要を入力" required></textarea>
+            </div>
+            <div class="form-actions">
+              <button class="btn primary" type="submit">記事を登録</button>
+              <a class="btn ghost" href="../index.html">トップで確認</a>
+            </div>
+          </form>
+
+          <div class="info-card">
+            <p class="kicker">プレビュー</p>
+            <article class="card" id="preview-card">
+              <div class="meta">
+                <span id="preview-date">2024-05-28</span>
+                <span>•</span>
+                <span id="preview-read">5 min</span>
+              </div>
+              <h3 id="preview-title">デザインシステムで統一感を作る</h3>
+              <p id="preview-excerpt">色・余白・コンポーネントを揃え、プロダクト全体の体験を向上させる方法をまとめました。</p>
+              <div class="actions">
+                <button class="btn primary" type="button">保存済み</button>
+                <button class="btn ghost" type="button">共有</button>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="inner footer-grid">
+      <div>
+        <p class="brand-title">クリエイティブスタジオ</p>
+        <p class="muted-text">投稿は管理ページから行えます。</p>
+      </div>
+      <div class="footer-actions">
+        <a class="btn ghost" href="../index.html">トップへ</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const form = document.getElementById('post-form');
+    const titleEl = document.getElementById('title');
+    const dateEl = document.getElementById('date');
+    const readEl = document.getElementById('read');
+    const excerptEl = document.getElementById('excerpt');
+
+    const previewTitle = document.getElementById('preview-title');
+    const previewDate = document.getElementById('preview-date');
+    const previewRead = document.getElementById('preview-read');
+    const previewExcerpt = document.getElementById('preview-excerpt');
+
+    const today = new Date().toISOString().slice(0, 10);
+    dateEl.value = today;
+    previewDate.textContent = today;
+
+    function updatePreview() {
+      previewTitle.textContent = titleEl.value || '無題の投稿';
+      previewDate.textContent = dateEl.value || today;
+      previewRead.textContent = readEl.value || '5 min';
+      previewExcerpt.textContent = excerptEl.value || '概要を入力するとここに表示されます。';
+    }
+
+    [titleEl, dateEl, readEl, excerptEl].forEach((el) => {
+      el.addEventListener('input', updatePreview);
+    });
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      updatePreview();
+      alert('投稿は管理ページで受け付けました（デモ）。');
+    });
+  </script>
+</body>
+</html>
