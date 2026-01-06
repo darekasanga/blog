@@ -16,10 +16,13 @@
           <p class="brand-title">EMPEROR.NEWS</p>
         </div>
       </div>
-      <nav class="nav-links" aria-label="メインナビゲーション">
-        <a href="index.html" class="nav-link active">トップ</a>
-        <a href="admin/index.html" class="nav-link">管理</a>
-      </nav>
+      <div class="header-actions">
+        <nav class="nav-links" aria-label="メインナビゲーション">
+          <a href="index.html" class="nav-link active">トップ</a>
+          <a href="admin/index.html" class="nav-link">管理</a>
+        </nav>
+        <div class="theme-selector" id="site-theme-picker" aria-label="表示テーマ選択"></div>
+      </div>
     </div>
   </header>
 
@@ -85,7 +88,7 @@
 
   <script src="assets/data.js"></script>
   <script>
-    const { readPosts, resolveTheme, readSiteTheme } = window.BlogData;
+    const { readPosts, resolveTheme, readSiteTheme, saveSiteTheme, themes } = window.BlogData;
     const params = new URLSearchParams(window.location.search);
     const postId = params.get('id');
 
@@ -99,11 +102,55 @@
     const commentForm = document.getElementById('comment-form');
     const commenterEl = document.getElementById('commenter');
     const commentBodyEl = document.getElementById('comment-body');
+    const siteThemePicker = document.getElementById('site-theme-picker');
+    const articleCard = document.getElementById('article');
 
     const posts = readPosts();
-    const siteTheme = resolveTheme(readSiteTheme());
-    document.documentElement.style.setProperty('--accent', siteTheme.accent);
-    document.documentElement.style.setProperty('--accent-2', siteTheme.accent2);
+    let siteThemeKey = readSiteTheme();
+    let siteTheme = resolveTheme(siteThemeKey);
+    function applySiteTheme(themeKey) {
+      siteThemeKey = saveSiteTheme(themeKey);
+      siteTheme = resolveTheme(siteThemeKey);
+      document.documentElement.style.setProperty('--accent', siteTheme.accent);
+      document.documentElement.style.setProperty('--accent-2', siteTheme.accent2);
+      syncThemePicker();
+    }
+
+    function syncThemePicker() {
+      if (!siteThemePicker) return;
+      siteThemePicker.querySelectorAll('[data-theme]').forEach((button) => {
+        const isActive = button.dataset.theme === siteThemeKey;
+        button.classList.toggle('active', isActive);
+        button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      });
+    }
+
+    function renderSiteThemePicker() {
+      if (!siteThemePicker) return;
+      siteThemePicker.innerHTML = `
+        <span class="theme-selector-label">表示テーマ</span>
+        <div class="theme-selector-grid">
+          ${themes
+            .map(
+              (theme) => `
+                <button class="theme-chip" type="button" data-theme="${theme.key}" style="--accent:${theme.accent};--accent-2:${theme.accent2};" aria-pressed="${theme.key === siteThemeKey}">
+                  <span class="swatch" aria-hidden="true"></span>
+                  <span>${theme.name}</span>
+                </button>
+              `
+            )
+            .join('')}
+        </div>
+      `;
+
+      siteThemePicker.querySelectorAll('[data-theme]').forEach((button) => {
+        button.addEventListener('click', () => {
+          applySiteTheme(button.dataset.theme);
+        });
+      });
+    }
+
+    applySiteTheme(siteThemeKey);
     const post = posts.find((item) => item.id === postId);
     const lightbox = document.createElement('div');
     lightbox.className = 'lightbox hidden';
@@ -170,8 +217,10 @@
       }
 
       const theme = resolveTheme(post.theme || siteTheme.key);
-      document.documentElement.style.setProperty('--accent', theme.accent);
-      document.documentElement.style.setProperty('--accent-2', theme.accent2);
+      if (articleCard) {
+        articleCard.style.setProperty('--accent', theme.accent);
+        articleCard.style.setProperty('--accent-2', theme.accent2);
+      }
 
       commentForm.hidden = false;
       titleEl.textContent = post.title;
@@ -285,6 +334,8 @@
     }
 
     renderArticle();
+    renderSiteThemePicker();
+    syncThemePicker();
 
     if (post) {
       const initialComments = loadComments(post.id);

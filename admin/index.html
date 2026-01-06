@@ -193,9 +193,11 @@
     let editingId = null;
     let selectedTheme = resolveTheme(readSiteTheme());
 
-    function syncThemeInputs() {
-      themeOptionsEl.querySelectorAll('input[name="theme"]').forEach((input) => {
-        input.checked = input.value === selectedTheme.key;
+    function syncThemeOptions() {
+      themeOptionsEl.querySelectorAll('.theme-option').forEach((option) => {
+        const isActive = option.dataset.theme === selectedTheme.key;
+        option.classList.toggle('active', isActive);
+        option.setAttribute('aria-pressed', isActive ? 'true' : 'false');
       });
     }
 
@@ -209,28 +211,27 @@
       currentThemePill.style.setProperty('--accent', accent);
       currentThemePill.style.setProperty('--accent-2', accent2);
       currentThemeLabel.textContent = name;
-      syncThemeInputs();
+      syncThemeOptions();
     }
 
     function renderThemeOptions() {
       themeOptionsEl.innerHTML = themes
         .map(
           (theme) => `
-            <label class="theme-option" style="--accent:${theme.accent};--accent-2:${theme.accent2};">
-              <input type="radio" name="theme" value="${theme.key}" ${theme.key === selectedTheme.key ? 'checked' : ''} />
-              <span class="swatch"></span>
+            <button class="theme-option" type="button" data-theme="${theme.key}" style="--accent:${theme.accent};--accent-2:${theme.accent2};" aria-pressed="${theme.key === selectedTheme.key}">
+              <span class="swatch" aria-hidden="true"></span>
               <div>
                 <strong>${theme.name}</strong>
                 <small>${theme.accent} → ${theme.accent2}</small>
               </div>
-            </label>
+            </button>
           `
         )
         .join('');
 
-      themeOptionsEl.querySelectorAll('input[name="theme"]').forEach((input) => {
-        input.addEventListener('change', () => {
-          applyTheme(input.value);
+      themeOptionsEl.querySelectorAll('.theme-option').forEach((option) => {
+        option.addEventListener('click', () => {
+          applyTheme(option.dataset.theme);
           updatePreview();
         });
       });
@@ -504,6 +505,7 @@
       resetForm();
     });
 
+    renderPostList();
     renderThemeOptions();
     applyTheme(selectedTheme.key);
     updateReadTime();

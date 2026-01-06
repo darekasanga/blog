@@ -1,14 +1,21 @@
-const { readPosts, escapeHtml, resolveTheme, readSiteTheme } = window.BlogData;
+const { readPosts, escapeHtml, resolveTheme, readSiteTheme, saveSiteTheme, themes } = window.BlogData;
 const posts = readPosts();
 const track = document.getElementById('card-track');
 const buttons = document.querySelectorAll('[data-action]');
 const scrollList = document.getElementById('scroll-list');
 const tagMarquee = document.getElementById('tag-marquee');
-const siteThemeKey = readSiteTheme();
-const siteTheme = resolveTheme(siteThemeKey);
+const siteThemePicker = document.getElementById('site-theme-picker');
+let siteThemeKey = readSiteTheme();
+let siteTheme = resolveTheme(siteThemeKey);
 
-document.documentElement.style.setProperty('--accent', siteTheme.accent);
-document.documentElement.style.setProperty('--accent-2', siteTheme.accent2);
+function applySiteTheme(themeKey) {
+  siteThemeKey = saveSiteTheme(themeKey);
+  siteTheme = resolveTheme(siteThemeKey);
+  document.documentElement.style.setProperty('--accent', siteTheme.accent);
+  document.documentElement.style.setProperty('--accent-2', siteTheme.accent2);
+}
+
+applySiteTheme(siteThemeKey);
 
 const tagPalette = ['#6c63ff', '#4fc3f7', '#ffb347', '#ff6b6b', '#9b72ff', '#4ef2c7', '#f2c14e'];
 const lightbox = document.createElement('div');
@@ -141,8 +148,47 @@ function setupLightbox() {
   bindImages('.scroll-thumb img');
 }
 
+function syncThemePicker() {
+  if (!siteThemePicker) return;
+  siteThemePicker.querySelectorAll('[data-theme]').forEach((button) => {
+    const isActive = button.dataset.theme === siteThemeKey;
+    button.classList.toggle('active', isActive);
+    button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+  });
+}
+
+function renderSiteThemePicker() {
+  if (!siteThemePicker) return;
+  siteThemePicker.innerHTML = `
+    <span class="theme-selector-label">表示テーマ</span>
+    <div class="theme-selector-grid">
+      ${themes
+        .map(
+          (theme) => `
+            <button class="theme-chip" type="button" data-theme="${theme.key}" style="--accent:${theme.accent};--accent-2:${theme.accent2};" aria-pressed="${theme.key === siteThemeKey}">
+              <span class="swatch" aria-hidden="true"></span>
+              <span>${theme.name}</span>
+            </button>
+          `
+        )
+        .join('')}
+    </div>
+  `;
+
+  siteThemePicker.querySelectorAll('[data-theme]').forEach((button) => {
+    button.addEventListener('click', () => {
+      applySiteTheme(button.dataset.theme);
+      syncThemePicker();
+      renderCards();
+      renderScrollList();
+    });
+  });
+}
+
 renderCards();
 setupButtons();
 renderScrollList();
 renderTags();
 setupLightbox();
+renderSiteThemePicker();
+syncThemePicker();
