@@ -121,12 +121,6 @@ textarea {
   gap: 12px;
 }
 
-.nav-links.nav-icons {
-  gap: 10px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
 .nav-link {
   padding: 9px 14px;
   border-radius: 999px;
@@ -144,36 +138,6 @@ textarea {
   color: var(--fg);
   border-color: var(--accent);
   background: rgba(108, 99, 255, 0.12);
-}
-
-.nav-icon {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: #0f1119;
-  border-color: var(--border);
-  color: var(--fg);
-  min-width: 0;
-}
-
-.nav-icon .nav-icon-mark {
-  width: 28px;
-  height: 28px;
-  border-radius: 10px;
-  display: grid;
-  place-items: center;
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  color: #0b0c10;
-  font-weight: 700;
-  font-size: 13px;
-  flex-shrink: 0;
-}
-
-.nav-icon .nav-icon-label {
-  font-weight: 700;
-  color: var(--fg);
 }
 
 .nav-anchor {
@@ -670,8 +634,7 @@ h2 {
 }
 
 .management-list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
   gap: 12px;
 }
 
@@ -683,10 +646,8 @@ h2 {
   display: grid;
   gap: 12px;
   padding: 16px;
-  align-items: center;
-  position: relative;
-  overflow: hidden;
-  transition: transform 0.2s ease, border-color 0.2s ease;
+  align-items: start;
+  grid-template-columns: 1fr auto;
 }
 
 .manage-summary {
@@ -697,11 +658,7 @@ h2 {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  position: absolute;
-  inset: 12px 12px 12px auto;
-  transform: translateX(140px);
-  opacity: 0;
-  transition: transform 0.2s ease, opacity 0.2s ease;
+  justify-content: flex-end;
 }
 
 .btn.danger {
@@ -771,13 +728,23 @@ h2 {
 }
 
 .manage-card.show-actions .manage-actions {
-  transform: translateX(0);
+  transform: none;
   opacity: 1;
 }
 
 .manage-card.show-actions .manage-summary {
-  transform: translateX(-120px);
-  opacity: 0.65;
+  transform: none;
+  opacity: 1;
+}
+
+@media (max-width: 640px) {
+  .manage-card {
+    grid-template-columns: 1fr;
+  }
+
+  .manage-actions {
+    justify-content: flex-start;
+  }
 }
 
 .comments-card {

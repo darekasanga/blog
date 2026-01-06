@@ -4,7 +4,8 @@ const track = document.getElementById('card-track');
 const buttons = document.querySelectorAll('[data-action]');
 const scrollList = document.getElementById('scroll-list');
 const tagMarquee = document.getElementById('tag-marquee');
-const siteTheme = resolveTheme(readSiteTheme());
+const siteThemeKey = readSiteTheme();
+const siteTheme = resolveTheme(siteThemeKey);
 
 document.documentElement.style.setProperty('--accent', siteTheme.accent);
 document.documentElement.style.setProperty('--accent-2', siteTheme.accent2);
@@ -43,7 +44,8 @@ function renderTags(tags = []) {
 }
 
 function themeStyle(post) {
-  return `--accent:${siteTheme.accent};--accent-2:${siteTheme.accent2};--focus-start:${post.imageFocus?.start ?? 0}%;--focus-end:${post.imageFocus?.end ?? 100}%;`;
+  const theme = resolveTheme(post.theme || siteThemeKey);
+  return `--accent:${theme.accent};--accent-2:${theme.accent2};--focus-start:${post.imageFocus?.start ?? 0}%;--focus-end:${post.imageFocus?.end ?? 100}%;`;
 }
 
 function renderCards() {
