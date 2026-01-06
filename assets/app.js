@@ -1,9 +1,13 @@
-const { readPosts, escapeHtml, resolveTheme } = window.BlogData;
+const { readPosts, escapeHtml, resolveTheme, readSiteTheme } = window.BlogData;
 const posts = readPosts();
 const track = document.getElementById('card-track');
 const buttons = document.querySelectorAll('[data-action]');
 const scrollList = document.getElementById('scroll-list');
 const tagMarquee = document.getElementById('tag-marquee');
+const siteTheme = resolveTheme(readSiteTheme());
+
+document.documentElement.style.setProperty('--accent', siteTheme.accent);
+document.documentElement.style.setProperty('--accent-2', siteTheme.accent2);
 
 const tagPalette = ['#6c63ff', '#4fc3f7', '#ffb347', '#ff6b6b', '#9b72ff', '#4ef2c7', '#f2c14e'];
 const lightbox = document.createElement('div');
@@ -39,8 +43,7 @@ function renderTags(tags = []) {
 }
 
 function themeStyle(post) {
-  const theme = resolveTheme(post.theme);
-  return `--accent:${theme.accent};--accent-2:${theme.accent2};--focus-start:${post.imageFocus?.start ?? 0}%;--focus-end:${post.imageFocus?.end ?? 100}%;`;
+  return `--accent:${siteTheme.accent};--accent-2:${siteTheme.accent2};--focus-start:${post.imageFocus?.start ?? 0}%;--focus-end:${post.imageFocus?.end ?? 100}%;`;
 }
 
 function renderCards() {

@@ -1,5 +1,6 @@
 (function () {
   const STORAGE_KEY = 'posts';
+  const THEME_STORAGE_KEY = 'site-theme';
 
   const themePresets = [
     { key: 'violet-ice', name: 'バイオレット', accent: '#6c63ff', accent2: '#4fc3f7' },
@@ -90,6 +91,19 @@
     return themePresets.find((theme) => theme.key === key) || themePresets[0];
   }
 
+  function readSiteTheme() {
+    const stored = localStorage.getItem(THEME_STORAGE_KEY);
+    const theme = resolveTheme(stored);
+    localStorage.setItem(THEME_STORAGE_KEY, theme.key);
+    return theme.key;
+  }
+
+  function saveSiteTheme(themeKey = DEFAULT_THEME) {
+    const theme = resolveTheme(themeKey);
+    localStorage.setItem(THEME_STORAGE_KEY, theme.key);
+    return theme.key;
+  }
+
   function normalizeFocus(input = null, fallbackPosition = 50) {
     if (input && Number.isFinite(input.start) && Number.isFinite(input.end)) {
       const start = Math.min(Math.max(Number(input.start), 0), 100);
@@ -129,7 +143,7 @@
     const imageFocus = normalizeFocus(post.imageFocus, post.imagePosition);
     const focusCenter = Math.round((imageFocus.start + imageFocus.end) / 2);
     const imagePosition = Number.isFinite(Number(post.imagePosition)) ? Math.min(Math.max(Number(post.imagePosition), 0), 100) : focusCenter;
-    const theme = resolveTheme(post.theme || DEFAULT_THEME).key;
+    const theme = resolveTheme(post.theme || readSiteTheme() || DEFAULT_THEME).key;
     return {
       id,
       title: post.title || '無題の投稿',
@@ -188,6 +202,8 @@
     normalizeTags,
     themes: themePresets,
     resolveTheme,
+    readSiteTheme,
+    saveSiteTheme,
     estimateReadMinutes,
     formatReadTime,
     normalizeFocus,

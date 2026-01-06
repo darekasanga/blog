@@ -103,7 +103,7 @@
 
   <script src="assets/data.js"></script>
   <script>
-    const { readPosts, resolveTheme } = window.BlogData;
+    const { readPosts, resolveTheme, readSiteTheme } = window.BlogData;
     const params = new URLSearchParams(window.location.search);
     const postId = params.get('id');
 
@@ -119,6 +119,9 @@
     const commentBodyEl = document.getElementById('comment-body');
 
     const posts = readPosts();
+    const siteTheme = resolveTheme(readSiteTheme());
+    document.documentElement.style.setProperty('--accent', siteTheme.accent);
+    document.documentElement.style.setProperty('--accent-2', siteTheme.accent2);
     const post = posts.find((item) => item.id === postId);
     const lightbox = document.createElement('div');
     lightbox.className = 'lightbox hidden';
@@ -189,9 +192,6 @@
       metaEl.textContent = `${post.date} • ${post.read}`;
       renderContent(post.content || post.excerpt);
       setThumb(post.image, post.title, post.imagePosition, post.imageFocus);
-      const theme = resolveTheme(post.theme);
-      document.documentElement.style.setProperty('--accent', theme.accent);
-      document.documentElement.style.setProperty('--accent-2', theme.accent2);
       renderTags(post.tags || []);
     }
 

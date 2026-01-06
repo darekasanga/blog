@@ -91,24 +91,6 @@
               <input id="image" name="image" type="file" accept="image/*" />
               <p class="muted-text" style="margin: 6px 0 0;">アップロード後、自動でリサイズして保存します。</p>
             </div>
-            <div class="field">
-              <label>投稿カラー（10種類）</label>
-              <div class="theme-grid" id="theme-options"></div>
-            </div>
-            <div class="field">
-              <label>プレビュー範囲（%）</label>
-              <div class="focus-controls">
-                <label class="field">
-                  <span>開始位置</span>
-                  <input id="focus-start" type="range" min="0" max="95" value="20" />
-                </label>
-                <label class="field">
-                  <span>終了位置</span>
-                  <input id="focus-end" type="range" min="5" max="100" value="80" />
-                </label>
-              </div>
-              <p class="muted-text" style="margin: 6px 0 0;">フォーカスしたい縦の範囲を指定できます。選択範囲がプレビューに表示されます。</p>
-            </div>
             <div class="form-actions">
               <button class="btn primary" type="submit" id="submit-button">記事を登録</button>
               <button class="btn ghost" type="button" id="cancel-edit" aria-live="polite" hidden>編集をやめる</button>
@@ -133,6 +115,25 @@
                 <button class="btn primary full" type="button">記事を読む</button>
               </div>
             </article>
+            <div class="field">
+              <label>画像のフォーカス範囲（%）</label>
+              <div class="focus-controls">
+                <label class="field">
+                  <span>開始位置</span>
+                  <input id="focus-start" type="range" min="0" max="95" value="20" />
+                </label>
+                <label class="field">
+                  <span>終了位置</span>
+                  <input id="focus-end" type="range" min="5" max="100" value="80" />
+                </label>
+              </div>
+              <p class="muted-text" style="margin: 6px 0 0;">プレビュー下のバーで画像の見せたい範囲を調整できます。</p>
+            </div>
+            <div class="field">
+              <label>サイトカラー</label>
+              <p class="muted-text" style="margin: 0;">全ページに適用されるアクセントカラーを選択します。記事ごとの設定ではありません。</p>
+              <div class="theme-grid" id="theme-options"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -170,7 +171,7 @@
 
   <script src="../assets/data.js"></script>
   <script>
-    const { readPosts, savePosts, normalizePost, escapeHtml } = window.BlogData;
+    const { readPosts, savePosts, normalizePost, escapeHtml, readSiteTheme, saveSiteTheme } = window.BlogData;
     const { themes, resolveTheme, estimateReadMinutes, formatReadTime, normalizeFocus } = window.BlogData;
 
     const form = document.getElementById('post-form');
@@ -208,24 +209,34 @@
     let resizedImageData = '';
     let posts = readPosts();
     let editingId = null;
-    let selectedTheme = themes[0];
+    let selectedTheme = resolveTheme(readSiteTheme());
 
-    function setTheme(themeKey) {
+    function setTheme(themeKey, { syncPosts = true } = {}) {
       selectedTheme = resolveTheme(themeKey);
-      const { accent, accent2, name } = selectedTheme;
+      const { accent, accent2, name, key } = selectedTheme;
+      saveSiteTheme(key);
+      document.documentElement.style.setProperty('--accent', accent);
+      document.documentElement.style.setProperty('--accent-2', accent2);
       previewCard.style.setProperty('--accent', accent);
       previewCard.style.setProperty('--accent-2', accent2);
       currentThemePill.style.setProperty('--accent', accent);
       currentThemePill.style.setProperty('--accent-2', accent2);
       currentThemeLabel.textContent = name;
+
+      if (syncPosts) {
+        posts = posts.map((post) => ({ ...post, theme: key }));
+        savePosts(posts);
+      }
+
+      renderPostList();
     }
 
     function renderThemeOptions() {
       themeOptionsEl.innerHTML = themes
         .map(
-          (theme, index) => `
+          (theme) => `
             <label class="theme-option" style="--accent:${theme.accent};--accent-2:${theme.accent2};">
-              <input type="radio" name="theme" value="${theme.key}" ${index === 0 ? 'checked' : ''} />
+              <input type="radio" name="theme" value="${theme.key}" ${theme.key === selectedTheme.key ? 'checked' : ''} />
               <span class="swatch"></span>
               <div>
                 <strong>${theme.name}</strong>
@@ -242,8 +253,6 @@
           updatePreview();
         });
       });
-
-      setTheme(themes[0].key);
     }
 
     function removeLongVacationButtons() {
@@ -319,18 +328,19 @@
         return;
       }
 
+      const theme = selectedTheme;
       postCount.textContent = `${posts.length}件の投稿`;
       postList.innerHTML = posts
         .map(
           (post) => `
-            <article class=\"manage-card\" data-id=\"${post.id}\" style=\"--accent:${resolveTheme(post.theme).accent};--accent-2:${resolveTheme(post.theme).accent2};\">
+            <article class=\"manage-card\" data-id=\"${post.id}\" style=\"--accent:${theme.accent};--accent-2:${theme.accent2};\">
               <div class=\"manage-summary\">
                 <p class=\"meta\"><span>${escapeHtml(post.date)}</span><span>•</span><span>${escapeHtml(post.read)}</span></p>
                 <h3>${escapeHtml(post.title)}</h3>
                 <p class=\"muted-text\">${escapeHtml(post.excerpt)}</p>
-                <div class=\"theme-pill\" aria-label=\"テーマ ${escapeHtml(resolveTheme(post.theme).name)}\">
+                <div class=\"theme-pill\" aria-label=\"テーマ ${escapeHtml(theme.name)}\">
                   <span class=\"swatch\"></span>
-                  <strong>${escapeHtml(resolveTheme(post.theme).name)}</strong>
+                  <strong>${escapeHtml(theme.name)}</strong>
                 </div>
                 <div class=\"tag-row\">${(post.tags || []).map((tag) => `<span class=\"chip\">#${escapeHtml(tag)}</span>`).join('')}</div>
               </div>
@@ -403,7 +413,6 @@
       tagsEl.value = '';
       focusStartEl.value = '20';
       focusEndEl.value = '80';
-      themeOptionsEl.querySelector('input[name="theme"]')?.click();
       updatePreview();
       updateReadTime();
     }
@@ -425,9 +434,6 @@
       const focus = normalizeFocus(target.imageFocus, target.imagePosition);
       focusStartEl.value = focus.start;
       focusEndEl.value = focus.end;
-      const themeInput = themeOptionsEl.querySelector(`input[value=\"${target.theme}\"]`);
-      (themeInput || themeOptionsEl.querySelector('input[name=\"theme\"]')).checked = true;
-      setTheme(target.theme);
       submitButton.textContent = '変更を保存';
       cancelEditButton.hidden = false;
       updatePreview();
@@ -545,7 +551,7 @@
     });
 
     renderThemeOptions();
-    renderPostList();
+    setTheme(selectedTheme.key);
     updateReadTime();
     updatePreview();
   </script>
