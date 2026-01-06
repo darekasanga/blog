@@ -16,27 +16,9 @@
           <p class="brand-title">EMPEROR.NEWS</p>
         </div>
       </div>
-      <nav class="nav-links nav-icons" aria-label="メインナビゲーション">
-        <a href="#csv-import" class="nav-link nav-icon active">
-          <span class="nav-icon-mark" aria-hidden="true">CSV</span>
-          <span class="nav-icon-label">CSV取込み</span>
-        </a>
-        <a href="#settings" class="nav-link nav-icon">
-          <span class="nav-icon-mark" aria-hidden="true">⚙</span>
-          <span class="nav-icon-label">設定</span>
-        </a>
-        <a href="../index.html" class="nav-link nav-icon">
-          <span class="nav-icon-mark" aria-hidden="true">🏠</span>
-          <span class="nav-icon-label">トップページ</span>
-        </a>
-        <a href="#login" class="nav-link nav-icon">
-          <span class="nav-icon-mark" aria-hidden="true">🔑</span>
-          <span class="nav-icon-label">ログイン</span>
-        </a>
-        <a href="#user" class="nav-link nav-icon">
-          <span class="nav-icon-mark" aria-hidden="true">👤</span>
-          <span class="nav-icon-label">ユーザー</span>
-        </a>
+      <nav class="nav-links" aria-label="メインナビゲーション">
+        <a href="../index.html" class="nav-link">トップ</a>
+        <a href="index.html" class="nav-link active">管理</a>
       </nav>
     </div>
   </header>
@@ -130,8 +112,8 @@
               <p class="muted-text" style="margin: 6px 0 0;">プレビュー下のバーで画像の見せたい範囲を調整できます。</p>
             </div>
             <div class="field">
-              <label>サイトカラー</label>
-              <p class="muted-text" style="margin: 0;">全ページに適用されるアクセントカラーを選択します。記事ごとの設定ではありません。</p>
+              <label>記事テーマ</label>
+              <p class="muted-text" style="margin: 0;">この記事だけに適用されるカラーを選択できます。</p>
               <div class="theme-grid" id="theme-options"></div>
             </div>
           </div>
@@ -171,8 +153,8 @@
 
   <script src="../assets/data.js"></script>
   <script>
-    const { readPosts, savePosts, normalizePost, escapeHtml, readSiteTheme, saveSiteTheme } = window.BlogData;
-    const { themes, resolveTheme, estimateReadMinutes, formatReadTime, normalizeFocus } = window.BlogData;
+    const { readPosts, savePosts, normalizePost, escapeHtml, readSiteTheme, resolveTheme } = window.BlogData;
+    const { themes, estimateReadMinutes, formatReadTime, normalizeFocus } = window.BlogData;
 
     const form = document.getElementById('post-form');
     const titleEl = document.getElementById('title');
@@ -211,10 +193,15 @@
     let editingId = null;
     let selectedTheme = resolveTheme(readSiteTheme());
 
-    function setTheme(themeKey, { syncPosts = true } = {}) {
+    function syncThemeInputs() {
+      themeOptionsEl.querySelectorAll('input[name="theme"]').forEach((input) => {
+        input.checked = input.value === selectedTheme.key;
+      });
+    }
+
+    function applyTheme(themeKey) {
       selectedTheme = resolveTheme(themeKey);
-      const { accent, accent2, name, key } = selectedTheme;
-      saveSiteTheme(key);
+      const { accent, accent2, name } = selectedTheme;
       document.documentElement.style.setProperty('--accent', accent);
       document.documentElement.style.setProperty('--accent-2', accent2);
       previewCard.style.setProperty('--accent', accent);
@@ -222,13 +209,7 @@
       currentThemePill.style.setProperty('--accent', accent);
       currentThemePill.style.setProperty('--accent-2', accent2);
       currentThemeLabel.textContent = name;
-
-      if (syncPosts) {
-        posts = posts.map((post) => ({ ...post, theme: key }));
-        savePosts(posts);
-      }
-
-      renderPostList();
+      syncThemeInputs();
     }
 
     function renderThemeOptions() {
@@ -249,7 +230,7 @@
 
       themeOptionsEl.querySelectorAll('input[name="theme"]').forEach((input) => {
         input.addEventListener('change', () => {
-          setTheme(input.value);
+          applyTheme(input.value);
           updatePreview();
         });
       });
@@ -328,11 +309,11 @@
         return;
       }
 
-      const theme = selectedTheme;
       postCount.textContent = `${posts.length}件の投稿`;
       postList.innerHTML = posts
-        .map(
-          (post) => `
+        .map((post) => {
+          const theme = resolveTheme(post.theme);
+          return `
             <article class=\"manage-card\" data-id=\"${post.id}\" style=\"--accent:${theme.accent};--accent-2:${theme.accent2};\">
               <div class=\"manage-summary\">
                 <p class=\"meta\"><span>${escapeHtml(post.date)}</span><span>•</span><span>${escapeHtml(post.read)}</span></p>
@@ -350,8 +331,8 @@
                 <button class=\"btn danger\" type=\"button\" data-action=\"delete\">削除</button>
               </div>
             </article>
-          `
-        )
+          `;
+        })
         .join('');
 
       postList.querySelectorAll('button[data-action=\"edit\"]').forEach((button) => {
@@ -372,35 +353,6 @@
         });
       });
 
-      attachSwipeHandlers();
-    }
-
-    function attachSwipeHandlers() {
-      const threshold = 40;
-      postList.querySelectorAll('.manage-card').forEach((card) => {
-        let startX = null;
-        card.addEventListener('pointerdown', (event) => {
-          startX = event.clientX;
-          card.setPointerCapture(event.pointerId);
-        });
-
-        card.addEventListener('pointermove', (event) => {
-          if (startX === null) return;
-          const deltaX = event.clientX - startX;
-          if (deltaX < -threshold) {
-            card.classList.add('show-actions');
-          } else if (deltaX > threshold) {
-            card.classList.remove('show-actions');
-          }
-        });
-
-        const clearSwipe = () => {
-          startX = null;
-        };
-
-        card.addEventListener('pointerup', clearSwipe);
-        card.addEventListener('pointercancel', clearSwipe);
-      });
     }
 
     function resetForm() {
@@ -413,6 +365,7 @@
       tagsEl.value = '';
       focusStartEl.value = '20';
       focusEndEl.value = '80';
+      applyTheme(readSiteTheme());
       updatePreview();
       updateReadTime();
     }
@@ -434,6 +387,7 @@
       const focus = normalizeFocus(target.imageFocus, target.imagePosition);
       focusStartEl.value = focus.start;
       focusEndEl.value = focus.end;
+      applyTheme(target.theme || selectedTheme.key);
       submitButton.textContent = '変更を保存';
       cancelEditButton.hidden = false;
       updatePreview();
@@ -551,7 +505,7 @@
     });
 
     renderThemeOptions();
-    setTheme(selectedTheme.key);
+    applyTheme(selectedTheme.key);
     updateReadTime();
     updatePreview();
   </script>
