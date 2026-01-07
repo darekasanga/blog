@@ -370,13 +370,24 @@
     return Math.min(Math.max(value, 0.5), 2);
   }
 
+  function summarizeContent(content = '', limit = 120) {
+    const normalized = String(content || '').replace(/\s+/g, ' ').trim();
+    if (!normalized.length) return '';
+    const sentenceMatch = normalized.match(/^(.+?[。！？!?]|.+$)/);
+    let summary = sentenceMatch ? sentenceMatch[1].trim() : normalized;
+    if (summary.length > limit) {
+      summary = `${summary.slice(0, limit).trimEnd()}…`;
+    }
+    return summary;
+  }
+
   function normalizePost(post = {}, index = 0) {
     const id = post.id || `post-${Date.now()}-${index}`;
     const date = post.date || new Date().toISOString().slice(0, 10);
-    const textForRead = `${post.excerpt || ''}\n${post.content || ''}\n${post.title || ''}`;
+    const content = post.content || post.excerpt || '本文がまだ登録されていません。';
+    const excerpt = summarizeContent(content);
+    const textForRead = `${content}\n${post.title || ''}`;
     const read = post.read || formatReadTime(estimateReadMinutes(textForRead));
-    const excerpt = post.excerpt || '';
-    const content = post.content || excerpt || '本文がまだ登録されていません。';
     const imageFocus = normalizeFocus(post.imageFocus, post.imagePosition);
     const focusCenter = Math.round((imageFocus.start + imageFocus.end) / 2);
     const imagePosition = Number.isFinite(Number(post.imagePosition)) ? Math.min(Math.max(Number(post.imagePosition), 0), 100) : focusCenter;
@@ -458,5 +469,6 @@
     formatReadTime,
     normalizeFocus,
     normalizeScale,
+    summarizeContent,
   };
 })();
