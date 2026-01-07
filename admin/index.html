@@ -299,7 +299,8 @@
     removeLongVacationButtons();
 
     function persistPosts(nextPosts) {
-      const limited = enforceSelectionLimits(nextPosts);
+      const ordered = nextPosts.map((post, index) => ({ ...post, order: index }));
+      const limited = enforceSelectionLimits(ordered);
       posts = limited.map((post, index) => ({ ...post, order: index }));
       savePosts(posts);
     }

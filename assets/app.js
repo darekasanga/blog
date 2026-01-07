@@ -1,5 +1,5 @@
 const { readPosts, escapeHtml, resolveTheme, readSiteTheme, saveSiteTheme, applyThemeToDocument, themes } = window.BlogData;
-const posts = readPosts();
+let posts = readPosts();
 const track = document.getElementById('card-track');
 const buttons = document.querySelectorAll('[data-action]');
 const scrollList = document.getElementById('scroll-list');
@@ -199,6 +199,19 @@ function renderSiteThemePicker() {
     renderScrollList();
   });
 }
+
+function reloadPosts() {
+  posts = readPosts();
+  renderCards();
+  renderScrollList();
+  renderTags();
+}
+
+window.addEventListener('storage', (event) => {
+  if (event.key === window.BlogData.STORAGE_KEY) {
+    reloadPosts();
+  }
+});
 
 renderCards();
 setupButtons();
