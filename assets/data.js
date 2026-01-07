@@ -120,6 +120,54 @@
   const DEFAULT_SCALE = 1;
   const CHARS_PER_MINUTE = 500;
 
+  function clampFeaturedAndDigest(list = []) {
+    const ordered = [...list].sort((a, b) => (a.order || 0) - (b.order || 0));
+    const featuredId = ordered.find((post) => post.isFeatured)?.id;
+    const digestIds = ordered.filter((post) => post.isDigest).map((post) => post.id).slice(0, 2);
+    return ordered.map((post) => ({
+      ...post,
+      isFeatured: featuredId ? post.id === featuredId : false,
+      isDigest: digestIds.includes(post.id),
+    }));
+  }
+
+  function hexToRgb(hex = '') {
+    const normalized = hex.replace('#', '');
+    if (normalized.length === 3) {
+      const [r, g, b] = normalized.split('').map((char) => parseInt(char + char, 16));
+      return { r, g, b };
+    }
+    if (normalized.length !== 6) {
+      return { r: 11, g: 12, b: 16 };
+    }
+    const int = parseInt(normalized, 16);
+    return {
+      r: (int >> 16) & 255,
+      g: (int >> 8) & 255,
+      b: int & 255,
+    };
+  }
+
+  function relativeLuminance(hexColor = '#000000') {
+    const { r, g, b } = hexToRgb(hexColor);
+    const [lr, lg, lb] = [r, g, b].map((value) => {
+      const channel = value / 255;
+      return channel <= 0.03928 ? channel / 12.92 : Math.pow((channel + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * lr + 0.7152 * lg + 0.0722 * lb;
+  }
+
+  function pickTextColor(background = '#0b0c10') {
+    const luminance = relativeLuminance(background);
+    return luminance > 0.35 ? '#0b0c10' : '#f5f7fb';
+  }
+
+  function pickMutedColor(background = '#0b0c10', fallback = '#c7ced9') {
+    const luminance = relativeLuminance(background);
+    if (fallback) return fallback;
+    return luminance > 0.35 ? '#374151' : '#c7ced9';
+  }
+
   const defaultPosts = [
     {
       id: 'post-design-system',
@@ -150,7 +198,7 @@
       imagePosition: 50,
       imageFocus: { start: 16, end: 84 },
       theme: 'sunset',
-      isFeatured: true,
+      isFeatured: false,
       isDigest: true,
       hidden: false,
       order: 1,
@@ -167,8 +215,8 @@
       imagePosition: 50,
       imageFocus: { start: 24, end: 88 },
       theme: 'forest',
-      isFeatured: true,
-      isDigest: true,
+      isFeatured: false,
+      isDigest: false,
       hidden: false,
       order: 2,
     },
@@ -184,8 +232,8 @@
       imagePosition: 50,
       imageFocus: { start: 12, end: 82 },
       theme: 'amber-night',
-      isFeatured: true,
-      isDigest: true,
+      isFeatured: false,
+      isDigest: false,
       hidden: false,
       order: 3,
     },
@@ -201,8 +249,8 @@
       imagePosition: 50,
       imageFocus: { start: 18, end: 86 },
       theme: 'aqua',
-      isFeatured: true,
-      isDigest: true,
+      isFeatured: false,
+      isDigest: false,
       hidden: false,
       order: 4,
     },
@@ -227,13 +275,17 @@
 
   function applyThemeToDocument(themeKey = DEFAULT_THEME) {
     const theme = resolveTheme(themeKey);
+    const bg = theme.background || '#0b0c10';
+    const text = theme.foreground || pickTextColor(bg);
+    const muted = pickMutedColor(bg, theme.muted);
     document.documentElement.style.setProperty('--accent', theme.accent);
     document.documentElement.style.setProperty('--accent-2', theme.accent2);
-    document.documentElement.style.setProperty('--bg', theme.background || '#0b0c10');
+    document.documentElement.style.setProperty('--bg', bg);
+    document.documentElement.style.setProperty('--fg', text);
     document.documentElement.style.setProperty('--card', theme.surface || '#11131a');
     document.documentElement.style.setProperty('--panel', theme.panel || theme.surface || '#0f1119');
     document.documentElement.style.setProperty('--border', theme.border || '#1e2230');
-    document.documentElement.style.setProperty('--muted', theme.muted || '#c7ced9');
+    document.documentElement.style.setProperty('--muted', muted);
     return theme;
   }
 
@@ -323,14 +375,15 @@
     }
 
     if (!Array.isArray(stored) || stored.length === 0) {
-      const normalizedDefaults = defaultPosts.map((post, index) => normalizePost(post, index));
+      const normalizedDefaults = clampFeaturedAndDigest(defaultPosts.map((post, index) => normalizePost(post, index)));
       savePosts(normalizedDefaults);
       return normalizedDefaults;
     }
 
     const normalized = stored.map((post, index) => normalizePost(post, index)).sort((a, b) => (a.order || 0) - (b.order || 0));
-    savePosts(normalized);
-    return normalized;
+    const clamped = clampFeaturedAndDigest(normalized);
+    savePosts(clamped);
+    return clamped;
   }
 
   function escapeHtml(value = '') {
