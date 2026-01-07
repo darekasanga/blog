@@ -126,6 +126,26 @@
     siteTitle: 'EMPEROR.NEWS',
     footerDescription: 'シンプルで統一感のあるブログ体験を届けます。',
   };
+  const storage = (() => {
+    const memory = new Map();
+    try {
+      const testKey = '__blog_storage_test__';
+      localStorage.setItem(testKey, '1');
+      localStorage.removeItem(testKey);
+      return localStorage;
+    } catch (error) {
+      console.warn('localStorageが使用できないため、メモリ保存に切り替えます。', error);
+      return {
+        getItem: (key) => memory.get(key) ?? null,
+        setItem: (key, value) => {
+          memory.set(key, String(value));
+        },
+        removeItem: (key) => {
+          memory.delete(key);
+        },
+      };
+    }
+  })();
 
   function hexToRgb(hex = '') {
     const normalized = hex.replace('#', '');
@@ -252,15 +272,15 @@
   }
 
   function readSiteTheme() {
-    const stored = localStorage.getItem(THEME_STORAGE_KEY);
+    const stored = storage.getItem(THEME_STORAGE_KEY);
     const theme = resolveTheme(stored);
-    localStorage.setItem(THEME_STORAGE_KEY, theme.key);
+    storage.setItem(THEME_STORAGE_KEY, theme.key);
     return theme.key;
   }
 
   function saveSiteTheme(themeKey = DEFAULT_THEME) {
     const theme = resolveTheme(themeKey);
-    localStorage.setItem(THEME_STORAGE_KEY, theme.key);
+    storage.setItem(THEME_STORAGE_KEY, theme.key);
     return theme.key;
   }
 
@@ -283,19 +303,19 @@
   function readSiteSettings() {
     let stored = {};
     try {
-      stored = JSON.parse(localStorage.getItem(SITE_SETTINGS_KEY) || '{}');
+      stored = JSON.parse(storage.getItem(SITE_SETTINGS_KEY) || '{}');
     } catch (error) {
       console.warn('トップページ設定の読み込みに失敗しました。初期値を使用します。', error);
     }
     const normalized = normalizeSiteSettings(stored);
-    localStorage.setItem(SITE_SETTINGS_KEY, JSON.stringify(normalized));
+    storage.setItem(SITE_SETTINGS_KEY, JSON.stringify(normalized));
     return normalized;
   }
 
   function saveSiteSettings(nextSettings = {}) {
     const current = readSiteSettings();
     const merged = normalizeSiteSettings({ ...current, ...nextSettings });
-    localStorage.setItem(SITE_SETTINGS_KEY, JSON.stringify(merged));
+    storage.setItem(SITE_SETTINGS_KEY, JSON.stringify(merged));
     return merged;
   }
 
@@ -385,13 +405,13 @@
   }
 
   function savePosts(posts) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(posts));
+    storage.setItem(STORAGE_KEY, JSON.stringify(posts));
   }
 
   function readPosts() {
     let stored = [];
     try {
-      stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      stored = JSON.parse(storage.getItem(STORAGE_KEY) || '[]');
     } catch (error) {
       console.warn('投稿データの読み込みに失敗しました。初期データを使用します。', error);
       savePosts(defaultPosts);
