@@ -123,6 +123,8 @@
   const DEFAULT_SITE_SETTINGS = {
     showHero: true,
     showFeatured: true,
+    siteTitle: 'EMPEROR.NEWS',
+    footerDescription: 'シンプルで統一感のあるブログ体験を届けます。',
   };
 
   function hexToRgb(hex = '') {
@@ -267,6 +269,14 @@
       showHero: typeof settings.showHero === 'boolean' ? settings.showHero : DEFAULT_SITE_SETTINGS.showHero,
       showFeatured:
         typeof settings.showFeatured === 'boolean' ? settings.showFeatured : DEFAULT_SITE_SETTINGS.showFeatured,
+      siteTitle:
+        typeof settings.siteTitle === 'string' && settings.siteTitle.trim()
+          ? settings.siteTitle.trim()
+          : DEFAULT_SITE_SETTINGS.siteTitle,
+      footerDescription:
+        typeof settings.footerDescription === 'string' && settings.footerDescription.trim()
+          ? settings.footerDescription.trim()
+          : DEFAULT_SITE_SETTINGS.footerDescription,
     };
   }
 

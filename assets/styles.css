@@ -455,6 +455,7 @@ h2 {
   width: 100%;
   aspect-ratio: 4 / 3;
   height: auto;
+  margin: 0 -14px;
   border-radius: 12px;
   overflow: hidden;
   background: linear-gradient(135deg, rgba(108, 99, 255, 0.2), rgba(79, 195, 247, 0.2));

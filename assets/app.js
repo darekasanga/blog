@@ -22,6 +22,8 @@ const heroListLink = document.getElementById('hero-list-link');
 const footerListLink = document.getElementById('footer-list-link');
 const heroTitle = document.getElementById('hero-title');
 const heroLead = document.getElementById('hero-lead');
+const siteTitleTargets = document.querySelectorAll('[data-site-title]');
+const footerDescriptionTargets = document.querySelectorAll('[data-footer-description]');
 let siteThemeKey = readSiteTheme();
 let siteTheme = applyThemeToDocument(siteThemeKey);
 const sortedVisiblePosts = () =>
@@ -53,6 +55,12 @@ function applyHomeSettings() {
   if (listSection) listSection.hidden = false;
   [heroListLink, footerListLink].forEach((link) => {
     if (link) link.hidden = false;
+  });
+  siteTitleTargets.forEach((el) => {
+    el.textContent = settings.siteTitle;
+  });
+  footerDescriptionTargets.forEach((el) => {
+    el.textContent = settings.footerDescription;
   });
 }
 

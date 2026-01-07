@@ -40,6 +40,10 @@
   const toggleFeatured = document.getElementById('toggle-featured');
   const editHint = document.getElementById('edit-hint');
   const featuredCount = document.getElementById('featured-count');
+  const siteTitleInput = document.getElementById('site-title');
+  const footerDescriptionInput = document.getElementById('footer-description');
+  const siteTitleTargets = document.querySelectorAll('[data-site-title]');
+  const footerDescriptionTargets = document.querySelectorAll('[data-footer-description]');
 
   const previewTitle = document.getElementById('preview-title');
   const previewDate = document.getElementById('preview-date');
@@ -158,17 +162,40 @@
 
   removeLongVacationButtons();
 
+  function applySiteText(settings) {
+    siteTitleTargets.forEach((el) => {
+      el.textContent = settings.siteTitle;
+    });
+    footerDescriptionTargets.forEach((el) => {
+      el.textContent = settings.footerDescription;
+    });
+  }
+
   function syncHomeSettingsForm() {
     const settings = readSiteSettings();
     if (toggleHero) toggleHero.checked = settings.showHero;
     if (toggleFeatured) toggleFeatured.checked = settings.showFeatured;
+    if (siteTitleInput) siteTitleInput.value = settings.siteTitle;
+    if (footerDescriptionInput) footerDescriptionInput.value = settings.footerDescription;
+    applySiteText(settings);
   }
 
   function persistHomeSettings() {
-    saveSiteSettings({
+    const settings = saveSiteSettings({
       showHero: toggleHero?.checked,
       showFeatured: toggleFeatured?.checked,
     });
+    applySiteText(settings);
+  }
+
+  function persistSiteInfo() {
+    const settings = saveSiteSettings({
+      siteTitle: siteTitleInput?.value,
+      footerDescription: footerDescriptionInput?.value,
+    });
+    if (siteTitleInput) siteTitleInput.value = settings.siteTitle;
+    if (footerDescriptionInput) footerDescriptionInput.value = settings.footerDescription;
+    applySiteText(settings);
   }
 
   function persistPosts(nextPosts) {
@@ -525,6 +552,9 @@
 
   [toggleHero, toggleFeatured].filter(Boolean).forEach((toggle) => {
     toggle.addEventListener('change', persistHomeSettings);
+  });
+  [siteTitleInput, footerDescriptionInput].filter(Boolean).forEach((input) => {
+    input.addEventListener('input', persistSiteInfo);
   });
 
   form.addEventListener('submit', (e) => {
