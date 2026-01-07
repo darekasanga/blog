@@ -471,7 +471,7 @@ h2 {
 
 .card-thumb {
   position: relative;
-  width: 100%;
+  width: calc(100% + 28px);
   aspect-ratio: 4 / 3;
   height: auto;
   margin: 0 -14px;
