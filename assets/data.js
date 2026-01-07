@@ -121,10 +121,8 @@
   const DEFAULT_SCALE = 1;
   const CHARS_PER_MINUTE = 500;
   const DEFAULT_SITE_SETTINGS = {
-    heroKicker: '最新を届けるブログ',
     showHero: true,
     showFeatured: true,
-    showList: true,
   };
 
   function clampFeatured(list = []) {
@@ -274,13 +272,10 @@
   }
 
   function normalizeSiteSettings(settings = {}) {
-    const heroKicker = typeof settings.heroKicker === 'string' ? settings.heroKicker.trim() : '';
     return {
-      heroKicker: heroKicker || DEFAULT_SITE_SETTINGS.heroKicker,
       showHero: typeof settings.showHero === 'boolean' ? settings.showHero : DEFAULT_SITE_SETTINGS.showHero,
       showFeatured:
         typeof settings.showFeatured === 'boolean' ? settings.showFeatured : DEFAULT_SITE_SETTINGS.showFeatured,
-      showList: typeof settings.showList === 'boolean' ? settings.showList : DEFAULT_SITE_SETTINGS.showList,
     };
   }
 
