@@ -33,6 +33,17 @@
             <p class="kicker">Article</p>
             <h1 id="article-title">記事が見つかりません</h1>
             <div class="meta" id="article-meta"></div>
+            <div class="ai-summary" id="ai-summary" hidden>
+              <div class="ai-summary-header">
+                <p class="kicker">COVE AI要約</p>
+                <span class="muted-text" id="ai-summary-updated"></span>
+              </div>
+              <p class="ai-summary-text" id="ai-summary-text">AI要約を読み込み中です。</p>
+              <details class="ai-summary-history" id="ai-summary-history" hidden>
+                <summary>要約の履歴を見る</summary>
+                <ol id="ai-summary-list"></ol>
+              </details>
+            </div>
             <div class="article-thumb placeholder" id="article-thumb" aria-hidden="true"></div>
             <div class="article-body" id="article-body">
               <p>指定された記事を読み込めませんでした。トップに戻って別の記事をお選びください。</p>
@@ -77,9 +88,6 @@
         <p class="brand-title" data-site-title>EMPEROR.NEWS</p>
         <p class="muted-text" data-footer-description>記事へのフィードバックをお待ちしています。</p>
       </div>
-      <div class="footer-actions">
-        <a class="btn ghost" href="index.html">トップへ</a>
-      </div>
       <div id="site-theme-picker" class="footer-theme-picker" aria-label="表示テーマ選択"></div>
     </div>
   </footer>
@@ -110,6 +118,11 @@
     const siteThemePicker = document.getElementById('site-theme-picker');
     const articleCard = document.getElementById('article');
     const commentAuthor = loadCommentAuthorProfile();
+    const summaryCard = document.getElementById('ai-summary');
+    const summaryTextEl = document.getElementById('ai-summary-text');
+    const summaryUpdatedEl = document.getElementById('ai-summary-updated');
+    const summaryHistoryEl = document.getElementById('ai-summary-history');
+    const summaryListEl = document.getElementById('ai-summary-list');
     const siteTitleTargets = document.querySelectorAll('[data-site-title]');
     const footerDescriptionTargets = document.querySelectorAll('[data-footer-description]');
 
@@ -218,6 +231,7 @@
         metaEl.textContent = '';
         renderContent('記事が見つかりませんでした。トップへ戻って別の記事をお試しください。');
         setThumb('', '');
+        renderSummary(null);
         if (commentForm) commentForm.hidden = true;
         commentCount.textContent = '';
         return;
@@ -232,6 +246,7 @@
       if (commentForm) commentForm.hidden = false;
       titleEl.textContent = post.title;
       metaEl.textContent = `${post.date} • ${post.read}`;
+      renderSummary(post);
       renderContent(post.content || post.excerpt);
       setThumb(post.image, post.title, post.imagePosition, post.imageFocus, post.imageScale);
       renderTags(post.tags || []);
@@ -254,6 +269,56 @@
       img.src = src;
       img.alt = alt || '拡大画像';
       lightbox.classList.remove('hidden');
+    }
+
+    function formatSummaryDate(value) {
+      if (!value) return '';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return '';
+      return date.toLocaleString('ja-JP');
+    }
+
+    function renderSummary(targetPost) {
+      if (!summaryCard || !summaryTextEl) return;
+      if (!targetPost) {
+        summaryCard.hidden = true;
+        return;
+      }
+      const history = Array.isArray(targetPost.summaryHistory) ? targetPost.summaryHistory : [];
+      const latestEntry = history[history.length - 1] || { text: targetPost.excerpt || '' };
+      const latestText = String(latestEntry.text || '').trim();
+      if (!latestText) {
+        summaryCard.hidden = true;
+        return;
+      }
+
+      summaryCard.hidden = false;
+      summaryTextEl.textContent = latestText;
+      if (summaryUpdatedEl) {
+        const label = formatSummaryDate(latestEntry.createdAt);
+        summaryUpdatedEl.textContent = label ? `更新: ${label}` : '';
+      }
+
+      if (summaryHistoryEl && summaryListEl) {
+        summaryListEl.innerHTML = '';
+        const entries = history.slice().reverse();
+        entries.forEach((entry) => {
+          const li = document.createElement('li');
+          li.className = 'ai-summary-item';
+          const itemHeader = document.createElement('div');
+          itemHeader.className = 'ai-summary-item-header';
+          const time = document.createElement('span');
+          time.className = 'muted-text';
+          time.textContent = formatSummaryDate(entry.createdAt) || '日時未登録';
+          itemHeader.appendChild(time);
+          const text = document.createElement('p');
+          text.textContent = entry.text;
+          li.appendChild(itemHeader);
+          li.appendChild(text);
+          summaryListEl.appendChild(li);
+        });
+        summaryHistoryEl.hidden = entries.length <= 1;
+      }
     }
 
     lightbox.addEventListener('click', () => {
