@@ -19,6 +19,24 @@
 
   const adminMode = document.body.dataset.adminMode || 'post';
   const isEditMode = adminMode === 'edit';
+  const ADMIN_AUTH_KEY = 'admin-authenticated';
+  const ADMIN_PASSWORD = 'admin';
+
+  function ensureAdminAuth() {
+    if (sessionStorage.getItem(ADMIN_AUTH_KEY) === 'true') {
+      return true;
+    }
+    const entered = window.prompt('管理ページのパスワードを入力してください。');
+    if (entered === ADMIN_PASSWORD) {
+      sessionStorage.setItem(ADMIN_AUTH_KEY, 'true');
+      return true;
+    }
+    alert('パスワードが一致しませんでした。トップへ戻ります。');
+    window.location.href = '../index.html';
+    return false;
+  }
+
+  if (!ensureAdminAuth()) return;
 
   const form = document.getElementById('post-form');
   const titleEl = document.getElementById('title');
