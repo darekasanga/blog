@@ -146,6 +146,11 @@
             </div>
           </div>
           <div class="info-card">
+            <label for="featured-select">注目の記事を選択</label>
+            <p class="muted-text" style="margin: 6px 0 0;">トップページの注目セクションに表示する記事を指定できます。</p>
+            <select id="featured-select" style="margin-top: 12px;"></select>
+          </div>
+          <div class="info-card">
             <p class="kicker">反映タイミング</p>
             <h3>トップページに即時反映</h3>
             <p class="muted-text">チェックの切替は保存と同時にトップページに反映されます。</p>
@@ -219,6 +224,7 @@
     const currentThemePill = document.getElementById('current-theme-pill');
     const toggleHero = document.getElementById('toggle-hero');
     const toggleFeatured = document.getElementById('toggle-featured');
+    const featuredSelect = document.getElementById('featured-select');
 
     const previewTitle = document.getElementById('preview-title');
     const previewDate = document.getElementById('preview-date');
@@ -461,6 +467,7 @@
       if (!posts.length) {
         postCount.textContent = 'まだ投稿がありません。';
         postList.innerHTML = '<p class=\"muted-text\">投稿を追加するとここに表示されます。</p>';
+        renderFeaturedSelector();
         return;
       }
 
@@ -480,7 +487,7 @@
                 </div>
                 <div class=\"status-row\">
                   <span class=\"pill ${post.hidden ? 'pill-muted' : 'pill-positive'}\">${post.hidden ? '非表示' : '表示中'}</span>
-                  <span class=\"pill pill-accent ${post.isFeatured ? '' : 'pill-muted'}\">トップ</span>
+                  <span class=\"pill pill-accent ${post.isFeatured ? '' : 'pill-muted'}\">注目</span>
                   <span class=\"pill pill-outline\">順番 ${index + 1}</span>
                 </div>
                 <div class=\"tag-row\">${(post.tags || []).map((tag) => `<span class=\"chip\">#${escapeHtml(tag)}</span>`).join('')}</div>
@@ -488,7 +495,7 @@
               <div class=\"manage-flags\">
                 <label class=\"flag-toggle\">
                   <input type=\"checkbox\" data-action=\"toggle\" data-field=\"isFeatured\" ${post.isFeatured ? 'checked' : ''} />
-                  <span>トップに表示</span>
+                  <span>注目に設定</span>
                 </label>
                 <label class=\"flag-toggle\">
                   <input type=\"checkbox\" data-action=\"toggle\" data-field=\"hidden\" ${post.hidden ? 'checked' : ''} />
@@ -567,6 +574,37 @@
         });
       });
 
+      renderFeaturedSelector();
+    }
+
+    function featuredCandidatePosts() {
+      const visible = posts.filter((post) => !post.hidden);
+      return visible.length ? visible : posts;
+    }
+
+    function renderFeaturedSelector() {
+      if (!featuredSelect) return;
+      const options = featuredCandidatePosts();
+      const currentFeatured = options.find((post) => post.isFeatured) || posts.find((post) => post.isFeatured);
+      featuredSelect.innerHTML = `
+        <option value="">選択なし</option>
+        ${options
+          .map(
+            (post) =>
+              `<option value="${escapeHtml(post.id)}">${escapeHtml(post.title)}（${escapeHtml(post.date)}）</option>`
+          )
+          .join('')}
+      `;
+      featuredSelect.value = currentFeatured ? currentFeatured.id : '';
+    }
+
+    function setFeaturedPost(id) {
+      const next = posts.map((post) => ({
+        ...post,
+        isFeatured: id ? post.id === id : false,
+      }));
+      persistPosts(next);
+      renderPostList();
     }
 
     function resetForm() {
@@ -681,6 +719,12 @@
       if (!toggle) return;
       toggle.addEventListener('change', persistHomeSettings);
     });
+
+    if (featuredSelect) {
+      featuredSelect.addEventListener('change', () => {
+        setFeaturedPost(featuredSelect.value);
+      });
+    }
 
     form.addEventListener('submit', (e) => {
       e.preventDefault();
