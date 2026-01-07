@@ -12,14 +12,11 @@ const {
 let posts = readPosts();
 const track = document.getElementById('card-track');
 const buttons = document.querySelectorAll('[data-action]');
-const scrollList = document.getElementById('scroll-list');
 const listGrid = document.getElementById('list-grid');
-const tagMarquee = document.getElementById('tag-marquee');
 const siteThemePicker = document.getElementById('site-theme-picker');
 const heroSection = document.getElementById('hero-section');
 const heroKicker = document.getElementById('hero-kicker');
 const featuredSection = document.getElementById('featured');
-const digestSection = document.getElementById('digest-section');
 const listSection = document.getElementById('article-list');
 const heroListLink = document.getElementById('hero-list-link');
 const footerListLink = document.getElementById('footer-list-link');
@@ -32,12 +29,6 @@ const featuredPosts = () => {
   const featured = visible.filter((post) => post.isFeatured);
   const pool = featured.length ? featured : visible;
   return pool.slice(0, 1);
-};
-const digestPosts = () => {
-  const visible = sortedVisiblePosts();
-  const digest = visible.filter((post) => post.isDigest);
-  const pool = digest.length ? digest : visible;
-  return pool.slice(0, 2);
 };
 
 function applySiteTheme(themeKey) {
@@ -54,46 +45,16 @@ function applyHomeSettings() {
   }
   if (heroSection) heroSection.hidden = !settings.showHero;
   if (featuredSection) featuredSection.hidden = !settings.showFeatured;
-  if (digestSection) digestSection.hidden = !settings.showDigest;
   if (listSection) listSection.hidden = !settings.showList;
   [heroListLink, footerListLink].forEach((link) => {
     if (link) link.hidden = !settings.showList;
   });
 }
 
-const tagPalette = ['#6c63ff', '#4fc3f7', '#ffb347', '#ff6b6b', '#9b72ff', '#4ef2c7', '#f2c14e'];
 const lightbox = document.createElement('div');
 lightbox.className = 'lightbox hidden';
 lightbox.innerHTML = '<img alt=\"拡大画像\" />';
 document.body.appendChild(lightbox);
-
-function renderTags(tags = []) {
-  if (!tagMarquee) return;
-  const visible = sortedVisiblePosts();
-  const allTags = Array.from(
-    new Set(
-      visible
-        .map((post) => post.tags || [])
-        .flat()
-        .filter(Boolean)
-    )
-  );
-
-  if (!allTags.length) {
-    tagMarquee.innerHTML = '<span class="muted-text">タグがまだありません</span>';
-    return;
-  }
-
-  const repeated = [...allTags, ...allTags];
-  const chips = repeated
-    .map((tag, index) => {
-      const color = tagPalette[index % tagPalette.length];
-      return `<span class="chip" style="--chip-bg:${color}1a;--chip-fg:${color};">#${escapeHtml(tag)}</span>`;
-    })
-    .join('');
-
-  tagMarquee.innerHTML = `<div class="marquee-track">${chips}</div>`;
-}
 
 function themeStyle(post) {
   const theme = resolveTheme(post.theme || siteThemeKey);
@@ -135,37 +96,6 @@ function renderCards() {
     .join('');
 }
 
-function renderScrollList() {
-  if (!scrollList) return;
-  const items = digestPosts();
-  if (!items.length) {
-    scrollList.innerHTML = '<p class="muted-text">表示できる記事がありません。</p>';
-    return;
-  }
-
-  scrollList.innerHTML = items
-    .map(
-      (post) => `
-        <article class="scroll-card" style="${themeStyle(post)}">
-          <div class="scroll-thumb ${post.image ? '' : 'placeholder'}" style="--image-pos:${post.imagePosition ?? 50}%;--focus-start:${post.imageFocus?.start ?? 0}%;--focus-end:${post.imageFocus?.end ?? 100}%;--image-scale:${post.imageScale ?? 1};">
-            ${
-              post.image
-                ? `<div class="focus-range" aria-hidden="true"></div><img src="${post.image}" alt="${escapeHtml(post.title)}の画像" />`
-                : '<div class="focus-range" aria-hidden="true"></div><span class="muted-text">画像未設定</span>'
-            }
-          </div>
-          <div class="scroll-body">
-            <p class="meta"><span>${escapeHtml(post.date)}</span><span>•</span><span>${escapeHtml(post.read)}</span></p>
-            <h3>${escapeHtml(post.title)}</h3>
-            <p class="muted-text">${escapeHtml(post.excerpt)}</p>
-            <div class="tag-row">${(post.tags || []).map((tag) => `<span class="chip">#${escapeHtml(tag)}</span>`).join('')}</div>
-          </div>
-          <a class="stretched-link" href="article.html?id=${encodeURIComponent(post.id)}" aria-label="${escapeHtml(post.title)}を読む"></a>
-        </article>
-      `
-    )
-    .join('');
-}
 
 function renderListGrid() {
   if (!listGrid) return;
@@ -292,7 +222,6 @@ function renderSiteThemePicker() {
   select.addEventListener('change', () => {
     applySiteTheme(select.value);
     renderCards();
-    renderScrollList();
     renderListGrid();
   });
 }
@@ -300,8 +229,6 @@ function renderSiteThemePicker() {
 function reloadPosts() {
   posts = readPosts();
   renderCards();
-  renderScrollList();
-  renderTags();
   renderListGrid();
 }
 
@@ -317,8 +244,6 @@ window.addEventListener('storage', (event) => {
 applyHomeSettings();
 renderCards();
 setupButtons();
-renderScrollList();
-renderTags();
 renderListGrid();
 setupLightbox();
 renderSiteThemePicker();

@@ -150,10 +150,6 @@
                   <span>注目の記事を表示</span>
                 </label>
                 <label class="flag-toggle">
-                  <input type="checkbox" id="toggle-digest" />
-                  <span>ダイジェストを表示</span>
-                </label>
-                <label class="flag-toggle">
                   <input type="checkbox" id="toggle-list" />
                   <span>記事一覧を表示</span>
                 </label>
@@ -174,7 +170,7 @@
           <div>
             <p class="kicker">投稿一覧</p>
             <h2>保存済みの記事</h2>
-            <p class="muted-text" style="margin-top:4px;">トップとダイジェストの表示設定や順番を管理できます。</p>
+            <p class="muted-text" style="margin-top:4px;">トップの表示設定や順番を管理できます。</p>
           </div>
           <p class="muted-text" id="post-count"></p>
         </div>
@@ -235,7 +231,6 @@
     const heroKickerInput = document.getElementById('hero-kicker-input');
     const toggleHero = document.getElementById('toggle-hero');
     const toggleFeatured = document.getElementById('toggle-featured');
-    const toggleDigest = document.getElementById('toggle-digest');
     const toggleList = document.getElementById('toggle-list');
 
     const previewTitle = document.getElementById('preview-title');
@@ -266,11 +261,9 @@
     function enforceSelectionLimits(list = []) {
       const ordered = [...list].sort((a, b) => (a.order || 0) - (b.order || 0));
       const featuredTarget = ordered.find((post) => post.isFeatured)?.id;
-      const digestTargets = ordered.filter((post) => post.isDigest).map((post) => post.id).slice(0, 2);
       return ordered.map((post) => ({
         ...post,
         isFeatured: featuredTarget ? post.id === featuredTarget : false,
-        isDigest: digestTargets.includes(post.id),
       }));
     }
 
@@ -362,7 +355,6 @@
       }
       if (toggleHero) toggleHero.checked = settings.showHero;
       if (toggleFeatured) toggleFeatured.checked = settings.showFeatured;
-      if (toggleDigest) toggleDigest.checked = settings.showDigest;
       if (toggleList) toggleList.checked = settings.showList;
     }
 
@@ -371,7 +363,6 @@
         heroKicker: heroKickerInput?.value,
         showHero: toggleHero?.checked,
         showFeatured: toggleFeatured?.checked,
-        showDigest: toggleDigest?.checked,
         showList: toggleList?.checked,
       });
     }
@@ -415,18 +406,6 @@
           updated = posts.map((post) => ({ ...post, isFeatured: post.id === id }));
         } else {
           updated = posts.map((post) => (post.id === id ? { ...post, isFeatured: false } : post));
-        }
-      } else if (key === 'isDigest') {
-        if (value) {
-          const target = posts.find((post) => post.id === id);
-          const digestCandidates = [target, ...posts.filter((post) => post.isDigest && post.id !== id)]
-            .filter(Boolean)
-            .sort((a, b) => (a.order || 0) - (b.order || 0))
-            .slice(0, 2)
-            .map((post) => post.id);
-          updated = posts.map((post) => ({ ...post, isDigest: digestCandidates.includes(post.id) }));
-        } else {
-          updated = posts.map((post) => (post.id === id ? { ...post, isDigest: false } : post));
         }
       } else {
         updated = posts.map((post) => (post.id === id ? { ...post, [key]: value } : post));
@@ -521,7 +500,6 @@
                 <div class=\"status-row\">
                   <span class=\"pill ${post.hidden ? 'pill-muted' : 'pill-positive'}\">${post.hidden ? '非表示' : '表示中'}</span>
                   <span class=\"pill pill-accent ${post.isFeatured ? '' : 'pill-muted'}\">トップ</span>
-                  <span class=\"pill pill-accent ${post.isDigest ? '' : 'pill-muted'}\">ダイジェスト</span>
                   <span class=\"pill pill-outline\">順番 ${index + 1}</span>
                 </div>
                 <div class=\"tag-row\">${(post.tags || []).map((tag) => `<span class=\"chip\">#${escapeHtml(tag)}</span>`).join('')}</div>
@@ -530,10 +508,6 @@
                 <label class=\"flag-toggle\">
                   <input type=\"checkbox\" data-action=\"toggle\" data-field=\"isFeatured\" ${post.isFeatured ? 'checked' : ''} />
                   <span>トップに表示</span>
-                </label>
-                <label class=\"flag-toggle\">
-                  <input type=\"checkbox\" data-action=\"toggle\" data-field=\"isDigest\" ${post.isDigest ? 'checked' : ''} />
-                  <span>ダイジェストに表示</span>
                 </label>
                 <label class=\"flag-toggle\">
                   <input type=\"checkbox\" data-action=\"toggle\" data-field=\"hidden\" ${post.hidden ? 'checked' : ''} />
@@ -725,7 +699,7 @@
     if (heroKickerInput) {
       heroKickerInput.addEventListener('input', persistHomeSettings);
     }
-    [toggleHero, toggleFeatured, toggleDigest, toggleList].forEach((toggle) => {
+    [toggleHero, toggleFeatured, toggleList].forEach((toggle) => {
       if (!toggle) return;
       toggle.addEventListener('change', persistHomeSettings);
     });
