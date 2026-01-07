@@ -476,7 +476,7 @@ h2 {
   aspect-ratio: 4 / 3;
   height: auto;
   margin: -14px -14px 0;
-  border-radius: 12px;
+  border-radius: 12px 12px 0 0;
   overflow: hidden;
   background: linear-gradient(135deg, rgba(108, 99, 255, 0.2), rgba(79, 195, 247, 0.2));
   border: 1px solid var(--border);
@@ -566,7 +566,7 @@ h2 {
   height: auto;
   min-height: 0;
   aspect-ratio: 4 / 3;
-  border-radius: 12px;
+  border-radius: 12px 12px 0 0;
   overflow: hidden;
   background: linear-gradient(135deg, rgba(108, 99, 255, 0.2), rgba(79, 195, 247, 0.2));
   border: 1px solid var(--border);
@@ -935,7 +935,7 @@ h2 {
 
 .article-thumb {
   width: 100%;
-  border-radius: 12px;
+  border-radius: 12px 12px 0 0;
   border: 1px solid var(--border);
   aspect-ratio: 4 / 3;
   height: auto;

@@ -15,6 +15,7 @@
     formatReadTime,
     normalizeFocus,
     normalizeScale,
+    summarizeContent,
   } = window.BlogData;
 
   const adminMode = document.body.dataset.adminMode || 'post';
@@ -267,7 +268,9 @@
     previewTitle.textContent = titleEl?.value || '無題の投稿';
     previewDate.textContent = dateEl?.value || today;
     previewRead.textContent = readEl?.value || '5 min';
-    previewExcerpt.textContent = excerptEl?.value || '概要を入力するとここに表示されます。';
+    const summary = summarizeContent(contentEl?.value || '');
+    if (excerptEl) excerptEl.value = summary;
+    previewExcerpt.textContent = summary || '本文からAIが要約します。';
     const tags = window.BlogData.normalizeTags((tagsEl?.value || '').split(','));
     previewTags.innerHTML = tags.map((tag) => `<span class="chip">#${window.BlogData.escapeHtml(tag)}</span>`).join('');
     const focus = normalizeFocus({ start: Number(focusStartEl?.value), end: Number(focusEndEl?.value) });
@@ -293,7 +296,7 @@
 
   function updateReadTime() {
     if (!readEl || !previewRead) return;
-    const minutes = estimateReadMinutes(`${titleEl?.value || ''}\n${excerptEl?.value || ''}\n${contentEl?.value || ''}`);
+    const minutes = estimateReadMinutes(`${titleEl?.value || ''}\n${contentEl?.value || ''}`);
     const label = formatReadTime(minutes);
     readEl.value = label;
     previewRead.textContent = label;
@@ -493,7 +496,7 @@
     if (titleEl) titleEl.value = target.title;
     if (dateEl) dateEl.value = target.date;
     if (readEl) readEl.value = target.read;
-    if (excerptEl) excerptEl.value = target.excerpt;
+    if (excerptEl) excerptEl.value = summarizeContent(target.content || target.excerpt || '');
     if (contentEl) contentEl.value = target.content || '';
     resizedImageData = target.image || '';
     if (tagsEl) tagsEl.value = (target.tags || []).join(', ');
@@ -526,7 +529,7 @@
     renderPostList();
   }
 
-  [titleEl, dateEl, excerptEl, contentEl, tagsEl].filter(Boolean).forEach((el) => {
+  [titleEl, dateEl, contentEl, tagsEl].filter(Boolean).forEach((el) => {
     el.addEventListener('input', () => {
       updateReadTime();
       updatePreview();
@@ -605,8 +608,8 @@
     const title = previewTitle?.textContent.trim() || '';
     const date = previewDate?.textContent.trim() || '';
     const read = previewRead?.textContent.trim() || '';
-    const excerpt = previewExcerpt?.textContent.trim() || '';
     const content = contentEl?.value.trim() || '';
+    const excerpt = summarizeContent(content);
     const existing = editingId ? posts.find((post) => post.id === editingId) : null;
     const image = resizedImageData || existing?.image || '';
     const tags = window.BlogData.normalizeTags((tagsEl?.value || '').split(','));
