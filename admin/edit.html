@@ -44,9 +44,9 @@
             </div>
           </div>
           <div class="info-card">
-            <label for="featured-select">注目の記事を選択</label>
-            <p class="muted-text" style="margin: 6px 0 0;">トップページの注目セクションに表示する記事を指定できます。</p>
-            <select id="featured-select" style="margin-top: 12px;"></select>
+            <label>注目の記事を選択</label>
+            <p class="muted-text" style="margin: 6px 0 0;">投稿一覧の「注目に設定」チェックで最大30件まで指定できます。</p>
+            <p class="muted-text" id="featured-count" style="margin: 6px 0 0;"></p>
           </div>
           <div class="info-card">
             <p class="kicker">反映タイミング</p>
@@ -184,10 +184,9 @@
         <a class="btn ghost" href="../index.html">トップへ</a>
         <a class="btn ghost" href="index.html">記事投稿へ</a>
       </div>
+      <div id="site-theme-picker" class="footer-theme-picker" aria-label="表示テーマ選択"></div>
     </div>
   </footer>
-
-  <div id="site-theme-picker" class="floating-theme-picker" aria-label="表示テーマ選択"></div>
 
   <script src="../assets/data.js"></script>
   <script src="../assets/admin.js"></script>

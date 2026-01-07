@@ -57,20 +57,26 @@
       <p class="muted-text" id="comment-count"></p>
     </div>
 
-    <form id="comment-form" class="comment-form">
-      <label class="field">
-        <span>お名前</span>
-        <input id="commenter" name="commenter" type="text" placeholder="ペンネームでOK" required />
-      </label>
-      <label class="field">
-        <span>コメント</span>
-        <textarea id="comment-body" name="comment-body" rows="4" placeholder="記事の感想や質問をどうぞ" required></textarea>
-      </label>
-      <button class="btn primary full" type="submit">コメントを投稿</button>
-    </form>
+    <button class="btn primary full comments-toggle" type="button" id="comment-toggle" aria-expanded="false">
+      コメントを投稿
+    </button>
 
-    <div id="comment-list" class="comment-list" aria-live="polite">
-      <p id="comment-empty" class="muted-text">最初のコメントを投稿しませんか？</p>
+    <div class="comments-body" id="comments-body" hidden>
+      <form id="comment-form" class="comment-form">
+        <label class="field">
+          <span>お名前</span>
+          <input id="commenter" name="commenter" type="text" placeholder="ペンネームでOK" required />
+        </label>
+        <label class="field">
+          <span>コメント</span>
+          <textarea id="comment-body" name="comment-body" rows="4" placeholder="記事の感想や質問をどうぞ" required></textarea>
+        </label>
+        <button class="btn primary full" type="submit">コメントを投稿</button>
+      </form>
+
+      <div id="comment-list" class="comment-list" aria-live="polite">
+        <p id="comment-empty" class="muted-text">最初のコメントを投稿しませんか？</p>
+      </div>
     </div>
   </aside>
 
@@ -84,10 +90,9 @@
         <a class="btn ghost" href="index.html">トップへ</a>
         <a class="btn ghost" href="admin/index.html">記事投稿</a>
       </div>
+      <div id="site-theme-picker" class="footer-theme-picker" aria-label="表示テーマ選択"></div>
     </div>
   </footer>
-
-  <div id="site-theme-picker" class="floating-theme-picker" aria-label="表示テーマ選択"></div>
   <script src="assets/data.js"></script>
   <script>
     const { readPosts, resolveTheme, readSiteTheme, saveSiteTheme, applyThemeToDocument, themes } = window.BlogData;
@@ -102,6 +107,8 @@
     const commentCount = document.getElementById('comment-count');
     const emptyState = document.getElementById('comment-empty');
     const commentForm = document.getElementById('comment-form');
+    const commentToggle = document.getElementById('comment-toggle');
+    const commentsBody = document.getElementById('comments-body');
     const commenterEl = document.getElementById('commenter');
     const commentBodyEl = document.getElementById('comment-body');
     const siteThemePicker = document.getElementById('site-theme-picker');
@@ -202,7 +209,9 @@
         metaEl.textContent = '';
         renderContent('記事が見つかりませんでした。トップへ戻って別の記事をお試しください。');
         setThumb('', '');
-        commentForm.hidden = true;
+        if (commentForm) commentForm.hidden = true;
+        if (commentsBody) commentsBody.hidden = true;
+        if (commentToggle) commentToggle.hidden = true;
         commentCount.textContent = '';
         return;
       }
@@ -213,7 +222,8 @@
         articleCard.style.setProperty('--accent-2', theme.accent2);
       }
 
-      commentForm.hidden = false;
+      if (commentForm) commentForm.hidden = false;
+      if (commentToggle) commentToggle.hidden = false;
       titleEl.textContent = post.title;
       metaEl.textContent = `${post.date} • ${post.read}`;
       renderContent(post.content || post.excerpt);
@@ -324,6 +334,13 @@
       commentForm.reset();
     }
 
+    function setCommentsOpen(isOpen) {
+      if (!commentsBody || !commentToggle) return;
+      commentsBody.hidden = !isOpen;
+      commentToggle.setAttribute('aria-expanded', String(isOpen));
+      commentToggle.textContent = isOpen ? 'コメントを閉じる' : 'コメントを投稿';
+    }
+
     renderArticle();
     renderSiteThemePicker();
     syncThemePicker();
@@ -332,6 +349,10 @@
       const initialComments = loadComments(post.id);
       renderComments(initialComments);
       commentForm.addEventListener('submit', handleCommentSubmit);
+      setCommentsOpen(false);
+      commentToggle.addEventListener('click', () => {
+        setCommentsOpen(commentsBody.hidden);
+      });
     } else {
       commentList.innerHTML = '';
       emptyState.hidden = false;
