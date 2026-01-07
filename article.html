@@ -44,31 +44,32 @@
             </div>
           </article>
         </div>
+        <div class="comments-section">
+          <div class="info-card comments-card" aria-label="コメントフォーム">
+            <div class="section-header">
+              <div>
+                <p class="kicker">コメント</p>
+                <h3>感想を残す</h3>
+              </div>
+              <p class="muted-text" id="comment-count"></p>
+            </div>
+
+            <form id="comment-form" class="comment-form">
+              <label class="field">
+                <span>コメント</span>
+                <textarea id="comment-body" name="comment-body" rows="4" placeholder="記事の感想や質問をどうぞ" required></textarea>
+              </label>
+              <button class="btn primary full" type="submit">コメントを投稿</button>
+            </form>
+
+            <div id="comment-list" class="comment-list" aria-live="polite">
+              <p id="comment-empty" class="muted-text">最初のコメントを投稿しませんか？</p>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   </main>
-
-  <aside class="info-card comments-card floating-comments" aria-label="コメントフォーム">
-    <div class="section-header">
-      <div>
-        <p class="kicker">コメント</p>
-        <h3>感想を残す</h3>
-      </div>
-      <p class="muted-text" id="comment-count"></p>
-    </div>
-
-    <form id="comment-form" class="comment-form">
-      <label class="field">
-        <span>コメント</span>
-        <textarea id="comment-body" name="comment-body" rows="4" placeholder="記事の感想や質問をどうぞ" required></textarea>
-      </label>
-      <button class="btn primary full" type="submit">コメントを投稿</button>
-    </form>
-
-    <div id="comment-list" class="comment-list" aria-live="polite">
-      <p id="comment-empty" class="muted-text">最初のコメントを投稿しませんか？</p>
-    </div>
-  </aside>
 
   <footer class="site-footer">
     <div class="inner footer-grid">
@@ -78,7 +79,6 @@
       </div>
       <div class="footer-actions">
         <a class="btn ghost" href="index.html">トップへ</a>
-        <a class="btn ghost" href="admin/index.html">記事投稿</a>
       </div>
       <div id="site-theme-picker" class="footer-theme-picker" aria-label="表示テーマ選択"></div>
     </div>
