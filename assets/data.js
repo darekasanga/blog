@@ -5,18 +5,6 @@
 
   const themePresets = [
     {
-      key: 'daylight',
-      name: 'デイライト',
-      accent: '#2563eb',
-      accent2: '#38bdf8',
-      background: '#f5f7fb',
-      surface: '#ffffff',
-      panel: '#eef2ff',
-      border: '#d6dbe6',
-      muted: '#475569',
-      foreground: '#111827',
-    },
-    {
       key: 'violet-ice',
       name: 'バイオレット',
       accent: '#8b5cf6',

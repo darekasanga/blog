@@ -57,26 +57,16 @@
       <p class="muted-text" id="comment-count"></p>
     </div>
 
-    <button class="btn primary full comments-toggle" type="button" id="comment-toggle" aria-expanded="false">
-      コメントを投稿
-    </button>
+    <form id="comment-form" class="comment-form">
+      <label class="field">
+        <span>コメント</span>
+        <textarea id="comment-body" name="comment-body" rows="4" placeholder="記事の感想や質問をどうぞ" required></textarea>
+      </label>
+      <button class="btn primary full" type="submit">コメントを投稿</button>
+    </form>
 
-    <div class="comments-body" id="comments-body" hidden>
-      <form id="comment-form" class="comment-form">
-        <label class="field">
-          <span>お名前</span>
-          <input id="commenter" name="commenter" type="text" placeholder="ペンネームでOK" required />
-        </label>
-        <label class="field">
-          <span>コメント</span>
-          <textarea id="comment-body" name="comment-body" rows="4" placeholder="記事の感想や質問をどうぞ" required></textarea>
-        </label>
-        <button class="btn primary full" type="submit">コメントを投稿</button>
-      </form>
-
-      <div id="comment-list" class="comment-list" aria-live="polite">
-        <p id="comment-empty" class="muted-text">最初のコメントを投稿しませんか？</p>
-      </div>
+    <div id="comment-list" class="comment-list" aria-live="polite">
+      <p id="comment-empty" class="muted-text">最初のコメントを投稿しませんか？</p>
     </div>
   </aside>
 
@@ -107,12 +97,10 @@
     const commentCount = document.getElementById('comment-count');
     const emptyState = document.getElementById('comment-empty');
     const commentForm = document.getElementById('comment-form');
-    const commentToggle = document.getElementById('comment-toggle');
-    const commentsBody = document.getElementById('comments-body');
-    const commenterEl = document.getElementById('commenter');
     const commentBodyEl = document.getElementById('comment-body');
     const siteThemePicker = document.getElementById('site-theme-picker');
     const articleCard = document.getElementById('article');
+    const commentAuthor = loadCommentAuthorProfile();
 
     const posts = readPosts();
     let siteThemeKey = readSiteTheme();
@@ -210,8 +198,6 @@
         renderContent('記事が見つかりませんでした。トップへ戻って別の記事をお試しください。');
         setThumb('', '');
         if (commentForm) commentForm.hidden = true;
-        if (commentsBody) commentsBody.hidden = true;
-        if (commentToggle) commentToggle.hidden = true;
         commentCount.textContent = '';
         return;
       }
@@ -223,7 +209,6 @@
       }
 
       if (commentForm) commentForm.hidden = false;
-      if (commentToggle) commentToggle.hidden = false;
       titleEl.textContent = post.title;
       metaEl.textContent = `${post.date} • ${post.read}`;
       renderContent(post.content || post.excerpt);
@@ -258,6 +243,34 @@
       return `comments:${id}`;
     }
 
+    function commentAuthorKey() {
+      return 'comment-author-profile';
+    }
+
+    function generateAuthorId() {
+      if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+        return window.crypto.randomUUID();
+      }
+      return `author-${Date.now().toString(36)}-${Math.random().toString(16).slice(2)}`;
+    }
+
+    function loadCommentAuthorProfile() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(commentAuthorKey()) || '{}');
+        if (saved && saved.id) {
+          return saved;
+        }
+      } catch (error) {
+        console.warn('投稿者情報の読み込みに失敗しました。', error);
+      }
+      const profile = {
+        id: generateAuthorId(),
+        label: 'あなた',
+      };
+      localStorage.setItem(commentAuthorKey(), JSON.stringify(profile));
+      return profile;
+    }
+
     function loadComments(id) {
       try {
         const saved = JSON.parse(localStorage.getItem(commentStorageKey(id)) || '[]');
@@ -290,11 +303,12 @@
       comments.forEach((comment) => {
         const article = document.createElement('article');
         article.className = 'comment-card';
+        const isOwner = comment.authorId && comment.authorId === commentAuthor.id;
 
         const header = document.createElement('div');
         header.className = 'comment-header';
         const name = document.createElement('strong');
-        name.textContent = comment.name;
+        name.textContent = isOwner ? commentAuthor.label : comment.name || '匿名';
         const time = document.createElement('span');
         const date = new Date(comment.createdAt || Date.now());
         time.textContent = date.toLocaleString('ja-JP');
@@ -306,15 +320,62 @@
 
         article.appendChild(header);
         article.appendChild(body);
+
+        if (isOwner) {
+          const actions = document.createElement('div');
+          actions.className = 'comment-actions';
+          const editButton = document.createElement('button');
+          editButton.type = 'button';
+          editButton.className = 'btn ghost';
+          editButton.textContent = '編集';
+          editButton.addEventListener('click', () => handleEditComment(comment));
+          const deleteButton = document.createElement('button');
+          deleteButton.type = 'button';
+          deleteButton.className = 'btn ghost';
+          deleteButton.textContent = '削除';
+          deleteButton.addEventListener('click', () => handleDeleteComment(comment));
+          actions.appendChild(editButton);
+          actions.appendChild(deleteButton);
+          article.appendChild(actions);
+        }
         commentList.appendChild(article);
       });
+    }
+
+    function handleEditComment(comment) {
+      const nextBody = window.prompt('コメントを編集', comment.body || '');
+      if (nextBody === null) return;
+      const trimmed = nextBody.trim();
+      if (!trimmed) {
+        alert('コメントを入力してください。');
+        return;
+      }
+      const current = loadComments(post.id);
+      const updated = current.map((item) =>
+        item.id === comment.id
+          ? {
+              ...item,
+              body: trimmed,
+              updatedAt: new Date().toISOString(),
+            }
+          : item
+      );
+      saveComments(post.id, updated);
+      renderComments(updated);
+    }
+
+    function handleDeleteComment(comment) {
+      if (!window.confirm('このコメントを削除しますか？')) return;
+      const current = loadComments(post.id);
+      const updated = current.filter((item) => item.id !== comment.id);
+      saveComments(post.id, updated);
+      renderComments(updated);
     }
 
     function handleCommentSubmit(event) {
       event.preventDefault();
       if (!post) return;
 
-      const name = commenterEl.value.trim() || '名無しさん';
       const body = commentBodyEl.value.trim();
       if (!body) {
         alert('コメントを入力してください。');
@@ -324,21 +385,15 @@
       const current = loadComments(post.id);
       const newComment = {
         id: `comment-${Date.now()}`,
-        name,
+        name: '匿名',
         body,
         createdAt: new Date().toISOString(),
+        authorId: commentAuthor.id,
       };
       const updated = [newComment, ...current].slice(0, 100);
       saveComments(post.id, updated);
       renderComments(updated);
       commentForm.reset();
-    }
-
-    function setCommentsOpen(isOpen) {
-      if (!commentsBody || !commentToggle) return;
-      commentsBody.hidden = !isOpen;
-      commentToggle.setAttribute('aria-expanded', String(isOpen));
-      commentToggle.textContent = isOpen ? 'コメントを閉じる' : 'コメントを投稿';
     }
 
     renderArticle();
@@ -349,10 +404,6 @@
       const initialComments = loadComments(post.id);
       renderComments(initialComments);
       commentForm.addEventListener('submit', handleCommentSubmit);
-      setCommentsOpen(false);
-      commentToggle.addEventListener('click', () => {
-        setCommentsOpen(commentsBody.hidden);
-      });
     } else {
       commentList.innerHTML = '';
       emptyState.hidden = false;
