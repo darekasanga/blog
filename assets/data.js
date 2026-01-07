@@ -1,6 +1,7 @@
 (function () {
   const STORAGE_KEY = 'posts';
   const THEME_STORAGE_KEY = 'site-theme';
+  const SITE_SETTINGS_KEY = 'site-settings';
 
   const themePresets = [
     {
@@ -119,6 +120,13 @@
   const DEFAULT_FOCUS = { start: 20, end: 80 };
   const DEFAULT_SCALE = 1;
   const CHARS_PER_MINUTE = 500;
+  const DEFAULT_SITE_SETTINGS = {
+    heroKicker: '最新を届けるブログ',
+    showHero: true,
+    showFeatured: true,
+    showDigest: true,
+    showList: true,
+  };
 
   function clampFeaturedAndDigest(list = []) {
     const ordered = [...list].sort((a, b) => (a.order || 0) - (b.order || 0));
@@ -273,6 +281,37 @@
     return theme.key;
   }
 
+  function normalizeSiteSettings(settings = {}) {
+    const heroKicker = typeof settings.heroKicker === 'string' ? settings.heroKicker.trim() : '';
+    return {
+      heroKicker: heroKicker || DEFAULT_SITE_SETTINGS.heroKicker,
+      showHero: typeof settings.showHero === 'boolean' ? settings.showHero : DEFAULT_SITE_SETTINGS.showHero,
+      showFeatured:
+        typeof settings.showFeatured === 'boolean' ? settings.showFeatured : DEFAULT_SITE_SETTINGS.showFeatured,
+      showDigest: typeof settings.showDigest === 'boolean' ? settings.showDigest : DEFAULT_SITE_SETTINGS.showDigest,
+      showList: typeof settings.showList === 'boolean' ? settings.showList : DEFAULT_SITE_SETTINGS.showList,
+    };
+  }
+
+  function readSiteSettings() {
+    let stored = {};
+    try {
+      stored = JSON.parse(localStorage.getItem(SITE_SETTINGS_KEY) || '{}');
+    } catch (error) {
+      console.warn('トップページ設定の読み込みに失敗しました。初期値を使用します。', error);
+    }
+    const normalized = normalizeSiteSettings(stored);
+    localStorage.setItem(SITE_SETTINGS_KEY, JSON.stringify(normalized));
+    return normalized;
+  }
+
+  function saveSiteSettings(nextSettings = {}) {
+    const current = readSiteSettings();
+    const merged = normalizeSiteSettings({ ...current, ...nextSettings });
+    localStorage.setItem(SITE_SETTINGS_KEY, JSON.stringify(merged));
+    return merged;
+  }
+
   function applyThemeToDocument(themeKey = DEFAULT_THEME) {
     const theme = resolveTheme(themeKey);
     const bg = theme.background || '#0b0c10';
@@ -397,6 +436,7 @@
 
   window.BlogData = {
     STORAGE_KEY,
+    SITE_SETTINGS_KEY,
     defaultPosts,
     readPosts,
     savePosts,
@@ -407,6 +447,8 @@
     resolveTheme,
     readSiteTheme,
     saveSiteTheme,
+    readSiteSettings,
+    saveSiteSettings,
     applyThemeToDocument,
     estimateReadMinutes,
     formatReadTime,
