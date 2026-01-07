@@ -55,6 +55,25 @@ button {
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
 }
 
+.form-message {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: color-mix(in srgb, var(--accent) 12%, var(--panel));
+  color: var(--fg);
+  font-weight: 600;
+}
+
+.form-message.success {
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+}
+
+.form-message.error {
+  border-color: color-mix(in srgb, #f87171 55%, var(--border));
+  background: color-mix(in srgb, #f87171 18%, var(--panel));
+}
+
 label {
   font-weight: 600;
   color: var(--fg);

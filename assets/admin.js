@@ -42,6 +42,7 @@
   const featuredCount = document.getElementById('featured-count');
   const siteTitleInput = document.getElementById('site-title');
   const footerDescriptionInput = document.getElementById('footer-description');
+  const resultMessage = document.getElementById('result-message');
   const siteTitleTargets = document.querySelectorAll('[data-site-title]');
   const footerDescriptionTargets = document.querySelectorAll('[data-footer-description]');
 
@@ -448,6 +449,21 @@
     updateReadTime();
   }
 
+  function showResultMessage(message, tone = 'success') {
+    if (!resultMessage) return;
+    resultMessage.textContent = message;
+    resultMessage.classList.remove('success', 'error');
+    resultMessage.classList.add(tone);
+    resultMessage.hidden = false;
+  }
+
+  function clearResultMessage() {
+    if (!resultMessage) return;
+    resultMessage.textContent = '';
+    resultMessage.classList.remove('success', 'error');
+    resultMessage.hidden = true;
+  }
+
   function startEdit(id) {
     const target = posts.find((post) => post.id === id);
     if (!target) {
@@ -455,6 +471,7 @@
     }
 
     editingId = id;
+    clearResultMessage();
     if (titleEl) titleEl.value = target.title;
     if (dateEl) dateEl.value = target.date;
     if (readEl) readEl.value = target.read;
@@ -563,7 +580,7 @@
     updatePreview();
 
     if (isEditMode && !editingId) {
-      alert('編集する記事を選択してください。');
+      showResultMessage('編集する記事を選択してください。', 'error');
       return;
     }
 
@@ -602,7 +619,7 @@
     const nextPosts = editingId ? posts.map((post) => (post.id === editingId ? preparedPost : post)) : [preparedPost, ...posts];
     persistPosts(nextPosts);
     renderPostList();
-    alert(editingId ? '変更を保存しました。' : '投稿を保存しました。トップページで確認できます。');
+    showResultMessage(editingId ? '変更を保存しました。' : '投稿を保存しました。トップページで確認できます。');
     resetForm();
   });
 
