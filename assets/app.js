@@ -1,10 +1,28 @@
-const { readPosts, escapeHtml, resolveTheme, readSiteTheme, saveSiteTheme, applyThemeToDocument, themes } = window.BlogData;
+const {
+  readPosts,
+  escapeHtml,
+  resolveTheme,
+  readSiteTheme,
+  saveSiteTheme,
+  readSiteSettings,
+  applyThemeToDocument,
+  themes,
+  SITE_SETTINGS_KEY,
+} = window.BlogData;
 let posts = readPosts();
 const track = document.getElementById('card-track');
 const buttons = document.querySelectorAll('[data-action]');
 const scrollList = document.getElementById('scroll-list');
+const listGrid = document.getElementById('list-grid');
 const tagMarquee = document.getElementById('tag-marquee');
 const siteThemePicker = document.getElementById('site-theme-picker');
+const heroSection = document.getElementById('hero-section');
+const heroKicker = document.getElementById('hero-kicker');
+const featuredSection = document.getElementById('featured');
+const digestSection = document.getElementById('digest-section');
+const listSection = document.getElementById('article-list');
+const heroListLink = document.getElementById('hero-list-link');
+const footerListLink = document.getElementById('footer-list-link');
 let siteThemeKey = readSiteTheme();
 let siteTheme = applyThemeToDocument(siteThemeKey);
 const sortedVisiblePosts = () =>
@@ -28,6 +46,20 @@ function applySiteTheme(themeKey) {
 }
 
 applySiteTheme(siteThemeKey);
+
+function applyHomeSettings() {
+  const settings = readSiteSettings();
+  if (heroKicker) {
+    heroKicker.textContent = settings.heroKicker;
+  }
+  if (heroSection) heroSection.hidden = !settings.showHero;
+  if (featuredSection) featuredSection.hidden = !settings.showFeatured;
+  if (digestSection) digestSection.hidden = !settings.showDigest;
+  if (listSection) listSection.hidden = !settings.showList;
+  [heroListLink, footerListLink].forEach((link) => {
+    if (link) link.hidden = !settings.showList;
+  });
+}
 
 const tagPalette = ['#6c63ff', '#4fc3f7', '#ffb347', '#ff6b6b', '#9b72ff', '#4ef2c7', '#f2c14e'];
 const lightbox = document.createElement('div');
@@ -135,6 +167,39 @@ function renderScrollList() {
     .join('');
 }
 
+function renderListGrid() {
+  if (!listGrid) return;
+  const items = sortedVisiblePosts();
+  if (!items.length) {
+    listGrid.innerHTML = '<p class="muted-text">表示できる記事がありません。</p>';
+    return;
+  }
+
+  listGrid.innerHTML = items
+    .map((post) => {
+      const theme = resolveTheme(post.theme || siteThemeKey);
+      const imagePos = post.imagePosition ?? 50;
+      const imageScale = post.imageScale ?? 1;
+      return `
+        <article class="gallery-card" style="--accent:${theme.accent};--accent-2:${theme.accent2};">
+          <a class="gallery-link" href="article.html?id=${encodeURIComponent(post.id)}">
+            ${
+              post.image
+                ? `<div class="gallery-thumb"><img src="${post.image}" alt="${escapeHtml(post.title)}の画像" style="object-position:center ${imagePos}%;--image-scale:${imageScale};" /></div>`
+                : '<div class="gallery-thumb placeholder"><span class="muted-text">画像未設定</span></div>'
+            }
+            <div class="gallery-body">
+              <p class="meta"><span>${escapeHtml(post.date)}</span><span>•</span><span>${escapeHtml(post.read)}</span></p>
+              <h3>${escapeHtml(post.title)}</h3>
+              <p class="muted-text">${escapeHtml(post.excerpt)}</p>
+            </div>
+          </a>
+        </article>
+      `;
+    })
+    .join('');
+}
+
 function scrollByAmount(direction) {
   if (!track) return;
   const cardWidth = track.firstElementChild?.getBoundingClientRect().width || 280;
@@ -197,6 +262,7 @@ function renderSiteThemePicker() {
     applySiteTheme(select.value);
     renderCards();
     renderScrollList();
+    renderListGrid();
   });
 }
 
@@ -205,18 +271,24 @@ function reloadPosts() {
   renderCards();
   renderScrollList();
   renderTags();
+  renderListGrid();
 }
 
 window.addEventListener('storage', (event) => {
   if (event.key === window.BlogData.STORAGE_KEY) {
     reloadPosts();
   }
+  if (event.key === SITE_SETTINGS_KEY) {
+    applyHomeSettings();
+  }
 });
 
+applyHomeSettings();
 renderCards();
 setupButtons();
 renderScrollList();
 renderTags();
+renderListGrid();
 setupLightbox();
 renderSiteThemePicker();
 syncThemePicker();

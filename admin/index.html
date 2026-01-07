@@ -127,6 +127,47 @@
     </section>
 
     <div class="nav-anchor" id="settings" aria-hidden="true"></div>
+    <section class="section">
+      <div class="inner">
+        <p class="kicker">トップページ設定</p>
+        <h2>表示エリアとキャッチコピー</h2>
+        <div class="info-grid">
+          <div class="info-card">
+            <div class="field">
+              <label for="hero-kicker-input">「最新を届けるブログ」の文字列</label>
+              <input id="hero-kicker-input" name="hero-kicker-input" type="text" placeholder="例）最新を届けるブログ" />
+              <p class="muted-text" style="margin-top: 6px;">トップのヒーローエリアに表示されます。</p>
+            </div>
+            <div class="field" style="margin-top: 16px;">
+              <label>表示切替</label>
+              <div class="manage-flags">
+                <label class="flag-toggle">
+                  <input type="checkbox" id="toggle-hero" />
+                  <span>最新を届けるブログを表示</span>
+                </label>
+                <label class="flag-toggle">
+                  <input type="checkbox" id="toggle-featured" />
+                  <span>注目の記事を表示</span>
+                </label>
+                <label class="flag-toggle">
+                  <input type="checkbox" id="toggle-digest" />
+                  <span>ダイジェストを表示</span>
+                </label>
+                <label class="flag-toggle">
+                  <input type="checkbox" id="toggle-list" />
+                  <span>記事一覧を表示</span>
+                </label>
+              </div>
+            </div>
+          </div>
+          <div class="info-card">
+            <p class="kicker">反映タイミング</p>
+            <h3>トップページに即時反映</h3>
+            <p class="muted-text">チェックの切替や文字列の変更は保存と同時にトップページに反映されます。</p>
+          </div>
+        </div>
+      </div>
+    </section>
     <section class="section muted">
       <div class="inner">
         <div class="section-header">
@@ -161,7 +202,18 @@
 
   <script src="../assets/data.js"></script>
   <script>
-    const { readPosts, savePosts, normalizePost, escapeHtml, readSiteTheme, resolveTheme, applyThemeToDocument, saveSiteTheme } = window.BlogData;
+    const {
+      readPosts,
+      savePosts,
+      normalizePost,
+      escapeHtml,
+      readSiteTheme,
+      resolveTheme,
+      applyThemeToDocument,
+      saveSiteTheme,
+      readSiteSettings,
+      saveSiteSettings,
+    } = window.BlogData;
     const { themes, estimateReadMinutes, formatReadTime, normalizeFocus, normalizeScale } = window.BlogData;
 
     const form = document.getElementById('post-form');
@@ -180,6 +232,11 @@
     const themeOptionsEl = document.getElementById('theme-options');
     const currentThemeLabel = document.getElementById('current-theme-label');
     const currentThemePill = document.getElementById('current-theme-pill');
+    const heroKickerInput = document.getElementById('hero-kicker-input');
+    const toggleHero = document.getElementById('toggle-hero');
+    const toggleFeatured = document.getElementById('toggle-featured');
+    const toggleDigest = document.getElementById('toggle-digest');
+    const toggleList = document.getElementById('toggle-list');
 
     const previewTitle = document.getElementById('preview-title');
     const previewDate = document.getElementById('preview-date');
@@ -297,6 +354,27 @@
     }
 
     removeLongVacationButtons();
+
+    function syncHomeSettingsForm() {
+      const settings = readSiteSettings();
+      if (heroKickerInput) {
+        heroKickerInput.value = settings.heroKicker;
+      }
+      if (toggleHero) toggleHero.checked = settings.showHero;
+      if (toggleFeatured) toggleFeatured.checked = settings.showFeatured;
+      if (toggleDigest) toggleDigest.checked = settings.showDigest;
+      if (toggleList) toggleList.checked = settings.showList;
+    }
+
+    function persistHomeSettings() {
+      saveSiteSettings({
+        heroKicker: heroKickerInput?.value,
+        showHero: toggleHero?.checked,
+        showFeatured: toggleFeatured?.checked,
+        showDigest: toggleDigest?.checked,
+        showList: toggleList?.checked,
+      });
+    }
 
     function persistPosts(nextPosts) {
       const ordered = nextPosts.map((post, index) => ({ ...post, order: index }));
@@ -644,6 +722,14 @@
 
     cancelEditButton.addEventListener('click', resetForm);
 
+    if (heroKickerInput) {
+      heroKickerInput.addEventListener('input', persistHomeSettings);
+    }
+    [toggleHero, toggleFeatured, toggleDigest, toggleList].forEach((toggle) => {
+      if (!toggle) return;
+      toggle.addEventListener('change', persistHomeSettings);
+    });
+
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       updateReadTime();
@@ -695,6 +781,7 @@
     applyArticleTheme(selectedTheme.key);
     updateReadTime();
     updatePreview();
+    syncHomeSettingsForm();
   </script>
 </body>
 </html>
