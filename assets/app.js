@@ -175,7 +175,33 @@ function renderListGrid() {
     return;
   }
 
-  listGrid.innerHTML = items
+  const latestItems = items.slice(0, 2);
+  const remainingItems = items.slice(2);
+
+  const digestMarkup = latestItems
+    .map(
+      (post) => `
+        <article class="scroll-card" style="${themeStyle(post)}">
+          <div class="scroll-thumb ${post.image ? '' : 'placeholder'}" style="--image-pos:${post.imagePosition ?? 50}%;--focus-start:${post.imageFocus?.start ?? 0}%;--focus-end:${post.imageFocus?.end ?? 100}%;--image-scale:${post.imageScale ?? 1};">
+            ${
+              post.image
+                ? `<div class="focus-range" aria-hidden="true"></div><img src="${post.image}" alt="${escapeHtml(post.title)}の画像" />`
+                : '<div class="focus-range" aria-hidden="true"></div><span class="muted-text">画像未設定</span>'
+            }
+          </div>
+          <div class="scroll-body">
+            <p class="meta"><span>${escapeHtml(post.date)}</span><span>•</span><span>${escapeHtml(post.read)}</span></p>
+            <h3>${escapeHtml(post.title)}</h3>
+            <p class="muted-text">${escapeHtml(post.excerpt)}</p>
+            <div class="tag-row">${(post.tags || []).map((tag) => `<span class="chip">#${escapeHtml(tag)}</span>`).join('')}</div>
+          </div>
+          <a class="stretched-link" href="article.html?id=${encodeURIComponent(post.id)}" aria-label="${escapeHtml(post.title)}を読む"></a>
+        </article>
+      `
+    )
+    .join('');
+
+  const gridMarkup = remainingItems
     .map((post) => {
       const theme = resolveTheme(post.theme || siteThemeKey);
       const imagePos = post.imagePosition ?? 50;
@@ -198,6 +224,11 @@ function renderListGrid() {
       `;
     })
     .join('');
+
+  listGrid.innerHTML = `
+    ${latestItems.length ? `<div class="scroll-list">${digestMarkup}</div>` : ''}
+    ${remainingItems.length ? `<div class="gallery-grid three-column">${gridMarkup}</div>` : ''}
+  `;
 }
 
 function scrollByAmount(direction) {

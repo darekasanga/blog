@@ -333,6 +333,19 @@ h2 {
   gap: 12px;
 }
 
+.gallery-grid.three-column {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.article-list {
+  display: grid;
+  gap: 24px;
+}
+
+.article-list .scroll-list {
+  margin: 0;
+}
+
 .gallery-card {
   position: relative;
   border: 1px solid var(--border);
@@ -553,6 +566,18 @@ h2 {
 
 @media (max-width: 900px) {
   .scroll-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 960px) {
+  .gallery-grid.three-column {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .gallery-grid.three-column {
     grid-template-columns: 1fr;
   }
 }
