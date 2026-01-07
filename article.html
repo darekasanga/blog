@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true"></div>
         <div>
           <p class="brand-kicker">BLOG</p>
-          <p class="brand-title">EMPEROR.NEWS</p>
+          <p class="brand-title" data-site-title>EMPEROR.NEWS</p>
         </div>
       </div>
       <div class="header-actions">
@@ -74,8 +74,8 @@
   <footer class="site-footer">
     <div class="inner footer-grid">
       <div>
-        <p class="brand-title">EMPEROR.NEWS</p>
-        <p class="muted-text">記事へのフィードバックをお待ちしています。</p>
+        <p class="brand-title" data-site-title>EMPEROR.NEWS</p>
+        <p class="muted-text" data-footer-description>記事へのフィードバックをお待ちしています。</p>
       </div>
       <div class="footer-actions">
         <a class="btn ghost" href="index.html">トップへ</a>
@@ -85,7 +85,16 @@
   </footer>
   <script src="assets/data.js"></script>
   <script>
-    const { readPosts, resolveTheme, readSiteTheme, saveSiteTheme, applyThemeToDocument, themes } = window.BlogData;
+    const {
+      readPosts,
+      resolveTheme,
+      readSiteTheme,
+      saveSiteTheme,
+      applyThemeToDocument,
+      readSiteSettings,
+      themes,
+      SITE_SETTINGS_KEY,
+    } = window.BlogData;
     const params = new URLSearchParams(window.location.search);
     const postId = params.get('id');
 
@@ -101,6 +110,8 @@
     const siteThemePicker = document.getElementById('site-theme-picker');
     const articleCard = document.getElementById('article');
     const commentAuthor = loadCommentAuthorProfile();
+    const siteTitleTargets = document.querySelectorAll('[data-site-title]');
+    const footerDescriptionTargets = document.querySelectorAll('[data-footer-description]');
 
     const posts = readPosts();
     let siteThemeKey = readSiteTheme();
@@ -136,6 +147,16 @@
     }
 
     applySiteTheme(siteThemeKey);
+    function applySiteText() {
+      const settings = readSiteSettings();
+      siteTitleTargets.forEach((el) => {
+        el.textContent = settings.siteTitle;
+      });
+      footerDescriptionTargets.forEach((el) => {
+        el.textContent = settings.footerDescription;
+      });
+    }
+    applySiteText();
     const post = posts.find((item) => item.id === postId);
     const lightbox = document.createElement('div');
     lightbox.className = 'lightbox hidden';
@@ -399,6 +420,12 @@
     renderArticle();
     renderSiteThemePicker();
     syncThemePicker();
+
+    window.addEventListener('storage', (event) => {
+      if (event.key === SITE_SETTINGS_KEY) {
+        applySiteText();
+      }
+    });
 
     if (post) {
       const initialComments = loadComments(post.id);

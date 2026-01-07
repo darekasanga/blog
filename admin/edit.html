@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true"></div>
         <div>
           <p class="brand-kicker">BLOG</p>
-          <p class="brand-title">EMPEROR.NEWS</p>
+          <p class="brand-title" data-site-title>EMPEROR.NEWS</p>
         </div>
       </div>
       <nav class="nav-links" aria-label="メインナビゲーション">
@@ -52,6 +52,13 @@
             <p class="kicker">反映タイミング</p>
             <h3>トップページに即時反映</h3>
             <p class="muted-text">チェックの切替は保存と同時にトップページに反映されます。</p>
+          </div>
+          <div class="info-card">
+            <label for="site-title">ブログ名</label>
+            <input id="site-title" type="text" placeholder="例）EMPEROR.NEWS" />
+            <label for="footer-description" style="margin-top: 12px;">フッターの説明</label>
+            <textarea id="footer-description" rows="3" placeholder="フッターに表示する説明文を入力"></textarea>
+            <p class="muted-text" style="margin: 6px 0 0;">サイト全体のヘッダー/フッターに反映されます。</p>
           </div>
         </div>
       </div>
@@ -177,8 +184,8 @@
   <footer class="site-footer">
     <div class="inner footer-grid">
       <div>
-        <p class="brand-title">EMPEROR.NEWS</p>
-        <p class="muted-text">投稿の編集はこのページから行えます。</p>
+        <p class="brand-title" data-site-title>EMPEROR.NEWS</p>
+        <p class="muted-text" data-footer-description>シンプルで統一感のあるブログ体験を届けます。</p>
       </div>
       <div class="footer-actions">
         <a class="btn ghost" href="../index.html">トップへ</a>
