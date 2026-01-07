@@ -12,12 +12,14 @@ const sortedVisiblePosts = () =>
 const featuredPosts = () => {
   const visible = sortedVisiblePosts();
   const featured = visible.filter((post) => post.isFeatured);
-  return featured.length ? featured : visible;
+  const pool = featured.length ? featured : visible;
+  return pool.slice(0, 1);
 };
 const digestPosts = () => {
   const visible = sortedVisiblePosts();
   const digest = visible.filter((post) => post.isDigest);
-  return digest.length ? digest : visible;
+  const pool = digest.length ? digest : visible;
+  return pool.slice(0, 2);
 };
 
 function applySiteTheme(themeKey) {

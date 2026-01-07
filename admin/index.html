@@ -206,6 +206,17 @@
     let siteTheme = applyThemeToDocument(siteThemeKey);
     let selectedTheme = resolveTheme(siteThemeKey);
 
+    function enforceSelectionLimits(list = []) {
+      const ordered = [...list].sort((a, b) => (a.order || 0) - (b.order || 0));
+      const featuredTarget = ordered.find((post) => post.isFeatured)?.id;
+      const digestTargets = ordered.filter((post) => post.isDigest).map((post) => post.id).slice(0, 2);
+      return ordered.map((post) => ({
+        ...post,
+        isFeatured: featuredTarget ? post.id === featuredTarget : false,
+        isDigest: digestTargets.includes(post.id),
+      }));
+    }
+
     function syncThemeOptions() {
       themeOptionsEl.querySelectorAll('.theme-option').forEach((option) => {
         const isActive = option.dataset.theme === selectedTheme.key;
@@ -288,9 +299,12 @@
     removeLongVacationButtons();
 
     function persistPosts(nextPosts) {
-      posts = nextPosts.map((post, index) => ({ ...post, order: index }));
+      const limited = enforceSelectionLimits(nextPosts);
+      posts = limited.map((post, index) => ({ ...post, order: index }));
       savePosts(posts);
     }
+
+    persistPosts(posts);
 
     function movePost(id, offset) {
       const index = posts.findIndex((post) => post.id === id);
@@ -315,7 +329,30 @@
     }
 
     function updatePostFlag(id, key, value) {
-      const updated = posts.map((post) => (post.id === id ? { ...post, [key]: value } : post));
+      let updated = posts;
+
+      if (key === 'isFeatured') {
+        if (value) {
+          updated = posts.map((post) => ({ ...post, isFeatured: post.id === id }));
+        } else {
+          updated = posts.map((post) => (post.id === id ? { ...post, isFeatured: false } : post));
+        }
+      } else if (key === 'isDigest') {
+        if (value) {
+          const target = posts.find((post) => post.id === id);
+          const digestCandidates = [target, ...posts.filter((post) => post.isDigest && post.id !== id)]
+            .filter(Boolean)
+            .sort((a, b) => (a.order || 0) - (b.order || 0))
+            .slice(0, 2)
+            .map((post) => post.id);
+          updated = posts.map((post) => ({ ...post, isDigest: digestCandidates.includes(post.id) }));
+        } else {
+          updated = posts.map((post) => (post.id === id ? { ...post, isDigest: false } : post));
+        }
+      } else {
+        updated = posts.map((post) => (post.id === id ? { ...post, [key]: value } : post));
+      }
+
       persistPosts(updated);
       renderPostList();
     }
