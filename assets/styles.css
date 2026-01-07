@@ -780,6 +780,7 @@ h2 {
   flex-wrap: wrap;
   gap: 8px;
   justify-content: flex-end;
+  grid-column: 1 / -1;
 }
 
 .manage-flags {
