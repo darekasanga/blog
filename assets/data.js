@@ -124,18 +124,15 @@
     heroKicker: '最新を届けるブログ',
     showHero: true,
     showFeatured: true,
-    showDigest: true,
     showList: true,
   };
 
-  function clampFeaturedAndDigest(list = []) {
+  function clampFeatured(list = []) {
     const ordered = [...list].sort((a, b) => (a.order || 0) - (b.order || 0));
     const featuredId = ordered.find((post) => post.isFeatured)?.id;
-    const digestIds = ordered.filter((post) => post.isDigest).map((post) => post.id).slice(0, 2);
     return ordered.map((post) => ({
       ...post,
       isFeatured: featuredId ? post.id === featuredId : false,
-      isDigest: digestIds.includes(post.id),
     }));
   }
 
@@ -190,7 +187,6 @@
       imageFocus: DEFAULT_FOCUS,
       theme: 'violet-ice',
       isFeatured: true,
-      isDigest: true,
       hidden: false,
       order: 0,
     },
@@ -207,7 +203,6 @@
       imageFocus: { start: 16, end: 84 },
       theme: 'sunset',
       isFeatured: false,
-      isDigest: true,
       hidden: false,
       order: 1,
     },
@@ -224,7 +219,6 @@
       imageFocus: { start: 24, end: 88 },
       theme: 'forest',
       isFeatured: false,
-      isDigest: false,
       hidden: false,
       order: 2,
     },
@@ -241,7 +235,6 @@
       imageFocus: { start: 12, end: 82 },
       theme: 'amber-night',
       isFeatured: false,
-      isDigest: false,
       hidden: false,
       order: 3,
     },
@@ -258,7 +251,6 @@
       imageFocus: { start: 18, end: 86 },
       theme: 'aqua',
       isFeatured: false,
-      isDigest: false,
       hidden: false,
       order: 4,
     },
@@ -288,7 +280,6 @@
       showHero: typeof settings.showHero === 'boolean' ? settings.showHero : DEFAULT_SITE_SETTINGS.showHero,
       showFeatured:
         typeof settings.showFeatured === 'boolean' ? settings.showFeatured : DEFAULT_SITE_SETTINGS.showFeatured,
-      showDigest: typeof settings.showDigest === 'boolean' ? settings.showDigest : DEFAULT_SITE_SETTINGS.showDigest,
       showList: typeof settings.showList === 'boolean' ? settings.showList : DEFAULT_SITE_SETTINGS.showList,
     };
   }
@@ -376,7 +367,6 @@
     const imageScale = normalizeScale(post.imageScale);
     const theme = resolveTheme(post.theme || readSiteTheme() || DEFAULT_THEME).key;
     const isFeatured = post.isFeatured !== false;
-    const isDigest = post.isDigest !== false;
     const hidden = post.hidden === true;
     const order = Number.isFinite(Number(post.order)) ? Number(post.order) : index;
     return {
@@ -393,7 +383,6 @@
       imageScale,
       theme,
       isFeatured,
-      isDigest,
       hidden,
       order,
     };
@@ -414,13 +403,13 @@
     }
 
     if (!Array.isArray(stored) || stored.length === 0) {
-      const normalizedDefaults = clampFeaturedAndDigest(defaultPosts.map((post, index) => normalizePost(post, index)));
+      const normalizedDefaults = clampFeatured(defaultPosts.map((post, index) => normalizePost(post, index)));
       savePosts(normalizedDefaults);
       return normalizedDefaults;
     }
 
     const normalized = stored.map((post, index) => normalizePost(post, index)).sort((a, b) => (a.order || 0) - (b.order || 0));
-    const clamped = clampFeaturedAndDigest(normalized);
+    const clamped = clampFeatured(normalized);
     savePosts(clamped);
     return clamped;
   }
