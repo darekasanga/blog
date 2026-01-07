@@ -381,11 +381,31 @@
     return summary;
   }
 
+  function normalizeSummaryHistory(history = [], summary = '') {
+    const normalizedHistory = Array.isArray(history)
+      ? history
+          .filter((item) => item && typeof item.text === 'string')
+          .map((item) => ({
+            text: String(item.text || '').trim(),
+            createdAt: item.createdAt || new Date().toISOString(),
+          }))
+          .filter((item) => item.text.length > 0)
+      : [];
+    const trimmedSummary = String(summary || '').trim();
+    if (!trimmedSummary) return normalizedHistory;
+    const lastEntry = normalizedHistory[normalizedHistory.length - 1];
+    if (!lastEntry || lastEntry.text !== trimmedSummary) {
+      normalizedHistory.push({ text: trimmedSummary, createdAt: new Date().toISOString() });
+    }
+    return normalizedHistory;
+  }
+
   function normalizePost(post = {}, index = 0) {
     const id = post.id || `post-${Date.now()}-${index}`;
     const date = post.date || new Date().toISOString().slice(0, 10);
     const content = post.content || post.excerpt || '本文がまだ登録されていません。';
     const excerpt = summarizeContent(content);
+    const summaryHistory = normalizeSummaryHistory(post.summaryHistory, excerpt);
     const textForRead = `${content}\n${post.title || ''}`;
     const read = post.read || formatReadTime(estimateReadMinutes(textForRead));
     const imageFocus = normalizeFocus(post.imageFocus, post.imagePosition);
@@ -402,6 +422,7 @@
       date,
       read,
       excerpt,
+      summaryHistory,
       content,
       image: post.image || '',
       tags: normalizeTags(post.tags),
@@ -470,5 +491,6 @@
     normalizeFocus,
     normalizeScale,
     summarizeContent,
+    normalizeSummaryHistory,
   };
 })();
