@@ -101,12 +101,20 @@ function updateHeroContent() {
     if (heroKicker) heroKicker.textContent = '最新記事';
     if (heroTitle) heroTitle.textContent = 'まだ記事がありません';
     if (heroLead) heroLead.textContent = '管理ページから最初の記事を登録してください。';
+    if (heroListLink) {
+      heroListLink.href = '#article-list';
+      heroListLink.setAttribute('aria-disabled', 'true');
+    }
     return;
   }
 
   if (heroKicker) heroKicker.textContent = `最新記事 ${latest.date}`;
   if (heroTitle) heroTitle.textContent = latest.title;
   if (heroLead) heroLead.textContent = latest.excerpt || '最新記事の概要がまだありません。';
+  if (heroListLink) {
+    heroListLink.href = `article.html?id=${encodeURIComponent(latest.id)}`;
+    heroListLink.removeAttribute('aria-disabled');
+  }
 }
 
 
