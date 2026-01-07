@@ -115,30 +115,6 @@
               <label for="content">本文</label>
               <textarea id="content" name="content" rows="6" placeholder="本文を入力。改行も反映されます。" required></textarea>
             </div>
-            <div class="form-actions">
-              <button class="btn primary" type="submit" id="submit-button">変更を保存</button>
-              <button class="btn ghost" type="button" id="cancel-edit" aria-live="polite" hidden>編集をやめる</button>
-              <a class="btn ghost" href="index.html">記事投稿へ</a>
-            </div>
-          </form>
-
-          <div class="info-card">
-            <p class="kicker">プレビュー</p>
-            <article class="card" id="preview-card">
-              <div class="card-thumb placeholder" id="preview-thumb" aria-hidden="true" style="--focus-start:20%;--focus-end:80%;">
-                <div class="focus-range" aria-hidden="true"></div>
-              </div>
-              <div class="meta">
-                <span id="preview-date">2024-05-28</span>
-                <span>•</span>
-                <span id="preview-read">5 min</span>
-              </div>
-              <h3 id="preview-title">デザインシステムで統一感を作る</h3>
-              <p id="preview-excerpt">色・余白・コンポーネントを揃え、プロダクト全体の体験を向上させる方法をまとめました。</p>
-              <div class="actions">
-                <button class="btn primary full" type="button">記事を読む</button>
-              </div>
-            </article>
             <div class="field">
               <label for="image">記事画像</label>
               <input id="image" name="image" type="file" accept="image/*" />
@@ -168,6 +144,30 @@
               <p class="muted-text" style="margin: 0;">この記事だけに適用されるカラーを選択できます。</p>
               <div class="theme-grid" id="theme-options"></div>
             </div>
+            <div class="form-actions">
+              <button class="btn primary" type="submit" id="submit-button">変更を保存</button>
+              <button class="btn ghost" type="button" id="cancel-edit" aria-live="polite" hidden>編集をやめる</button>
+              <a class="btn ghost" href="index.html">記事投稿へ</a>
+            </div>
+          </form>
+
+          <div class="info-card">
+            <p class="kicker">プレビュー</p>
+            <article class="card" id="preview-card">
+              <div class="card-thumb placeholder" id="preview-thumb" aria-hidden="true" style="--focus-start:20%;--focus-end:80%;">
+                <div class="focus-range" aria-hidden="true"></div>
+              </div>
+              <div class="meta">
+                <span id="preview-date">2024-05-28</span>
+                <span>•</span>
+                <span id="preview-read">5 min</span>
+              </div>
+              <h3 id="preview-title">デザインシステムで統一感を作る</h3>
+              <p id="preview-excerpt">色・余白・コンポーネントを揃え、プロダクト全体の体験を向上させる方法をまとめました。</p>
+              <div class="actions">
+                <button class="btn primary full" type="button">記事を読む</button>
+              </div>
+            </article>
           </div>
         </div>
       </div>
