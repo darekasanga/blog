@@ -20,6 +20,8 @@ const featuredSection = document.getElementById('featured');
 const listSection = document.getElementById('article-list');
 const heroListLink = document.getElementById('hero-list-link');
 const footerListLink = document.getElementById('footer-list-link');
+const heroTitle = document.getElementById('hero-title');
+const heroLead = document.getElementById('hero-lead');
 let siteThemeKey = readSiteTheme();
 let siteTheme = applyThemeToDocument(siteThemeKey);
 const sortedVisiblePosts = () =>
@@ -40,14 +42,11 @@ applySiteTheme(siteThemeKey);
 
 function applyHomeSettings() {
   const settings = readSiteSettings();
-  if (heroKicker) {
-    heroKicker.textContent = settings.heroKicker;
-  }
   if (heroSection) heroSection.hidden = !settings.showHero;
   if (featuredSection) featuredSection.hidden = !settings.showFeatured;
-  if (listSection) listSection.hidden = !settings.showList;
+  if (listSection) listSection.hidden = false;
   [heroListLink, footerListLink].forEach((link) => {
-    if (link) link.hidden = !settings.showList;
+    if (link) link.hidden = false;
   });
 }
 
@@ -94,6 +93,20 @@ function renderCards() {
       `
     )
     .join('');
+}
+
+function updateHeroContent() {
+  const latest = sortedVisiblePosts()[0];
+  if (!latest) {
+    if (heroKicker) heroKicker.textContent = '最新記事';
+    if (heroTitle) heroTitle.textContent = 'まだ記事がありません';
+    if (heroLead) heroLead.textContent = '管理ページから最初の記事を登録してください。';
+    return;
+  }
+
+  if (heroKicker) heroKicker.textContent = `最新記事 ${latest.date}`;
+  if (heroTitle) heroTitle.textContent = latest.title;
+  if (heroLead) heroLead.textContent = latest.excerpt || '最新記事の概要がまだありません。';
 }
 
 
@@ -228,6 +241,7 @@ function renderSiteThemePicker() {
 
 function reloadPosts() {
   posts = readPosts();
+  updateHeroContent();
   renderCards();
   renderListGrid();
 }
@@ -242,6 +256,7 @@ window.addEventListener('storage', (event) => {
 });
 
 applyHomeSettings();
+updateHeroContent();
 renderCards();
 setupButtons();
 renderListGrid();

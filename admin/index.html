@@ -130,36 +130,25 @@
     <section class="section">
       <div class="inner">
         <p class="kicker">トップページ設定</p>
-        <h2>表示エリアとキャッチコピー</h2>
+        <h2>表示エリアの切り替え</h2>
         <div class="info-grid">
           <div class="info-card">
-            <div class="field">
-              <label for="hero-kicker-input">「最新を届けるブログ」の文字列</label>
-              <input id="hero-kicker-input" name="hero-kicker-input" type="text" placeholder="例）最新を届けるブログ" />
-              <p class="muted-text" style="margin-top: 6px;">トップのヒーローエリアに表示されます。</p>
-            </div>
-            <div class="field" style="margin-top: 16px;">
-              <label>表示切替</label>
-              <div class="manage-flags">
-                <label class="flag-toggle">
-                  <input type="checkbox" id="toggle-hero" />
-                  <span>最新を届けるブログを表示</span>
-                </label>
-                <label class="flag-toggle">
-                  <input type="checkbox" id="toggle-featured" />
-                  <span>注目の記事を表示</span>
-                </label>
-                <label class="flag-toggle">
-                  <input type="checkbox" id="toggle-list" />
-                  <span>記事一覧を表示</span>
-                </label>
-              </div>
+            <label>表示切替</label>
+            <div class="manage-flags" style="margin-top: 8px;">
+              <label class="flag-toggle">
+                <input type="checkbox" id="toggle-hero" />
+                <span>最新を届けるブログを表示</span>
+              </label>
+              <label class="flag-toggle">
+                <input type="checkbox" id="toggle-featured" />
+                <span>注目の記事を表示</span>
+              </label>
             </div>
           </div>
           <div class="info-card">
             <p class="kicker">反映タイミング</p>
             <h3>トップページに即時反映</h3>
-            <p class="muted-text">チェックの切替や文字列の変更は保存と同時にトップページに反映されます。</p>
+            <p class="muted-text">チェックの切替は保存と同時にトップページに反映されます。</p>
           </div>
         </div>
       </div>
@@ -228,10 +217,8 @@
     const themeOptionsEl = document.getElementById('theme-options');
     const currentThemeLabel = document.getElementById('current-theme-label');
     const currentThemePill = document.getElementById('current-theme-pill');
-    const heroKickerInput = document.getElementById('hero-kicker-input');
     const toggleHero = document.getElementById('toggle-hero');
     const toggleFeatured = document.getElementById('toggle-featured');
-    const toggleList = document.getElementById('toggle-list');
 
     const previewTitle = document.getElementById('preview-title');
     const previewDate = document.getElementById('preview-date');
@@ -350,20 +337,14 @@
 
     function syncHomeSettingsForm() {
       const settings = readSiteSettings();
-      if (heroKickerInput) {
-        heroKickerInput.value = settings.heroKicker;
-      }
       if (toggleHero) toggleHero.checked = settings.showHero;
       if (toggleFeatured) toggleFeatured.checked = settings.showFeatured;
-      if (toggleList) toggleList.checked = settings.showList;
     }
 
     function persistHomeSettings() {
       saveSiteSettings({
-        heroKicker: heroKickerInput?.value,
         showHero: toggleHero?.checked,
         showFeatured: toggleFeatured?.checked,
-        showList: toggleList?.checked,
       });
     }
 
@@ -696,10 +677,7 @@
 
     cancelEditButton.addEventListener('click', resetForm);
 
-    if (heroKickerInput) {
-      heroKickerInput.addEventListener('input', persistHomeSettings);
-    }
-    [toggleHero, toggleFeatured, toggleList].forEach((toggle) => {
+    [toggleHero, toggleFeatured].forEach((toggle) => {
       if (!toggle) return;
       toggle.addEventListener('change', persistHomeSettings);
     });
