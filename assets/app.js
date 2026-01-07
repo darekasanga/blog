@@ -30,7 +30,7 @@ const featuredPosts = () => {
   const visible = sortedVisiblePosts();
   const featured = visible.filter((post) => post.isFeatured);
   const pool = featured.length ? featured : visible;
-  return pool.slice(0, 1);
+  return pool.slice(0, 30);
 };
 
 function applySiteTheme(themeKey) {
@@ -131,9 +131,10 @@ function renderListGrid() {
       const theme = resolveTheme(post.theme || siteThemeKey);
       const imagePos = post.imagePosition ?? 50;
       const imageScale = post.imageScale ?? 1;
+      const articleLink = `article.html?id=${encodeURIComponent(post.id)}`;
       return `
         <article class="gallery-card" style="--accent:${theme.accent};--accent-2:${theme.accent2};">
-          <a class="gallery-link" href="article.html?id=${encodeURIComponent(post.id)}">
+          <a class="gallery-link" href="${articleLink}">
             ${
               post.image
                 ? `<div class="gallery-thumb"><img src="${post.image}" alt="${escapeHtml(post.title)}の画像" style="object-position:center ${imagePos}%;--image-scale:${imageScale};" /></div>`
@@ -145,6 +146,9 @@ function renderListGrid() {
               <p class="muted-text">${escapeHtml(post.excerpt)}</p>
             </div>
           </a>
+          <div class="gallery-actions">
+            <a class="btn primary full" href="${articleLink}">記事を読む</a>
+          </div>
         </article>
       `;
     })
