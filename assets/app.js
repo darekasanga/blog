@@ -26,11 +26,17 @@ let siteThemeKey = readSiteTheme();
 let siteTheme = applyThemeToDocument(siteThemeKey);
 const sortedVisiblePosts = () =>
   [...posts].filter((post) => !post.hidden).sort((a, b) => (a.order || 0) - (b.order || 0));
+const latestVisiblePost = () =>
+  [...posts]
+    .filter((post) => !post.hidden)
+    .sort((a, b) => {
+      const aTime = new Date(a.date || 0).getTime();
+      const bTime = new Date(b.date || 0).getTime();
+      return bTime - aTime;
+    })[0];
 const featuredPosts = () => {
   const visible = sortedVisiblePosts();
-  const featured = visible.filter((post) => post.isFeatured);
-  const pool = featured.length ? featured : visible;
-  return pool.slice(0, 30);
+  return visible.filter((post) => post.isFeatured).slice(0, 30);
 };
 
 function applySiteTheme(themeKey) {
@@ -96,7 +102,7 @@ function renderCards() {
 }
 
 function updateHeroContent() {
-  const latest = sortedVisiblePosts()[0];
+  const latest = latestVisiblePost();
   if (!latest) {
     if (heroKicker) heroKicker.textContent = '最新記事';
     if (heroTitle) heroTitle.textContent = 'まだ記事がありません';

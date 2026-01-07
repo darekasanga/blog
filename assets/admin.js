@@ -38,8 +38,8 @@
   const currentThemePill = document.getElementById('current-theme-pill');
   const toggleHero = document.getElementById('toggle-hero');
   const toggleFeatured = document.getElementById('toggle-featured');
-  const featuredSelect = document.getElementById('featured-select');
   const editHint = document.getElementById('edit-hint');
+  const featuredCount = document.getElementById('featured-count');
 
   const previewTitle = document.getElementById('preview-title');
   const previewDate = document.getElementById('preview-date');
@@ -70,15 +70,6 @@
   let siteThemeKey = readSiteTheme();
   let siteTheme = applyThemeToDocument(siteThemeKey);
   let selectedTheme = resolveTheme(siteThemeKey);
-
-  function enforceSelectionLimits(list = []) {
-    const ordered = [...list].sort((a, b) => (a.order || 0) - (b.order || 0));
-    const featuredTarget = ordered.find((post) => post.isFeatured)?.id;
-    return ordered.map((post) => ({
-      ...post,
-      isFeatured: featuredTarget ? post.id === featuredTarget : false,
-    }));
-  }
 
   function syncThemeOptions() {
     if (!themeOptionsEl) return;
@@ -182,8 +173,7 @@
 
   function persistPosts(nextPosts) {
     const ordered = nextPosts.map((post, index) => ({ ...post, order: index }));
-    const limited = enforceSelectionLimits(ordered);
-    posts = limited.map((post, index) => ({ ...post, order: index }));
+    posts = ordered.map((post, index) => ({ ...post, order: index }));
     savePosts(posts);
   }
 
@@ -212,18 +202,16 @@
   }
 
   function updatePostFlag(id, key, value) {
-    let updated = posts;
-
-    if (key === 'isFeatured') {
-      if (value) {
-        updated = posts.map((post) => ({ ...post, isFeatured: post.id === id }));
-      } else {
-        updated = posts.map((post) => (post.id === id ? { ...post, isFeatured: false } : post));
+    if (key === 'isFeatured' && value) {
+      const featuredCount = posts.filter((post) => post.isFeatured).length;
+      if (featuredCount >= 30) {
+        alert('注目の記事は最大30件までです。');
+        renderPostList();
+        return;
       }
-    } else {
-      updated = posts.map((post) => (post.id === id ? { ...post, [key]: value } : post));
     }
 
+    const updated = posts.map((post) => (post.id === id ? { ...post, [key]: value } : post));
     persistPosts(updated);
     renderPostList();
   }
@@ -296,7 +284,9 @@
     if (!posts.length) {
       postCount.textContent = 'まだ投稿がありません。';
       postList.innerHTML = '<p class="muted-text">投稿を追加するとここに表示されます。</p>';
-      renderFeaturedSelector();
+      if (featuredCount) {
+        featuredCount.textContent = '注目の記事: 0件 / 30件';
+      }
       return;
     }
 
@@ -403,37 +393,10 @@
       });
     });
 
-    renderFeaturedSelector();
-  }
-
-  function featuredCandidatePosts() {
-    const visible = posts.filter((post) => !post.hidden);
-    return visible.length ? visible : posts;
-  }
-
-  function renderFeaturedSelector() {
-    if (!featuredSelect) return;
-    const options = featuredCandidatePosts();
-    const currentFeatured = options.find((post) => post.isFeatured) || posts.find((post) => post.isFeatured);
-    featuredSelect.innerHTML = `
-      <option value="">選択なし</option>
-      ${options
-        .map(
-          (post) =>
-            `<option value="${escapeHtml(post.id)}">${escapeHtml(post.title)}（${escapeHtml(post.date)}）</option>`
-        )
-        .join('')}
-    `;
-    featuredSelect.value = currentFeatured ? currentFeatured.id : '';
-  }
-
-  function setFeaturedPost(id) {
-    const next = posts.map((post) => ({
-      ...post,
-      isFeatured: id ? post.id === id : false,
-    }));
-    persistPosts(next);
-    renderPostList();
+    if (featuredCount) {
+      const count = posts.filter((post) => post.isFeatured).length;
+      featuredCount.textContent = `注目の記事: ${count}件 / 30件`;
+    }
   }
 
   function resetForm() {
@@ -563,12 +526,6 @@
   [toggleHero, toggleFeatured].filter(Boolean).forEach((toggle) => {
     toggle.addEventListener('change', persistHomeSettings);
   });
-
-  if (featuredSelect) {
-    featuredSelect.addEventListener('change', () => {
-      setFeaturedPost(featuredSelect.value);
-    });
-  }
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();

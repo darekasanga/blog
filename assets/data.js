@@ -5,6 +5,18 @@
 
   const themePresets = [
     {
+      key: 'daylight',
+      name: 'デイライト',
+      accent: '#2563eb',
+      accent2: '#38bdf8',
+      background: '#f5f7fb',
+      surface: '#ffffff',
+      panel: '#eef2ff',
+      border: '#d6dbe6',
+      muted: '#475569',
+      foreground: '#111827',
+    },
+    {
       key: 'violet-ice',
       name: 'バイオレット',
       accent: '#8b5cf6',
@@ -116,7 +128,7 @@
     },
   ];
 
-  const DEFAULT_THEME = themePresets[0].key;
+  const DEFAULT_THEME = 'violet-ice';
   const DEFAULT_FOCUS = { start: 20, end: 80 };
   const DEFAULT_SCALE = 1;
   const CHARS_PER_MINUTE = 500;
@@ -124,15 +136,6 @@
     showHero: true,
     showFeatured: true,
   };
-
-  function clampFeatured(list = []) {
-    const ordered = [...list].sort((a, b) => (a.order || 0) - (b.order || 0));
-    const featuredId = ordered.find((post) => post.isFeatured)?.id;
-    return ordered.map((post) => ({
-      ...post,
-      isFeatured: featuredId ? post.id === featuredId : false,
-    }));
-  }
 
   function hexToRgb(hex = '') {
     const normalized = hex.replace('#', '');
@@ -361,7 +364,7 @@
     const imagePosition = Number.isFinite(Number(post.imagePosition)) ? Math.min(Math.max(Number(post.imagePosition), 0), 100) : focusCenter;
     const imageScale = normalizeScale(post.imageScale);
     const theme = resolveTheme(post.theme || readSiteTheme() || DEFAULT_THEME).key;
-    const isFeatured = post.isFeatured !== false;
+    const isFeatured = post.isFeatured === true;
     const hidden = post.hidden === true;
     const order = Number.isFinite(Number(post.order)) ? Number(post.order) : index;
     return {
@@ -398,15 +401,14 @@
     }
 
     if (!Array.isArray(stored) || stored.length === 0) {
-      const normalizedDefaults = clampFeatured(defaultPosts.map((post, index) => normalizePost(post, index)));
+      const normalizedDefaults = defaultPosts.map((post, index) => normalizePost(post, index));
       savePosts(normalizedDefaults);
       return normalizedDefaults;
     }
 
     const normalized = stored.map((post, index) => normalizePost(post, index)).sort((a, b) => (a.order || 0) - (b.order || 0));
-    const clamped = clampFeatured(normalized);
-    savePosts(clamped);
-    return clamped;
+    savePosts(normalized);
+    return normalized;
   }
 
   function escapeHtml(value = '') {
