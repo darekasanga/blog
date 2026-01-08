@@ -61,6 +61,7 @@
                 <img id="source-preview" alt="入力画像プレビュー" />
                 <canvas id="analysis-layer" aria-label="解析レイヤー"></canvas>
                 <canvas id="correction-layer" aria-label="赤ペン修正レイヤー"></canvas>
+                <div class="layered-output__characters" id="character-annotations" aria-label="文字ごとの解読結果"></div>
                 <div class="layered-output__placeholder" id="layered-placeholder">
                   原文画像がここに表示されます
                 </div>
@@ -133,6 +134,7 @@
     const toggleAnalysisButton = document.getElementById('toggle-analysis');
     const clearCorrectionsButton = document.getElementById('clear-corrections');
     const layeredPlaceholder = document.getElementById('layered-placeholder');
+    const characterAnnotations = document.getElementById('character-annotations');
     const handwritingContext = handwritingCanvas.getContext('2d');
     const analysisContext = analysisCanvas.getContext('2d');
     const correctionContext = correctionCanvas.getContext('2d');
@@ -250,10 +252,16 @@
       context.clearRect(0, 0, context.canvas.width, context.canvas.height);
     };
 
+    const clearCharacterAnnotations = () => {
+      characterAnnotations.innerHTML = '';
+    };
+
     const renderAnalysisLayer = (ocrData) => {
       lastOcrData = ocrData;
       clearLayer(analysisContext);
-      if (!ocrData || !ocrData.words || !ocrData.words.length) {
+      clearCharacterAnnotations();
+      const entries = ocrData?.symbols?.length ? ocrData.symbols : ocrData?.words || [];
+      if (!entries.length) {
         return;
       }
       const rect = analysisCanvas.getBoundingClientRect();
@@ -262,14 +270,48 @@
       analysisContext.fillStyle = 'rgba(239, 68, 68, 0.18)';
       analysisContext.strokeStyle = 'rgba(239, 68, 68, 0.9)';
       analysisContext.lineWidth = 1.5;
-      ocrData.words.forEach((word) => {
-        if (!word.bbox) return;
-        const width = (word.bbox.x1 - word.bbox.x0) * scaleX;
-        const height = (word.bbox.y1 - word.bbox.y0) * scaleY;
-        const x = word.bbox.x0 * scaleX;
-        const y = word.bbox.y0 * scaleY;
+      entries.forEach((entry) => {
+        if (!entry.bbox) return;
+        const width = (entry.bbox.x1 - entry.bbox.x0) * scaleX;
+        const height = (entry.bbox.y1 - entry.bbox.y0) * scaleY;
+        const x = entry.bbox.x0 * scaleX;
+        const y = entry.bbox.y0 * scaleY;
         analysisContext.fillRect(x, y, width, height);
         analysisContext.strokeRect(x, y, width, height);
+      });
+    };
+
+    const renderCharacterAnnotations = (ocrData) => {
+      clearCharacterAnnotations();
+      if (!ocrData || !ocrData.symbols || !ocrData.symbols.length) {
+        return;
+      }
+      const rect = analysisCanvas.getBoundingClientRect();
+      const scaleX = rect.width / handwritingCanvas.width;
+      const scaleY = rect.height / handwritingCanvas.height;
+      ocrData.symbols.forEach((symbol) => {
+        if (!symbol.bbox) return;
+        const text = (symbol.text || '').trim();
+        if (!text) return;
+        const width = (symbol.bbox.x1 - symbol.bbox.x0) * scaleX;
+        const height = (symbol.bbox.y1 - symbol.bbox.y0) * scaleY;
+        const x = symbol.bbox.x0 * scaleX;
+        const y = symbol.bbox.y0 * scaleY;
+        const annotation = document.createElement('button');
+        annotation.type = 'button';
+        annotation.className = 'character-annotation';
+        annotation.style.left = `${x}px`;
+        annotation.style.top = `${y}px`;
+        annotation.style.width = `${width}px`;
+        annotation.style.height = `${height}px`;
+        const label = document.createElement('span');
+        label.className = 'character-annotation__label';
+        label.textContent = text;
+        annotation.appendChild(label);
+        annotation.addEventListener('click', () => {
+          label.hidden = true;
+        });
+        characterAnnotations.appendChild(annotation);
       });
     };
 
@@ -279,6 +321,7 @@
         layeredPlaceholder.hidden = false;
         clearLayer(analysisContext);
         clearLayer(correctionContext);
+        clearCharacterAnnotations();
         hasCorrections = false;
         return;
       }
@@ -396,9 +439,11 @@
       output.textContent = `[DECODED_OUTPUT]\n${resultText}`;
       if (ocrResult?.data) {
         renderAnalysisLayer(ocrResult.data);
+        renderCharacterAnnotations(ocrResult.data);
       } else {
         lastOcrData = null;
         clearLayer(analysisContext);
+        clearCharacterAnnotations();
       }
       if (!rawText && !hasDrawing) {
         status.textContent = '筆記入力がありません。';
@@ -414,6 +459,7 @@
       lastOcrData = null;
       clearLayer(analysisContext);
       clearLayer(correctionContext);
+      clearCharacterAnnotations();
       hasCorrections = false;
       status.textContent = '';
     });
@@ -433,6 +479,7 @@
       syncLayerCanvases();
       if (lastOcrData) {
         renderAnalysisLayer(lastOcrData);
+        renderCharacterAnnotations(lastOcrData);
       }
     });
     resizeCanvasForDisplay();
