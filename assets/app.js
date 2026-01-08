@@ -126,7 +126,9 @@ function updateHeroContent() {
       : DEFAULT_HERO_SETTINGS.overlayEnd;
     const imagePosition = Number.isFinite(latest?.heroImagePosition)
       ? latest.heroImagePosition
-      : DEFAULT_HERO_SETTINGS.imagePosition;
+      : Number.isFinite(latest?.imagePosition)
+        ? latest.imagePosition
+        : DEFAULT_HERO_SETTINGS.imagePosition;
     heroSection.style.setProperty('--hero-overlay-strong', overlayStrong.toFixed(2));
     heroSection.style.setProperty('--hero-overlay-weak', overlayWeak.toFixed(2));
     heroSection.style.setProperty('--hero-overlay-start', `${overlayStart}%`);
