@@ -242,8 +242,8 @@ textarea {
   --hero-overlay-strong: 0.7;
   --hero-overlay-weak: 0.25;
   --hero-image-position: 50%;
-  --hero-overlay-stop: 68%;
-  --hero-overlay-solid: clamp(0%, calc(var(--hero-overlay-stop) - 33%), 100%);
+  --hero-overlay-start: 35%;
+  --hero-overlay-end: 68%;
   background: linear-gradient(140deg, rgba(108, 99, 255, 0.2), rgba(15, 17, 25, 0.85));
 }
 
@@ -254,8 +254,8 @@ textarea {
   background: linear-gradient(
     95deg,
     rgba(11, 12, 16, var(--hero-overlay-strong)) 0%,
-    rgba(11, 12, 16, var(--hero-overlay-strong)) var(--hero-overlay-solid),
-    rgba(11, 12, 16, var(--hero-overlay-weak)) var(--hero-overlay-stop),
+    rgba(11, 12, 16, var(--hero-overlay-strong)) var(--hero-overlay-start),
+    rgba(11, 12, 16, var(--hero-overlay-weak)) var(--hero-overlay-end),
     rgba(11, 12, 16, 0) 100%
   );
   pointer-events: none;
@@ -307,9 +307,8 @@ h1 {
 }
 
 .preview-hero {
-  border-radius: 16px;
-  padding: 20px 0;
-  min-height: 200px;
+  border-radius: 0;
+  padding: 48px 0 40px;
   margin-bottom: 16px;
 }
 

@@ -118,15 +118,19 @@ function updateHeroContent() {
       : DEFAULT_HERO_SETTINGS.overlayOpacity;
     const overlayStrong = Math.min(Math.max(overlayValue, 0), 100) / 100;
     const overlayWeak = Math.min(Math.max(overlayStrong * 0.35, 0), 1);
-    const overlayStop = Number.isFinite(latest?.heroOverlayStop)
-      ? latest.heroOverlayStop
-      : DEFAULT_HERO_SETTINGS.overlayStop;
+    const overlayStart = Number.isFinite(latest?.heroOverlayStart)
+      ? latest.heroOverlayStart
+      : DEFAULT_HERO_SETTINGS.overlayStart;
+    const overlayEnd = Number.isFinite(latest?.heroOverlayEnd)
+      ? latest.heroOverlayEnd
+      : DEFAULT_HERO_SETTINGS.overlayEnd;
     const imagePosition = Number.isFinite(latest?.heroImagePosition)
       ? latest.heroImagePosition
       : DEFAULT_HERO_SETTINGS.imagePosition;
     heroSection.style.setProperty('--hero-overlay-strong', overlayStrong.toFixed(2));
     heroSection.style.setProperty('--hero-overlay-weak', overlayWeak.toFixed(2));
-    heroSection.style.setProperty('--hero-overlay-stop', `${overlayStop}%`);
+    heroSection.style.setProperty('--hero-overlay-start', `${overlayStart}%`);
+    heroSection.style.setProperty('--hero-overlay-end', `${overlayEnd}%`);
     heroSection.style.setProperty('--hero-image-position', `${imagePosition}%`);
   }
   if (!latest) {

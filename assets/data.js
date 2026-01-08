@@ -128,7 +128,8 @@
   };
   const DEFAULT_HERO_SETTINGS = {
     overlayOpacity: 70,
-    overlayStop: 68,
+    overlayStart: 35,
+    overlayEnd: 68,
     imagePosition: 50,
   };
   const storage = (() => {
@@ -422,8 +423,25 @@
     const hidden = post.hidden === true;
     const order = Number.isFinite(Number(post.order)) ? Number(post.order) : index;
     const overlayOpacity = Number(post.heroOverlayOpacity);
+    const overlayStartRaw = Number(post.heroOverlayStart);
+    const overlayEndRaw = Number(post.heroOverlayEnd);
     const overlayStop = Number(post.heroOverlayStop);
     const heroImagePosition = Number(post.heroImagePosition);
+    let heroOverlayEnd = Number.isFinite(overlayEndRaw)
+      ? Math.min(Math.max(overlayEndRaw, 0), 100)
+      : Number.isFinite(overlayStop)
+      ? Math.min(Math.max(overlayStop, 0), 100)
+      : DEFAULT_HERO_SETTINGS.overlayEnd;
+    let heroOverlayStart = Number.isFinite(overlayStartRaw)
+      ? Math.min(Math.max(overlayStartRaw, 0), 100)
+      : DEFAULT_HERO_SETTINGS.overlayStart;
+    if (heroOverlayEnd - heroOverlayStart < 5) {
+      if (heroOverlayEnd >= 100) {
+        heroOverlayStart = Math.max(heroOverlayEnd - 5, 0);
+      } else {
+        heroOverlayEnd = Math.min(heroOverlayStart + 5, 100);
+      }
+    }
     return {
       id,
       title: post.title || '無題の投稿',
@@ -444,9 +462,8 @@
       heroOverlayOpacity: Number.isFinite(overlayOpacity)
         ? Math.min(Math.max(overlayOpacity, 0), 100)
         : DEFAULT_HERO_SETTINGS.overlayOpacity,
-      heroOverlayStop: Number.isFinite(overlayStop)
-        ? Math.min(Math.max(overlayStop, 0), 100)
-        : DEFAULT_HERO_SETTINGS.overlayStop,
+      heroOverlayStart,
+      heroOverlayEnd,
       heroImagePosition: Number.isFinite(heroImagePosition)
         ? Math.min(Math.max(heroImagePosition, 0), 100)
         : DEFAULT_HERO_SETTINGS.imagePosition,
