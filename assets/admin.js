@@ -43,7 +43,6 @@
   const titleEl = document.getElementById('title');
   const dateEl = document.getElementById('date');
   const readEl = document.getElementById('read');
-  const excerptEl = document.getElementById('excerpt');
   const contentEl = document.getElementById('content');
   const tagsEl = document.getElementById('tags');
   const focusStartEl = document.getElementById('focus-start');
@@ -269,7 +268,6 @@
     previewDate.textContent = dateEl?.value || today;
     previewRead.textContent = readEl?.value || '5 min';
     const summary = summarizeContent(contentEl?.value || '');
-    if (excerptEl) excerptEl.value = summary;
     previewExcerpt.textContent = summary || '本文からAIが要約します。';
     const tags = window.BlogData.normalizeTags((tagsEl?.value || '').split(','));
     previewTags.innerHTML = tags.map((tag) => `<span class="chip">#${window.BlogData.escapeHtml(tag)}</span>`).join('');
@@ -496,7 +494,6 @@
     if (titleEl) titleEl.value = target.title;
     if (dateEl) dateEl.value = target.date;
     if (readEl) readEl.value = target.read;
-    if (excerptEl) excerptEl.value = summarizeContent(target.content || target.excerpt || '');
     if (contentEl) contentEl.value = target.content || '';
     resizedImageData = target.image || '';
     if (tagsEl) tagsEl.value = (target.tags || []).join(', ');
