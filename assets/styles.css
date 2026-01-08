@@ -340,6 +340,7 @@ h1 {
   border-radius: 0;
   padding: 48px 0 40px;
   min-height: var(--hero-height);
+  height: var(--hero-height);
   margin-bottom: 16px;
 }
 
