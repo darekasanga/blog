@@ -6,25 +6,21 @@
     themes,
   } = window.BlogData;
 
-  const ADMIN_PASSWORD = 'admin';
   const ADMIN_AUTH_KEY = 'admin-authenticated';
-  const MFA_CODE_KEY = 'admin-mfa-code';
-  const MFA_EXPIRES_KEY = 'admin-mfa-expires';
-  const MFA_TIMEOUT_MS = 5 * 60 * 1000;
+  const ADMIN_AUTH_EXPIRY_KEY = 'admin-authenticated-expires';
+  const AUTH_TTL_MS = 30 * 60 * 1000;
+  const CREDENTIAL_ID_KEY = 'admin-biometric-credential-id';
 
-  const form = document.getElementById('admin-login-form');
-  const passwordInput = document.getElementById('admin-password');
-  const mfaInput = document.getElementById('mfa-code');
-  const sendMfaButton = document.getElementById('send-mfa');
-  const resetButton = document.getElementById('reset-login');
+  const authButton = document.getElementById('biometric-auth');
+  const resetButton = document.getElementById('reset-biometric');
   const message = document.getElementById('login-message');
-  const mfaHint = document.getElementById('mfa-hint');
   const authLinks = document.getElementById('auth-links');
   const authStatus = document.getElementById('auth-status');
   const loginCard = document.getElementById('login-card');
   const siteThemePicker = document.getElementById('site-theme-picker');
+  const hint = document.getElementById('biometric-hint');
 
-  if (!form) return;
+  if (!authButton) return;
 
   let siteThemeKey = readSiteTheme();
   applyThemeToDocument(siteThemeKey);
@@ -75,69 +71,187 @@
     });
   }
 
-  function generateMfaCode() {
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    sessionStorage.setItem(MFA_CODE_KEY, code);
-    sessionStorage.setItem(MFA_EXPIRES_KEY, String(Date.now() + MFA_TIMEOUT_MS));
-    return code;
-  }
-
-  function isMfaValid(code) {
-    const stored = sessionStorage.getItem(MFA_CODE_KEY);
-    const expires = Number(sessionStorage.getItem(MFA_EXPIRES_KEY) || 0);
-    if (!stored || !expires) return false;
-    if (Date.now() > expires) return false;
-    return stored === code;
-  }
-
-  if (sessionStorage.getItem(ADMIN_AUTH_KEY) === 'true') {
-    updateAuthState(true);
-  }
-
-  if (sendMfaButton) {
-    sendMfaButton.addEventListener('click', () => {
-      const code = generateMfaCode();
-      if (mfaHint) {
-        mfaHint.textContent = `認証コードを送信しました。（デモ用コード: ${code}）有効期限: 5分`;
-      }
-      showMessage('認証コードを送信しました。', 'success');
+  function bufferToBase64Url(buffer) {
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+    bytes.forEach((byte) => {
+      binary += String.fromCharCode(byte);
     });
+    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   }
+
+  function base64UrlToBuffer(base64Url) {
+    const padding = '='.repeat((4 - (base64Url.length % 4)) % 4);
+    const base64 = (base64Url + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i += 1) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    return bytes.buffer;
+  }
+
+  function getRedirectTarget() {
+    const params = new URLSearchParams(window.location.search);
+    const redirectParam = params.get('redirect');
+    if (!redirectParam) return './index.html';
+
+    let targetUrl;
+    try {
+      targetUrl = new URL(redirectParam, window.location.origin);
+    } catch (error) {
+      return './index.html';
+    }
+
+    if (targetUrl.origin !== window.location.origin) {
+      return './index.html';
+    }
+
+    return `${targetUrl.pathname}${targetUrl.search}${targetUrl.hash}`;
+  }
+
+  function setAuthSession() {
+    sessionStorage.setItem(ADMIN_AUTH_KEY, 'true');
+    sessionStorage.setItem(ADMIN_AUTH_EXPIRY_KEY, String(Date.now() + AUTH_TTL_MS));
+  }
+
+  function clearAuthSession() {
+    sessionStorage.removeItem(ADMIN_AUTH_KEY);
+    sessionStorage.removeItem(ADMIN_AUTH_EXPIRY_KEY);
+  }
+
+  function isAuthSessionValid() {
+    const isAuthenticated = sessionStorage.getItem(ADMIN_AUTH_KEY) === 'true';
+    const expires = Number(sessionStorage.getItem(ADMIN_AUTH_EXPIRY_KEY) || 0);
+    if (!isAuthenticated || !expires) return false;
+    return Date.now() < expires;
+  }
+
+  async function isBiometricAvailable() {
+    if (!window.PublicKeyCredential || !navigator.credentials) return false;
+    if (!PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable) return true;
+    return PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+  }
+
+  async function registerCredential() {
+    const challenge = new Uint8Array(32);
+    window.crypto.getRandomValues(challenge);
+
+    const userId = new Uint8Array(16);
+    window.crypto.getRandomValues(userId);
+
+    const credential = await navigator.credentials.create({
+      publicKey: {
+        challenge,
+        rp: {
+          name: 'EMPEROR.NEWS',
+        },
+        user: {
+          id: userId,
+          name: 'admin@emperor.news',
+          displayName: '管理者',
+        },
+        pubKeyCredParams: [
+          { type: 'public-key', alg: -7 },
+          { type: 'public-key', alg: -257 },
+        ],
+        authenticatorSelection: {
+          authenticatorAttachment: 'platform',
+          userVerification: 'required',
+        },
+        timeout: 60000,
+        attestation: 'none',
+      },
+    });
+
+    if (!credential) {
+      throw new Error('credential-missing');
+    }
+
+    localStorage.setItem(CREDENTIAL_ID_KEY, bufferToBase64Url(credential.rawId));
+  }
+
+  async function authenticateCredential(credentialId) {
+    const challenge = new Uint8Array(32);
+    window.crypto.getRandomValues(challenge);
+
+    const assertion = await navigator.credentials.get({
+      publicKey: {
+        challenge,
+        allowCredentials: [
+          {
+            id: base64UrlToBuffer(credentialId),
+            type: 'public-key',
+            transports: ['internal'],
+          },
+        ],
+        userVerification: 'required',
+        timeout: 60000,
+      },
+    });
+
+    if (!assertion) {
+      throw new Error('assertion-missing');
+    }
+  }
+
+  async function handleBiometricAuth() {
+    clearMessage();
+
+    const available = await isBiometricAvailable();
+    if (!available) {
+      showMessage('この端末では生体認証が利用できません。', 'error');
+      return;
+    }
+
+    try {
+      const storedId = localStorage.getItem(CREDENTIAL_ID_KEY);
+      if (!storedId) {
+        showMessage('初回登録を開始します。', 'success');
+        await registerCredential();
+      } else {
+        await authenticateCredential(storedId);
+      }
+
+      setAuthSession();
+      updateAuthState(true);
+      showMessage('認証に成功しました。', 'success');
+      window.location.href = getRedirectTarget();
+    } catch (error) {
+      showMessage('認証に失敗しました。端末の生体認証を再度お試しください。', 'error');
+    }
+  }
+
+  authButton.addEventListener('click', () => {
+    handleBiometricAuth();
+  });
 
   if (resetButton) {
     resetButton.addEventListener('click', () => {
-      form.reset();
-      clearMessage();
-      if (mfaHint) {
-        mfaHint.textContent = '認証コードを送ると5分間有効なコードが発行されます。';
-      }
+      localStorage.removeItem(CREDENTIAL_ID_KEY);
+      clearAuthSession();
+      updateAuthState(false);
+      showMessage('登録情報をリセットしました。再度生体認証を実行してください。', 'success');
     });
   }
 
-  form.addEventListener('submit', (event) => {
-    event.preventDefault();
-    clearMessage();
-
-    const password = passwordInput?.value ?? '';
-    const code = mfaInput?.value ?? '';
-
-    if (password !== ADMIN_PASSWORD) {
-      showMessage('パスワードが一致しません。', 'error');
-      return;
-    }
-
-    if (!isMfaValid(code)) {
-      showMessage('認証コードが無効です。送信後に入力してください。', 'error');
-      return;
-    }
-
-    sessionStorage.setItem(ADMIN_AUTH_KEY, 'true');
-    sessionStorage.removeItem(MFA_CODE_KEY);
-    sessionStorage.removeItem(MFA_EXPIRES_KEY);
-
-    showMessage('ログインに成功しました。', 'success');
+  const redirectTarget = getRedirectTarget();
+  if (isAuthSessionValid()) {
     updateAuthState(true);
-  });
+    showMessage('認証済みのため、目的のページへ移動します。', 'success');
+    window.location.href = redirectTarget;
+    return;
+  }
 
   renderSiteThemePicker();
+  updateAuthState(false);
+
+  isBiometricAvailable().then((available) => {
+    if (!available) {
+      authButton.disabled = true;
+      if (hint) {
+        hint.textContent = 'この端末では生体認証が利用できません。別の端末でお試しください。';
+      }
+    }
+  });
 })();

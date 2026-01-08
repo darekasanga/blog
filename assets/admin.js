@@ -22,12 +22,23 @@
   const adminMode = document.body.dataset.adminMode || 'post';
   const isEditMode = adminMode === 'edit';
   const ADMIN_AUTH_KEY = 'admin-authenticated';
+  const ADMIN_AUTH_EXPIRY_KEY = 'admin-authenticated-expires';
 
   function ensureAdminAuth() {
-    if (sessionStorage.getItem(ADMIN_AUTH_KEY) === 'true') {
+    const authenticated = sessionStorage.getItem(ADMIN_AUTH_KEY) === 'true';
+    const expires = Number(sessionStorage.getItem(ADMIN_AUTH_EXPIRY_KEY) || 0);
+
+    if (authenticated && expires && Date.now() < expires) {
       return true;
     }
-    window.location.href = './login.html';
+
+    sessionStorage.removeItem(ADMIN_AUTH_KEY);
+    sessionStorage.removeItem(ADMIN_AUTH_EXPIRY_KEY);
+
+    const redirectTarget = encodeURIComponent(
+      `${window.location.pathname}${window.location.search}${window.location.hash}`
+    );
+    window.location.href = `../admin/login.html?redirect=${redirectTarget}`;
     return false;
   }
 
