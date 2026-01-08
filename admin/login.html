@@ -33,12 +33,12 @@
 
           <div class="login-list" aria-label="認証の流れ">
             <div class="login-item">
-              <strong>初回登録</strong>
-              <span class="muted-text">最初に生体認証の登録を行います。</span>
+              <strong>ログインコード発行</strong>
+              <span class="muted-text">管理者がログインコードを発行して登録を承認します。</span>
             </div>
             <div class="login-item">
-              <strong>認証</strong>
-              <span class="muted-text">次回からは生体認証のみで素早くアクセスできます。</span>
+              <strong>登録</strong>
+              <span class="muted-text">ログインコードと生体認証でユーザー登録します。</span>
             </div>
             <div class="login-item">
               <strong>自動遷移</strong>
@@ -54,6 +54,16 @@
           <p class="muted-text" id="biometric-hint">対応端末ではTouch ID / Face IDなどが利用できます。</p>
           <div class="biometric-manager">
             <p class="kicker">ユーザー管理</p>
+            <div class="login-code-panel">
+              <label for="login-code">ログインコード</label>
+              <input id="login-code" type="text" placeholder="発行されたログインコードを入力" autocomplete="one-time-code" />
+              <p class="muted-text">ログインコードと生体認証でユーザー登録ができます。</p>
+              <div class="form-actions">
+                <button class="btn ghost" type="button" id="issue-login-code">ログインコードを発行</button>
+              </div>
+              <p class="muted-text" id="login-code-hint">ユーザー管理権限を持つ管理者のみが発行できます。</p>
+              <div class="login-code-list" id="login-code-list" aria-live="polite"></div>
+            </div>
             <label for="biometric-label">登録ユーザー名</label>
             <input id="biometric-label" type="text" placeholder="例）管理者A" />
             <div class="form-actions">

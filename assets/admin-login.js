@@ -12,6 +12,8 @@
   const AUTH_TTL_MS = 30 * 60 * 1000;
   const CREDENTIAL_ID_KEY = 'admin-biometric-credential-id';
   const CREDENTIALS_KEY = 'admin-biometric-credentials';
+  const LOGIN_CODE_KEY = 'admin-login-codes';
+  const LOGIN_CODE_TTL_MS = 30 * 60 * 1000;
 
   const authButton = document.getElementById('biometric-auth');
   const resetButton = document.getElementById('reset-biometric');
@@ -25,6 +27,10 @@
   const biometricList = document.getElementById('biometric-list');
   const biometricLabelInput = document.getElementById('biometric-label');
   const biometricAdminHint = document.getElementById('biometric-admin-hint');
+  const loginCodeInput = document.getElementById('login-code');
+  const issueLoginCodeButton = document.getElementById('issue-login-code');
+  const loginCodeList = document.getElementById('login-code-list');
+  const loginCodeHint = document.getElementById('login-code-hint');
 
   if (!authButton) return;
 
@@ -156,6 +162,12 @@
     if (biometricAdminHint) {
       biometricAdminHint.hidden = allowed;
     }
+
+    const canIssueCodes = canManageUsers(getAuthenticatedCredentialId());
+    if (issueLoginCodeButton) issueLoginCodeButton.disabled = !canIssueCodes;
+    if (loginCodeHint) {
+      loginCodeHint.hidden = canIssueCodes;
+    }
   }
 
   function renderCredentialList() {
@@ -234,6 +246,102 @@
         showMessage(input.checked ? 'ユーザー管理権を付与しました。' : 'ユーザー管理権を解除しました。', 'success');
       });
     });
+  }
+
+  function readLoginCodeList() {
+    try {
+      const stored = JSON.parse(localStorage.getItem(LOGIN_CODE_KEY) || '[]');
+      if (Array.isArray(stored)) {
+        return stored
+          .filter((entry) => entry && typeof entry.code === 'string' && typeof entry.expiresAt === 'number')
+          .filter((entry) => Date.now() < entry.expiresAt);
+      }
+    } catch (error) {
+      // ignore malformed data
+    }
+    return [];
+  }
+
+  function saveLoginCodeList(list) {
+    localStorage.setItem(LOGIN_CODE_KEY, JSON.stringify(list));
+  }
+
+  function generateLoginCode() {
+    const value = new Uint32Array(1);
+    window.crypto.getRandomValues(value);
+    return String(value[0] % 1000000).padStart(6, '0');
+  }
+
+  function renderLoginCodeList() {
+    if (!loginCodeList) return;
+    const codes = readLoginCodeList();
+    if (!codes.length) {
+      loginCodeList.innerHTML = '<p class="muted-text">発行済みのログインコードはありません。</p>';
+      return;
+    }
+
+    const allowManage = canManageUsers(getAuthenticatedCredentialId());
+    loginCodeList.innerHTML = codes
+      .map(
+        (entry) => `
+          <div class="login-code-item" data-code="${entry.code}">
+            <div>
+              <strong>${entry.code}</strong>
+              <p class="muted-text">有効期限: ${new Date(entry.expiresAt).toLocaleTimeString('ja-JP', {
+                hour: '2-digit',
+                minute: '2-digit',
+              })}</p>
+            </div>
+            ${allowManage ? '<button class="btn ghost" type="button" data-action="remove">無効にする</button>' : ''}
+          </div>
+        `
+      )
+      .join('');
+
+    if (allowManage) {
+      loginCodeList.querySelectorAll('button[data-action="remove"]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const item = button.closest('.login-code-item');
+          const code = item?.dataset.code;
+          if (!code) return;
+          const next = readLoginCodeList().filter((entry) => entry.code !== code);
+          saveLoginCodeList(next);
+          renderLoginCodeList();
+          showMessage('ログインコードを無効にしました。', 'success');
+        });
+      });
+    }
+  }
+
+  function issueLoginCode() {
+    const code = generateLoginCode();
+    const next = readLoginCodeList();
+    next.push({
+      code,
+      issuedAt: Date.now(),
+      expiresAt: Date.now() + LOGIN_CODE_TTL_MS,
+    });
+    saveLoginCodeList(next);
+    renderLoginCodeList();
+    return code;
+  }
+
+  function isLoginCodeValid(code) {
+    const trimmed = code.trim();
+    if (!trimmed) return false;
+    const codes = readLoginCodeList();
+    return codes.some((entry) => entry.code === trimmed);
+  }
+
+  function consumeLoginCode(code) {
+    const trimmed = code.trim();
+    if (!trimmed) return false;
+    const codes = readLoginCodeList();
+    if (!codes.some((entry) => entry.code === trimmed)) return false;
+    const next = codes.filter((entry) => entry.code !== trimmed);
+    saveLoginCodeList(next);
+    renderLoginCodeList();
+    return true;
   }
 
   function getRedirectTarget() {
@@ -422,6 +530,13 @@
         showMessage('ユーザー管理権限がありません。', 'error');
         return;
       }
+      const credentials = readCredentialList();
+      const requiresLoginCode = credentials.length > 0;
+      const loginCodeValue = loginCodeInput?.value?.trim() || '';
+      if (requiresLoginCode && !isLoginCodeValid(loginCodeValue)) {
+        showMessage('ログインコードが無効です。管理者から発行されたコードを入力してください。', 'error');
+        return;
+      }
       const available = await isBiometricAvailable();
       if (!available) {
         showMessage('この端末では生体認証が利用できません。', 'error');
@@ -429,13 +544,34 @@
       }
       try {
         await registerCredential(biometricLabelInput?.value || '');
+        if (requiresLoginCode) {
+          consumeLoginCode(loginCodeValue);
+        }
         if (biometricLabelInput) {
           biometricLabelInput.value = '';
+        }
+        if (loginCodeInput) {
+          loginCodeInput.value = '';
         }
         showMessage('生体認証ユーザーを登録しました。', 'success');
       } catch (error) {
         showMessage('登録に失敗しました。端末の生体認証を再度お試しください。', 'error');
       }
+    });
+  }
+
+  if (issueLoginCodeButton) {
+    issueLoginCodeButton.addEventListener('click', () => {
+      clearMessage();
+      if (!canManageUsers(getAuthenticatedCredentialId())) {
+        showMessage('ユーザー管理権限がありません。', 'error');
+        return;
+      }
+      const code = issueLoginCode();
+      if (loginCodeInput) {
+        loginCodeInput.value = code;
+      }
+      showMessage('ログインコードを発行しました。', 'success');
     });
   }
 
@@ -450,6 +586,7 @@
 
   renderSiteThemePicker();
   renderCredentialList();
+  renderLoginCodeList();
   updateManagementControls();
   updateAuthState(false);
 
