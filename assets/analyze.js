@@ -22,7 +22,60 @@
 
   const MODE_STORAGE_KEY = 'analysis-mode';
   const TRAINING_STORAGE_KEY = 'analysis-training-data';
-  const BASE_CHARACTERS = ['あ', 'い', 'う', 'え', 'お', 'か', 'き', 'く', 'け', 'こ', 'さ', 'し', 'す', 'せ', 'そ'];
+  const BASE_CHARACTERS = [
+    'あ',
+    'い',
+    'う',
+    'え',
+    'お',
+    'か',
+    'き',
+    'く',
+    'け',
+    'こ',
+    'さ',
+    'し',
+    'す',
+    'せ',
+    'そ',
+    '漢',
+    '字',
+    '學',
+    '学',
+    '體',
+    '体',
+    '萬',
+    '万',
+    '國',
+    '国',
+    '舊',
+    '旧',
+    '龍',
+    '竜',
+    '寫',
+    '写',
+    '氣',
+    '気',
+    '畫',
+    '画',
+    '藝',
+    '艺',
+    '臺',
+    '台',
+    '廣',
+    '广',
+    '門',
+    '门',
+    '愛',
+    '戀',
+    '恋',
+    '變',
+    '变',
+    '雲',
+    '云',
+    '點',
+    '点',
+  ];
 
   let currentMode = 'frame';
   let leftHasInk = false;
@@ -208,8 +261,7 @@
     unknownButton.setAttribute('aria-label', '未確定として登録');
     unknownButton.textContent = '?';
 
-    wrapper.addEventListener('click', (event) => {
-      if (event.target.closest('button')) return;
+    const markForReview = () => {
       const target = annotations.find((annotation) => annotation.id === item.id);
       if (!target) return;
       target.confirmed = false;
@@ -220,6 +272,60 @@
       activeAnnotationId = target.id;
       renderAnnotationState(target, wrapper);
       updateRecognizedText();
+    };
+
+    const dragState = {
+      active: false,
+      moved: false,
+      startX: 0,
+      startY: 0,
+      startLeft: 0,
+      startTop: 0,
+    };
+
+    wrapper.addEventListener('pointerdown', (event) => {
+      if (event.target.closest('button')) return;
+      dragState.active = true;
+      dragState.moved = false;
+      dragState.startX = event.clientX;
+      dragState.startY = event.clientY;
+      dragState.startLeft = item.x;
+      dragState.startTop = item.y;
+      wrapper.classList.add('character-annotation--dragging');
+      wrapper.setPointerCapture(event.pointerId);
+      event.preventDefault();
+    });
+
+    wrapper.addEventListener('pointermove', (event) => {
+      if (!dragState.active) return;
+      const stackRect = stack.getBoundingClientRect();
+      const deltaX = event.clientX - dragState.startX;
+      const deltaY = event.clientY - dragState.startY;
+      if (Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3) {
+        dragState.moved = true;
+      }
+      const nextX = dragState.startLeft + deltaX / stackRect.width;
+      const nextY = dragState.startTop + deltaY / stackRect.height;
+      item.x = Math.max(0, Math.min(nextX, 1 - item.width));
+      item.y = Math.max(0, Math.min(nextY, 1 - item.height));
+      wrapper.style.left = `${item.x * 100}%`;
+      wrapper.style.top = `${item.y * 100}%`;
+    });
+
+    wrapper.addEventListener('pointerup', (event) => {
+      if (!dragState.active) return;
+      dragState.active = false;
+      wrapper.classList.remove('character-annotation--dragging');
+      wrapper.releasePointerCapture(event.pointerId);
+      if (!dragState.moved) {
+        markForReview();
+      }
+    });
+
+    wrapper.addEventListener('pointerleave', () => {
+      if (!dragState.active) return;
+      dragState.active = false;
+      wrapper.classList.remove('character-annotation--dragging');
     });
 
     removeButton.addEventListener('click', () => {
@@ -280,10 +386,12 @@
     let drawing = false;
     let lastPoint = null;
     let previousComposite = ctx.globalCompositeOperation;
+    let clippingActive = false;
 
     const start = (event) => {
-      if (!isEnabled()) return;
-      const options = getOptions ? getOptions() : {};
+      if (event.pointerType !== 'pen') return;
+      if (!isEnabled(event)) return;
+      const options = getOptions ? getOptions(event) : {};
       if (!options) return;
       drawing = true;
       lastPoint = getCanvasPoint(event, canvas);
@@ -291,6 +399,13 @@
       ctx.globalCompositeOperation = options.composite || 'source-over';
       ctx.strokeStyle = options.color || '#ef4444';
       ctx.lineWidth = options.lineWidth || 3;
+      if (options.clipRect) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(options.clipRect.x, options.clipRect.y, options.clipRect.width, options.clipRect.height);
+        ctx.clip();
+        clippingActive = true;
+      }
       ctx.beginPath();
       ctx.moveTo(lastPoint.x, lastPoint.y);
       canvas.setPointerCapture(event.pointerId);
@@ -310,6 +425,10 @@
       if (!drawing) return;
       drawing = false;
       lastPoint = null;
+      if (clippingActive) {
+        ctx.restore();
+        clippingActive = false;
+      }
       ctx.globalCompositeOperation = previousComposite;
       canvas.releasePointerCapture(event.pointerId);
       if (onComplete) onComplete();
@@ -555,15 +674,70 @@
     },
   );
 
+  const getAnnotationForPoint = (point) => {
+    const stackRect = stack.getBoundingClientRect();
+    return annotations.find((annotation) => {
+      const x = annotation.x * stackRect.width;
+      const y = annotation.y * stackRect.height;
+      const width = annotation.width * stackRect.width;
+      const height = annotation.height * stackRect.height;
+      return (
+        point.x >= x &&
+        point.x <= x + width &&
+        point.y >= y &&
+        point.y <= y + height
+      );
+    });
+  };
+
+  const markAnnotationForReview = (annotation) => {
+    if (!annotation) return;
+    annotation.confirmed = false;
+    annotation.unknown = false;
+    annotation.needsReview = true;
+    annotation.candidates = [];
+    annotation.char = '';
+    activeAnnotationId = annotation.id;
+    const element = characterLayer.querySelector(`[data-annotation-id="${annotation.id}"]`);
+    if (element) {
+      renderAnnotationState(annotation, element);
+    }
+    updateRecognizedText();
+  };
+
   createPenDrawer(
     rightCanvas,
     () => ['pen', 'handwriting', 'eraser'].includes(currentMode),
-    () => {
+    (event) => {
       if (currentMode === 'handwriting') {
-        return { color: '#38bdf8', lineWidth: 3 };
+        const point = getCanvasPoint(event, rightCanvas);
+        const target = getAnnotationForPoint(point);
+        if (!target) {
+          updateHandwritingStatus('青ペンは文字枠の中に書いてください。');
+          return null;
+        }
+        markAnnotationForReview(target);
+        const stackRect = stack.getBoundingClientRect();
+        return {
+          color: '#38bdf8',
+          lineWidth: 3,
+          clipRect: {
+            x: target.x * stackRect.width,
+            y: target.y * stackRect.height,
+            width: target.width * stackRect.width,
+            height: target.height * stackRect.height,
+          },
+        };
       }
       if (currentMode === 'eraser') {
         return { composite: 'destination-out', lineWidth: 16 };
+      }
+      if (currentMode === 'pen') {
+        const point = getCanvasPoint(event, rightCanvas);
+        const target = getAnnotationForPoint(point);
+        if (target) {
+          markAnnotationForReview(target);
+        }
       }
       return { color: '#ef4444', lineWidth: 3 };
     },
