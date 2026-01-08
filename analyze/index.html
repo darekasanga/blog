@@ -168,13 +168,31 @@
     };
 
     handwritingCanvas.addEventListener('pointerdown', (event) => {
+      event.preventDefault();
       handwritingCanvas.setPointerCapture(event.pointerId);
       startDrawing(event);
     });
-    handwritingCanvas.addEventListener('pointermove', drawStroke);
+    handwritingCanvas.addEventListener('pointermove', (event) => {
+      event.preventDefault();
+      drawStroke(event);
+    });
     handwritingCanvas.addEventListener('pointerup', stopDrawing);
     handwritingCanvas.addEventListener('pointercancel', stopDrawing);
     handwritingCanvas.addEventListener('pointerleave', stopDrawing);
+    handwritingCanvas.addEventListener(
+      'touchstart',
+      (event) => {
+        event.preventDefault();
+      },
+      { passive: false },
+    );
+    handwritingCanvas.addEventListener(
+      'touchmove',
+      (event) => {
+        event.preventDefault();
+      },
+      { passive: false },
+    );
 
     clearDrawingButton.addEventListener('click', () => {
       resetCanvas();
