@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EMPEROR.NEWS | 管理ログイン</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body data-admin-mode="login">
+  <header class="site-header">
+    <div class="inner">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true"></div>
+        <div>
+          <p class="brand-kicker">BLOG</p>
+          <p class="brand-title" data-site-title>EMPEROR.NEWS</p>
+        </div>
+      </div>
+      <nav class="nav-links" aria-label="メインナビゲーション">
+        <a href="../index.html" class="nav-link">トップ</a>
+        <a href="login.html" class="nav-link active">管理ログイン</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="section">
+      <div class="inner admin-login-grid">
+        <div class="info-card login-card" id="login-card">
+          <p class="kicker">管理ログイン</p>
+          <h1>安全な管理アクセス</h1>
+          <p class="lead">パスワードとワンタイムコードの2段階でログインします。</p>
+
+          <form class="login-form" id="admin-login-form">
+            <div class="field">
+              <label for="admin-user">管理者ID</label>
+              <input id="admin-user" name="admin-user" type="text" value="admin" autocomplete="username" required />
+            </div>
+            <div class="field">
+              <label for="admin-password">パスワード</label>
+              <input id="admin-password" name="admin-password" type="password" placeholder="パスワードを入力" autocomplete="current-password" required />
+            </div>
+            <div class="field">
+              <label for="mfa-code">ワンタイムコード</label>
+              <div class="mfa-row">
+                <input id="mfa-code" name="mfa-code" type="text" inputmode="numeric" pattern="[0-9]{6}" placeholder="6桁のコード" required />
+                <button class="btn ghost" type="button" id="send-mfa">認証コードを送る</button>
+              </div>
+              <p class="muted-text" id="mfa-hint">認証コードを送ると5分間有効なコードが発行されます。</p>
+            </div>
+            <p class="form-message" id="login-message" role="status" aria-live="polite" hidden></p>
+            <div class="form-actions">
+              <button class="btn primary" type="submit">ログイン</button>
+              <button class="btn ghost" type="button" id="reset-login">入力をリセット</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="info-card login-info">
+          <p class="kicker">管理機能</p>
+          <h2>認証後に進めるメニュー</h2>
+          <p class="muted-text">記事投稿・編集・AI解析に直接アクセスできます。</p>
+          <div class="login-list">
+            <div class="login-item">
+              <strong>記事投稿</strong>
+              <span class="muted-text">新規記事の作成とプレビュー</span>
+            </div>
+            <div class="login-item">
+              <strong>記事編集</strong>
+              <span class="muted-text">公開済み記事の更新や非表示操作</span>
+            </div>
+            <div class="login-item">
+              <strong>AI COVEくん解読</strong>
+              <span class="muted-text">AIアナリティクスと解析レポート</span>
+            </div>
+          </div>
+          <div class="auth-status" id="auth-status" aria-live="polite">ログインするとリンクが表示されます。</div>
+          <div class="auth-links" id="auth-links" hidden>
+            <a class="btn primary" href="index.html">記事投稿へ</a>
+            <a class="btn ghost" href="edit.html">記事編集へ</a>
+            <a class="btn ghost" href="../analyze/index.html">AI COVEくん解読へ</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="inner footer-grid">
+      <div>
+        <p class="brand-title" data-site-title>EMPEROR.NEWS</p>
+        <p class="muted-text" data-footer-description>シンプルで統一感のあるブログ体験を届けます。</p>
+      </div>
+      <div id="site-theme-picker" class="footer-theme-picker" aria-label="表示テーマ選択"></div>
+    </div>
+  </footer>
+
+  <script src="../assets/data.js"></script>
+  <script src="../assets/admin-login.js"></script>
+</body>
+</html>

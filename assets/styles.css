@@ -1260,6 +1260,75 @@ h2 {
   color: var(--fg);
 }
 
+.admin-login-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.login-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.login-card.is-authenticated::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 18px;
+  border: 1px solid rgba(57, 255, 201, 0.5);
+  pointer-events: none;
+}
+
+.login-form {
+  display: grid;
+  gap: 16px;
+}
+
+.mfa-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.mfa-row input {
+  flex: 1 1 160px;
+}
+
+.login-info {
+  display: grid;
+  gap: 16px;
+}
+
+.login-list {
+  display: grid;
+  gap: 12px;
+}
+
+.login-item {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+}
+
+.auth-status {
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px dashed var(--border);
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.auth-links {
+  display: grid;
+  gap: 12px;
+}
+
 body[data-admin-mode='post'] .preview-grid,
 body[data-admin-mode='edit'] .preview-grid {
   grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
@@ -1295,6 +1364,10 @@ body[data-admin-mode='edit'] .preview-panel {
     width: auto;
     max-height: none;
     overflow: visible;
+  }
+
+  .admin-login-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
