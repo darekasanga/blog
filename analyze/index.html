@@ -50,6 +50,14 @@
               <span class="mode-icon mode-icon-pen" aria-hidden="true"></span>
               <span>赤ペン</span>
             </button>
+            <button class="mode-button" type="button" data-analysis-mode="handwriting" aria-pressed="false">
+              <span class="mode-icon mode-icon-handwriting" aria-hidden="true"></span>
+              <span>青ペン</span>
+            </button>
+            <button class="mode-button" type="button" data-analysis-mode="eraser" aria-pressed="false">
+              <span class="mode-icon mode-icon-eraser" aria-hidden="true"></span>
+              <span>消しゴム</span>
+            </button>
           </div>
         </div>
         <div class="analysis-handwriting" aria-live="polite">
@@ -75,7 +83,7 @@
             <div>
               <p class="kicker">Analysis</p>
               <h2 id="analysis-correction-title">解析メモ</h2>
-              <p class="muted-text">右側で文字認識を行い、1文字ずつ枠指定して確定します。</p>
+              <p class="muted-text">右側で文字認識を行い、1文字ずつ枠指定して確定します。判定と違う場合は青ペンで書き直してください。</p>
             </div>
             <div class="layered-output">
               <div class="layered-output__stack" id="handwriting-stack">
