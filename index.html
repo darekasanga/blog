@@ -20,7 +20,7 @@
         <nav class="nav-links" aria-label="メインナビゲーション">
           <a href="index.html" class="nav-link active">トップ</a>
           <a href="admin/login.html?redirect=/admin/index.html" class="nav-link">管理メニュー</a>
-          <a href="admin/login.html?redirect=/analyze/index.html" class="nav-link">AI COVEくん解読</a>
+          <a href="#analysis-room" class="nav-link">AI COVEくん解読</a>
         </nav>
       </div>
     </div>
@@ -71,6 +71,46 @@
         <div id="list-grid" class="article-list" aria-live="polite"></div>
       </div>
     </section>
+
+    <section id="analysis-room" class="section muted">
+      <div class="inner">
+        <p class="kicker">AI COVEくん</p>
+        <h2>解読ルーム</h2>
+        <p class="lead">管理者限定のAI解析ページです。記事の深掘りや補足メモをここにまとめていきます。</p>
+        <div class="info-grid">
+          <div class="info-card">
+            <h3>解析ステータス</h3>
+            <p class="muted-text">最新の解析結果はここに表示されます。必要に応じて更新してください。</p>
+          </div>
+          <div class="info-card">
+            <h3>AIメモ</h3>
+            <p class="muted-text">この記事で気になったキーワードや洞察を記録する場所です。</p>
+          </div>
+          <div class="info-card">
+            <h3>次のアクション</h3>
+            <p class="muted-text">次に分析したい記事や改善案を書き留めておきます。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="inner">
+        <p class="kicker">赤ペン修正</p>
+        <h2>原稿と修正内容を並べて確認</h2>
+        <p class="muted-text">右側の赤枠エリアで範囲修正ができるように、原稿と修正欄を分離しています。</p>
+        <div class="analysis-editor">
+          <div class="analysis-panel">
+            <label for="analysis-source">原稿</label>
+            <textarea id="analysis-source" rows="10" placeholder="原稿を貼り付けてください。"></textarea>
+          </div>
+          <div class="analysis-panel correction-panel">
+            <label for="analysis-correction">赤ペン修正</label>
+            <textarea id="analysis-correction" rows="10" placeholder="赤ペン修正内容を入力してください。"></textarea>
+          </div>
+        </div>
+      </div>
+    </section>
   </main>
 
   <footer class="site-footer">
@@ -84,5 +124,6 @@
   </footer>
   <script src="assets/data.js"></script>
   <script src="assets/app.js"></script>
+  <script src="assets/analyze.js"></script>
 </body>
 </html>

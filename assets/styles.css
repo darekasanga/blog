@@ -866,6 +866,11 @@ body[data-admin-mode='edit'] #preview-thumb {
 body[data-admin-mode='post'] #preview-thumb .focus-range,
 body[data-admin-mode='edit'] #preview-thumb .focus-range {
   pointer-events: auto;
+  border-color: transparent;
+}
+
+body[data-admin-mode='post'] #preview-thumb.is-selecting .focus-range,
+body[data-admin-mode='edit'] #preview-thumb.is-selecting .focus-range {
   border-color: rgba(255, 82, 82, 0.7);
 }
 
