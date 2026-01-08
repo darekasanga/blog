@@ -274,23 +274,28 @@
     updatePlaceholder();
   };
 
-  const createPenDrawer = (canvas, isEnabled, onInk, onComplete) => {
+  const createPenDrawer = (canvas, isEnabled, getOptions, onInk, onComplete) => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     let drawing = false;
     let lastPoint = null;
+    let previousComposite = ctx.globalCompositeOperation;
 
     const start = (event) => {
       if (!isEnabled()) return;
+      const options = getOptions ? getOptions() : {};
+      if (!options) return;
       drawing = true;
       lastPoint = getCanvasPoint(event, canvas);
-      ctx.strokeStyle = '#ef4444';
-      ctx.lineWidth = 3;
+      previousComposite = ctx.globalCompositeOperation;
+      ctx.globalCompositeOperation = options.composite || 'source-over';
+      ctx.strokeStyle = options.color || '#ef4444';
+      ctx.lineWidth = options.lineWidth || 3;
       ctx.beginPath();
       ctx.moveTo(lastPoint.x, lastPoint.y);
       canvas.setPointerCapture(event.pointerId);
       event.preventDefault();
-      if (onInk) onInk();
+      if (onInk) onInk(options);
     };
 
     const move = (event) => {
@@ -305,6 +310,7 @@
       if (!drawing) return;
       drawing = false;
       lastPoint = null;
+      ctx.globalCompositeOperation = previousComposite;
       canvas.releasePointerCapture(event.pointerId);
       if (onComplete) onComplete();
     };
@@ -510,6 +516,15 @@
       button.classList.toggle('is-active', isActive);
       button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
     });
+    if (mode === 'handwriting') {
+      updateHandwritingStatus('青ペンで書き直した文字を再解析できます。');
+    } else if (mode === 'eraser') {
+      updateHandwritingStatus('消しゴムで青・赤ペンを消去できます。');
+    } else if (mode === 'pen') {
+      updateHandwritingStatus('赤ペンで枠内をなぞると再解析します。');
+    } else {
+      updateHandwritingStatus(defaultHandwritingStatus || '両枠とも手書き入力中');
+    }
   };
 
   if (modeButtons.length) {
@@ -530,23 +545,40 @@
     });
   }
 
-  createPenDrawer(leftCanvas, () => true, () => {
-    leftHasInk = true;
-    updatePlaceholder();
-  });
+  createPenDrawer(
+    leftCanvas,
+    () => true,
+    () => ({ color: '#0f172a', lineWidth: 3 }),
+    () => {
+      leftHasInk = true;
+      updatePlaceholder();
+    },
+  );
 
   createPenDrawer(
     rightCanvas,
-    () => currentMode === 'pen',
+    () => ['pen', 'handwriting', 'eraser'].includes(currentMode),
+    () => {
+      if (currentMode === 'handwriting') {
+        return { color: '#38bdf8', lineWidth: 3 };
+      }
+      if (currentMode === 'eraser') {
+        return { composite: 'destination-out', lineWidth: 16 };
+      }
+      return { color: '#ef4444', lineWidth: 3 };
+    },
     () => {
       rightHasInk = true;
       updatePlaceholder();
     },
     () => {
-      if (currentMode !== 'pen') return;
+      if (!['pen', 'handwriting'].includes(currentMode)) return;
       const target = annotations.find((annotation) => annotation.id === activeAnnotationId);
       if (target) {
         reanalyzeAnnotation(target);
+        if (currentMode === 'handwriting') {
+          updateHandwritingStatus('青ペンで書き直した文字を再解析しました。');
+        }
       }
     },
   );

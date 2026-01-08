@@ -630,6 +630,50 @@ h2 {
   transform: rotate(-35deg);
 }
 
+.mode-icon-handwriting {
+  border: none;
+}
+
+.mode-icon-handwriting::before {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 2px;
+  background: #38bdf8;
+  border-radius: 999px;
+  top: 8px;
+  left: 2px;
+  transform: rotate(-35deg);
+}
+
+.mode-icon-handwriting::after {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-right: 2px solid #38bdf8;
+  border-bottom: 2px solid #38bdf8;
+  top: 4px;
+  right: 2px;
+  transform: rotate(-35deg);
+}
+
+.mode-icon-eraser {
+  border: 1.5px solid currentColor;
+}
+
+.mode-icon-eraser::before {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 6px;
+  border-radius: 3px;
+  border: 1.5px solid currentColor;
+  top: 5px;
+  left: 3px;
+  transform: rotate(-12deg);
+}
+
 .card-thumb img {
   width: 100%;
   height: 100%;
@@ -1084,11 +1128,15 @@ h2 {
   -webkit-user-select: none;
 }
 
-.analysis-editor[data-analysis-mode='pen'] #analysis-layer {
+.analysis-editor[data-analysis-mode='pen'] #analysis-layer,
+.analysis-editor[data-analysis-mode='handwriting'] #analysis-layer,
+.analysis-editor[data-analysis-mode='eraser'] #analysis-layer {
   pointer-events: auto;
 }
 
-.analysis-editor[data-analysis-mode='pen'] #correction-layer {
+.analysis-editor[data-analysis-mode='pen'] #correction-layer,
+.analysis-editor[data-analysis-mode='handwriting'] #correction-layer,
+.analysis-editor[data-analysis-mode='eraser'] #correction-layer {
   pointer-events: none;
   cursor: default;
 }
