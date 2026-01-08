@@ -1352,6 +1352,36 @@ body[data-admin-mode='edit'] #preview-thumb .focus-range {
   margin-top: 16px;
 }
 
+.login-code-panel {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.login-code-list {
+  display: grid;
+  gap: 8px;
+}
+
+.login-code-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px dashed var(--border);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.login-code-item .muted-text {
+  margin: 4px 0 0;
+  font-size: 12px;
+}
+
 .biometric-list {
   display: grid;
   gap: 10px;
