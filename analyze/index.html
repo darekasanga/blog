@@ -38,7 +38,33 @@
             <h1>AI COVE解析</h1>
           </div>
         </div>
-        <p class="lead">ここからAI COVEの解析機能にアクセスできます。</p>
+        <p class="lead">MFA認証後に、解析対象の記事と補正ポイントを記録できます。</p>
+
+        <div class="analysis-editor">
+          <section class="analysis-panel" aria-labelledby="analysis-source-title">
+            <div>
+              <p class="kicker">Source</p>
+              <h2 id="analysis-source-title">解析対象の文章</h2>
+              <p class="muted-text">AI COVEに渡した本文や注釈を貼り付けて管理します。</p>
+            </div>
+            <label for="analysis-source" class="field">
+              <span>本文</span>
+              <textarea id="analysis-source" name="analysis-source" rows="12" placeholder="解析対象の文章を入力"></textarea>
+            </label>
+          </section>
+
+          <section class="analysis-panel correction-panel" aria-labelledby="analysis-correction-title">
+            <div>
+              <p class="kicker">Correction</p>
+              <h2 id="analysis-correction-title">赤ペン・修正メモ</h2>
+              <p class="muted-text">MFA認証後の指摘や再解析ポイントをまとめます。</p>
+            </div>
+            <label for="analysis-correction" class="field">
+              <span>補正内容</span>
+              <textarea id="analysis-correction" name="analysis-correction" rows="12" placeholder="修正したいポイントを入力"></textarea>
+            </label>
+          </section>
+        </div>
       </div>
     </section>
   </main>
@@ -54,5 +80,6 @@
   </footer>
 
   <script src="../assets/header-auth.js"></script>
+  <script src="../assets/analyze.js"></script>
 </body>
 </html>
