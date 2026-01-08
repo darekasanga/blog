@@ -761,6 +761,18 @@ h2 {
   box-shadow: var(--shadow);
 }
 
+.info-card--sticky {
+  position: sticky;
+  top: 24px;
+  align-self: start;
+}
+
+@media (max-width: 900px) {
+  .info-card--sticky {
+    position: static;
+  }
+}
+
 .form-actions {
   display: flex;
   gap: 12px;
@@ -878,9 +890,9 @@ h2 {
 
 .character-annotation__label {
   position: absolute;
-  left: 100%;
-  top: 50%;
-  transform: translate(8px, -50%);
+  left: 6px;
+  top: 6px;
+  transform: none;
   background: rgba(15, 23, 42, 0.9);
   color: #f8fafc;
   font-size: 12px;
@@ -891,6 +903,16 @@ h2 {
   white-space: nowrap;
   user-select: none;
   -webkit-user-select: none;
+}
+
+.character-annotation--active {
+  border-color: #f97316;
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.35);
+}
+
+.character-annotation--registered .character-annotation__label {
+  background: rgba(16, 185, 129, 0.9);
+  border-color: rgba(16, 185, 129, 0.9);
 }
 
 #analysis-layer {
