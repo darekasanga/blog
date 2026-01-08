@@ -21,7 +21,6 @@
         <a href="login.html" class="nav-link active" data-auth="guest">ログイン</a>
         <a href="index.html" class="nav-link" data-auth="auth" hidden>記事投稿</a>
         <a href="edit.html" class="nav-link" data-auth="auth" hidden>記事編集</a>
-        <a href="../index.html#analysis-room" class="nav-link" data-auth="auth" hidden>AI COVE解析</a>
         <button class="nav-link nav-button" type="button" data-auth="auth" data-action="logout" hidden>ログアウト</button>
       </nav>
     </div>
@@ -64,7 +63,7 @@
         <div class="info-card login-info">
           <p class="kicker">管理機能</p>
           <h2>認証後に進めるメニュー</h2>
-          <p class="muted-text">記事投稿・編集・AI解析に直接アクセスできます。</p>
+          <p class="muted-text">記事投稿・編集・専用リンクに直接アクセスできます。</p>
           <div class="login-list">
             <div class="login-item">
               <strong>記事投稿</strong>
@@ -75,15 +74,15 @@
               <span class="muted-text">公開済み記事の更新や非表示操作</span>
             </div>
             <div class="login-item">
-              <strong>AI COVEくん解読</strong>
-              <span class="muted-text">AIアナリティクスと解析レポート</span>
+              <strong>blog#68</strong>
+              <span class="muted-text">ログイン後のみアクセスできる専用リンク</span>
             </div>
           </div>
           <div class="auth-status" id="auth-status" aria-live="polite">ログインするとリンクが表示されます。</div>
           <div class="auth-links" id="auth-links" hidden>
             <a class="btn primary" href="index.html">記事投稿へ</a>
             <a class="btn ghost" href="edit.html">記事編集へ</a>
-            <a class="btn ghost" href="../index.html#analysis-room">AI COVEくん解読へ</a>
+            <a class="btn ghost" href="/blog#68">blog#68へ</a>
           </div>
         </div>
       </div>
