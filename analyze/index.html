@@ -58,11 +58,11 @@
         </div>
 
         <div class="analysis-editor">
-          <section class="analysis-panel" aria-labelledby="analysis-source-title">
+          <section class="analysis-panel handwriting-panel" data-panel-role="handwriting" aria-labelledby="analysis-source-title">
             <div>
-              <p class="kicker">Source</p>
-              <h2 id="analysis-source-title">解析対象の文章</h2>
-              <p class="muted-text">AI COVEに渡した本文や注釈を貼り付けて管理します。</p>
+              <p class="kicker">Handwriting</p>
+              <h2 id="analysis-source-title">手書き文字</h2>
+              <p class="muted-text">左側に手書き文字の内容を入力して記録します。</p>
             </div>
             <label for="analysis-source" class="field">
               <span>本文</span>
@@ -70,11 +70,11 @@
             </label>
           </section>
 
-          <section class="analysis-panel correction-panel" aria-labelledby="analysis-correction-title">
+          <section class="analysis-panel correction-panel" data-panel-role="analysis" aria-labelledby="analysis-correction-title">
             <div>
-              <p class="kicker">Correction</p>
-              <h2 id="analysis-correction-title">赤ペン・修正メモ</h2>
-              <p class="muted-text">MFA認証後の指摘や再解析ポイントをまとめます。</p>
+              <p class="kicker">Analysis</p>
+              <h2 id="analysis-correction-title">解析メモ</h2>
+              <p class="muted-text">右側に解析の補足や修正ポイントをまとめます。</p>
             </div>
             <label for="analysis-correction" class="field">
               <span>補正内容</span>

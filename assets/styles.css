@@ -1513,8 +1513,26 @@ body[data-admin-mode='edit'] #preview-thumb.is-selecting .focus-range {
 }
 
 .analysis-panel.correction-panel {
+  border-color: var(--border);
+  box-shadow: var(--shadow);
+}
+
+.analysis-editor[data-analysis-mode='pen'] .analysis-panel {
   border-color: rgba(255, 82, 82, 0.7);
   box-shadow: 0 0 0 1px rgba(255, 82, 82, 0.25);
+}
+
+.analysis-editor[data-analysis-mode='pen'] .analysis-panel textarea {
+  background: rgba(255, 82, 82, 0.04);
+}
+
+.analysis-editor[data-analysis-mode='frame'] .analysis-panel[data-panel-role='analysis'] {
+  border-color: rgba(46, 144, 255, 0.7);
+  box-shadow: 0 0 0 1px rgba(46, 144, 255, 0.25);
+}
+
+.analysis-editor[data-analysis-mode='frame'] .analysis-panel[data-panel-role='analysis'] textarea {
+  background: rgba(46, 144, 255, 0.04);
 }
 
 .lightbox {
