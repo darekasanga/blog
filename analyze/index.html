@@ -53,11 +53,28 @@
             <div class="section-header">
               <div>
                 <p class="kicker">Decoded</p>
-                <h2>出力プレビュー</h2>
+                <h2>レイヤー解析プレビュー</h2>
               </div>
             </div>
-            <pre class="output-panel" id="decoded-output">[DECODED_OUTPUT]
+            <div class="output-panel layered-output">
+              <div class="layered-output__stack" aria-label="解析レイヤースタック">
+                <img id="source-preview" alt="入力画像プレビュー" />
+                <canvas id="analysis-layer" aria-label="解析レイヤー"></canvas>
+                <canvas id="correction-layer" aria-label="赤ペン修正レイヤー"></canvas>
+                <div class="layered-output__placeholder" id="layered-placeholder">
+                  原文画像がここに表示されます
+                </div>
+              </div>
+              <div class="layered-output__meta">
+                <p class="muted-text">原画像に対して解析結果（ハイライト）と赤ペン修正を重ねて確認できます。</p>
+                <div class="layered-output__actions">
+                  <button class="btn ghost" type="button" id="toggle-analysis">解析レイヤー切替</button>
+                  <button class="btn ghost" type="button" id="clear-corrections">赤ペンをクリア</button>
+                </div>
+              </div>
+              <pre class="decoded-text" id="decoded-output">[DECODED_OUTPUT]
 （ここに結果が表示されます）</pre>
+            </div>
           </div>
         </div>
       </div>
@@ -110,10 +127,22 @@
     const output = document.getElementById('decoded-output');
     const status = document.getElementById('decode-status');
     const clearButton = document.getElementById('clear-button');
+    const sourcePreview = document.getElementById('source-preview');
+    const analysisCanvas = document.getElementById('analysis-layer');
+    const correctionCanvas = document.getElementById('correction-layer');
+    const toggleAnalysisButton = document.getElementById('toggle-analysis');
+    const clearCorrectionsButton = document.getElementById('clear-corrections');
+    const layeredPlaceholder = document.getElementById('layered-placeholder');
     const handwritingContext = handwritingCanvas.getContext('2d');
+    const analysisContext = analysisCanvas.getContext('2d');
+    const correctionContext = correctionCanvas.getContext('2d');
     let isDrawing = false;
     let hasDrawing = false;
     let lastPoint = null;
+    let isAnnotating = false;
+    let lastCorrectionPoint = null;
+    let analysisVisible = true;
+    let lastOcrData = null;
 
     const resizeCanvasForDisplay = () => {
       const ratio = window.devicePixelRatio || 1;
@@ -128,6 +157,26 @@
       handwritingContext.fillStyle = '#fff';
       handwritingContext.fillRect(0, 0, width, height);
       hasDrawing = false;
+    };
+
+    const syncLayerCanvases = () => {
+      const ratio = window.devicePixelRatio || 1;
+      const rect = sourcePreview.getBoundingClientRect();
+      if (!rect.width || !rect.height) {
+        return;
+      }
+      [analysisCanvas, correctionCanvas].forEach((canvas) => {
+        canvas.width = Math.max(1, Math.floor(rect.width * ratio));
+        canvas.height = Math.max(1, Math.floor(rect.height * ratio));
+        canvas.style.width = `${rect.width}px`;
+        canvas.style.height = `${rect.height}px`;
+      });
+      analysisContext.setTransform(ratio, 0, 0, ratio, 0, 0);
+      correctionContext.setTransform(ratio, 0, 0, ratio, 0, 0);
+      correctionContext.lineWidth = 3;
+      correctionContext.lineCap = 'round';
+      correctionContext.lineJoin = 'round';
+      correctionContext.strokeStyle = '#e11d48';
     };
 
     const resetCanvas = () => {
@@ -167,6 +216,77 @@
       lastPoint = null;
     };
 
+    const startCorrection = (event) => {
+      isAnnotating = true;
+      const rect = correctionCanvas.getBoundingClientRect();
+      lastCorrectionPoint = {
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
+      };
+    };
+
+    const drawCorrection = (event) => {
+      if (!isAnnotating || !lastCorrectionPoint) return;
+      const rect = correctionCanvas.getBoundingClientRect();
+      const currentPoint = {
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
+      };
+      correctionContext.beginPath();
+      correctionContext.moveTo(lastCorrectionPoint.x, lastCorrectionPoint.y);
+      correctionContext.lineTo(currentPoint.x, currentPoint.y);
+      correctionContext.stroke();
+      lastCorrectionPoint = currentPoint;
+    };
+
+    const stopCorrection = () => {
+      isAnnotating = false;
+      lastCorrectionPoint = null;
+    };
+
+    const clearLayer = (context) => {
+      context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+    };
+
+    const renderAnalysisLayer = (ocrData) => {
+      lastOcrData = ocrData;
+      clearLayer(analysisContext);
+      if (!ocrData || !ocrData.words || !ocrData.words.length) {
+        return;
+      }
+      const rect = analysisCanvas.getBoundingClientRect();
+      const scaleX = rect.width / handwritingCanvas.width;
+      const scaleY = rect.height / handwritingCanvas.height;
+      analysisContext.fillStyle = 'rgba(239, 68, 68, 0.18)';
+      analysisContext.strokeStyle = 'rgba(239, 68, 68, 0.9)';
+      analysisContext.lineWidth = 1.5;
+      ocrData.words.forEach((word) => {
+        if (!word.bbox) return;
+        const width = (word.bbox.x1 - word.bbox.x0) * scaleX;
+        const height = (word.bbox.y1 - word.bbox.y0) * scaleY;
+        const x = word.bbox.x0 * scaleX;
+        const y = word.bbox.y0 * scaleY;
+        analysisContext.fillRect(x, y, width, height);
+        analysisContext.strokeRect(x, y, width, height);
+      });
+    };
+
+    const updatePreviewImage = (imageData) => {
+      if (!imageData) {
+        sourcePreview.removeAttribute('src');
+        layeredPlaceholder.hidden = false;
+        clearLayer(analysisContext);
+        clearLayer(correctionContext);
+        return;
+      }
+      sourcePreview.src = imageData;
+      layeredPlaceholder.hidden = true;
+      sourcePreview.onload = () => {
+        syncLayerCanvases();
+      };
+      syncLayerCanvases();
+    };
+
     handwritingCanvas.addEventListener('pointerdown', (event) => {
       event.preventDefault();
       handwritingCanvas.setPointerCapture(event.pointerId);
@@ -194,8 +314,23 @@
       { passive: false },
     );
 
+    correctionCanvas.addEventListener('pointerdown', (event) => {
+      event.preventDefault();
+      correctionCanvas.setPointerCapture(event.pointerId);
+      startCorrection(event);
+    });
+    correctionCanvas.addEventListener('pointermove', (event) => {
+      event.preventDefault();
+      drawCorrection(event);
+    });
+    correctionCanvas.addEventListener('pointerup', stopCorrection);
+    correctionCanvas.addEventListener('pointercancel', stopCorrection);
+    correctionCanvas.addEventListener('pointerleave', stopCorrection);
+
     clearDrawingButton.addEventListener('click', () => {
       resetCanvas();
+      updatePreviewImage('');
+      lastOcrData = null;
       status.textContent = '筆記入力をクリアしました。';
     });
 
@@ -207,13 +342,14 @@
 
     const runOcr = async () => {
       if (!hasDrawing) {
-        return '';
+        return null;
       }
       status.textContent = '解読中…';
       const imageData = handwritingCanvas.toDataURL('image/png');
+      updatePreviewImage(imageData);
       if (!window.Tesseract) {
         status.textContent = 'OCR ライブラリの読み込みに失敗しました。';
-        return '';
+        return null;
       }
       const result = await window.Tesseract.recognize(imageData, 'jpn+eng', {
         logger: (message) => {
@@ -222,16 +358,26 @@
           }
         },
       });
-      return result.data.text.trim();
+      return {
+        text: result.data.text.trim(),
+        data: result.data,
+      };
     };
 
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
-      const rawText = await runOcr();
+      const ocrResult = await runOcr();
+      const rawText = ocrResult?.text ?? '';
       const blockInput = extractBlock('ORIGINAL_INPUT', rawText) || rawText;
       const resultText = blockInput || '（入力がありません）';
 
       output.textContent = `[DECODED_OUTPUT]\n${resultText}`;
+      if (ocrResult?.data) {
+        renderAnalysisLayer(ocrResult.data);
+      } else {
+        lastOcrData = null;
+        clearLayer(analysisContext);
+      }
       if (!rawText && !hasDrawing) {
         status.textContent = '筆記入力がありません。';
       } else {
@@ -242,10 +388,29 @@
     clearButton.addEventListener('click', () => {
       resetCanvas();
       output.textContent = '[DECODED_OUTPUT]\n（ここに結果が表示されます）';
+      updatePreviewImage('');
+      lastOcrData = null;
+      clearLayer(analysisContext);
+      clearLayer(correctionContext);
       status.textContent = '';
     });
 
-    window.addEventListener('resize', resizeCanvasForDisplay);
+    toggleAnalysisButton.addEventListener('click', () => {
+      analysisVisible = !analysisVisible;
+      analysisCanvas.style.opacity = analysisVisible ? '1' : '0';
+    });
+
+    clearCorrectionsButton.addEventListener('click', () => {
+      clearLayer(correctionContext);
+    });
+
+    window.addEventListener('resize', () => {
+      resizeCanvasForDisplay();
+      syncLayerCanvases();
+      if (lastOcrData) {
+        renderAnalysisLayer(lastOcrData);
+      }
+    });
     resizeCanvasForDisplay();
   </script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js" defer></script>
