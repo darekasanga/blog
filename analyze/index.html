@@ -52,6 +52,10 @@
             </button>
           </div>
         </div>
+        <div class="analysis-handwriting" aria-live="polite">
+          <p class="kicker">手書き判定</p>
+          <p class="muted-text" id="handwriting-status" data-handwriting="clear">手書き判定なし</p>
+        </div>
 
         <div class="analysis-editor">
           <section class="analysis-panel" aria-labelledby="analysis-source-title">
@@ -94,5 +98,35 @@
 
   <script src="../assets/header-auth.js"></script>
   <script src="../assets/analyze.js"></script>
+  <script>
+    (() => {
+      const sourceInput = document.getElementById('analysis-source');
+      const correctionInput = document.getElementById('analysis-correction');
+      const status = document.getElementById('handwriting-status');
+
+      if (!sourceInput || !correctionInput || !status) return;
+
+      const keywordRegex = /(手書き|直筆|手描き|走り書き|ラフ)/;
+      const symbolRegex = /[✍✎✐✏🖊🖋🖍]/;
+      const markerRegex = /(\[手書き\]|\(手書き\)|（手書き）|手書き[:：])/;
+
+      const detectHandwriting = (text) => {
+        const trimmed = text.trim();
+        if (!trimmed) return false;
+        return keywordRegex.test(trimmed) || symbolRegex.test(trimmed) || markerRegex.test(trimmed);
+      };
+
+      const updateStatus = () => {
+        const combinedText = `${sourceInput.value}\n${correctionInput.value}`;
+        const hasHandwriting = detectHandwriting(combinedText);
+        status.dataset.handwriting = hasHandwriting ? 'suspected' : 'clear';
+        status.textContent = hasHandwriting ? '手書きの可能性あり' : '手書き判定なし';
+      };
+
+      sourceInput.addEventListener('input', updateStatus);
+      correctionInput.addEventListener('input', updateStatus);
+      updateStatus();
+    })();
+  </script>
 </body>
 </html>
