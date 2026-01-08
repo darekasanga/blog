@@ -35,7 +35,7 @@
           右側の赤ペン修正では、赤枠表示をタップし修正を赤ペンでしたものを手書き文字判定により、蓄積データまたはOCRにより出力項目に出力する。
         </p>
         <div class="info-grid" style="align-items: stretch;">
-          <form class="info-card info-card--sticky" id="decode-form">
+          <form class="info-card" id="decode-form">
             <div class="field">
               <label for="handwriting-canvas">ORIGINAL_INPUT (筆記入力)</label>
               <div class="handwriting-panel">
@@ -152,6 +152,8 @@
     let hasCorrections = false;
     let activeAnnotation = null;
     let activeCorrectionStroke = false;
+    let correctionStrokeActive = false;
+    let correctionBounds = null;
 
     const resizeCanvasForDisplay = () => {
       const ratio = window.devicePixelRatio || 1;
@@ -232,6 +234,14 @@
         x: event.clientX - rect.left,
         y: event.clientY - rect.top,
       };
+      correctionBounds = {
+        minX: lastCorrectionPoint.x,
+        minY: lastCorrectionPoint.y,
+        maxX: lastCorrectionPoint.x,
+        maxY: lastCorrectionPoint.y,
+      };
+      correctionStrokeActive = false;
+      activeCorrectionStroke = false;
     };
 
     const drawCorrection = (event) => {
@@ -247,9 +257,74 @@
       correctionContext.stroke();
       lastCorrectionPoint = currentPoint;
       hasCorrections = true;
+      correctionStrokeActive = true;
+      if (correctionBounds) {
+        correctionBounds.minX = Math.min(correctionBounds.minX, currentPoint.x);
+        correctionBounds.minY = Math.min(correctionBounds.minY, currentPoint.y);
+        correctionBounds.maxX = Math.max(correctionBounds.maxX, currentPoint.x);
+        correctionBounds.maxY = Math.max(correctionBounds.maxY, currentPoint.y);
+      }
       if (activeAnnotation) {
         activeCorrectionStroke = true;
       }
+    };
+
+    const getCorrectionBbox = () => {
+      if (!correctionBounds) return null;
+      const rect = correctionCanvas.getBoundingClientRect();
+      if (!rect.width || !rect.height) return null;
+      const scaleX = handwritingCanvas.width / rect.width;
+      const scaleY = handwritingCanvas.height / rect.height;
+      return {
+        x0: correctionBounds.minX * scaleX,
+        y0: correctionBounds.minY * scaleY,
+        x1: correctionBounds.maxX * scaleX,
+        y1: correctionBounds.maxY * scaleY,
+      };
+    };
+
+    const renderSelectionAnnotation = (bbox, text) => {
+      clearLayer(analysisContext);
+      clearCharacterAnnotations();
+      const rect = analysisCanvas.getBoundingClientRect();
+      const scaleX = rect.width / handwritingCanvas.width;
+      const scaleY = rect.height / handwritingCanvas.height;
+      const width = (bbox.x1 - bbox.x0) * scaleX;
+      const height = (bbox.y1 - bbox.y0) * scaleY;
+      const x = bbox.x0 * scaleX;
+      const y = bbox.y0 * scaleY;
+      analysisContext.fillStyle = 'rgba(239, 68, 68, 0.18)';
+      analysisContext.strokeStyle = 'rgba(239, 68, 68, 0.9)';
+      analysisContext.lineWidth = 1.5;
+      analysisContext.fillRect(x, y, width, height);
+      analysisContext.strokeRect(x, y, width, height);
+      if (!text) return;
+      const annotation = document.createElement('button');
+      annotation.type = 'button';
+      annotation.className = 'character-annotation';
+      annotation.style.left = `${x}px`;
+      annotation.style.top = `${y}px`;
+      annotation.style.width = `${width}px`;
+      annotation.style.height = `${height}px`;
+      annotation.dataset.bbox = JSON.stringify(bbox);
+      const label = document.createElement('span');
+      label.className = 'character-annotation__label';
+      label.textContent = text;
+      annotation.appendChild(label);
+      annotation.addEventListener('click', () => {
+        if (activeAnnotation?.element) {
+          activeAnnotation.element.classList.remove('character-annotation--active');
+        }
+        activeAnnotation = {
+          element: annotation,
+          label,
+          bbox,
+        };
+        activeCorrectionStroke = false;
+        announceStatus('赤枠の上から赤ペンで修正してください。');
+        annotation.classList.add('character-annotation--active');
+      });
+      characterAnnotations.appendChild(annotation);
     };
 
     const stopCorrection = async () => {
@@ -268,6 +343,33 @@
         activeAnnotation.element.classList.remove('character-annotation--active');
         activeAnnotation = null;
         activeCorrectionStroke = false;
+        correctionStrokeActive = false;
+        correctionBounds = null;
+        return;
+      }
+      if (correctionStrokeActive) {
+        const bbox = getCorrectionBbox();
+        correctionStrokeActive = false;
+        correctionBounds = null;
+        if (!bbox) return;
+        const width = bbox.x1 - bbox.x0;
+        const height = bbox.y1 - bbox.y0;
+        if (width < 12 || height < 12) {
+          return;
+        }
+        announceStatus('指定範囲を判定中…');
+        activeAnnotation = null;
+        activeCorrectionStroke = false;
+        lastOcrData = null;
+        const text = await runOcrForRegion(bbox);
+        const normalized = normalizeBbox(bbox);
+        if (text) {
+          renderSelectionAnnotation(normalized, text);
+          announceStatus(`指定範囲の判定結果「${text}」を表示しました。`);
+        } else {
+          renderSelectionAnnotation(normalized, '');
+          announceStatus('指定範囲の判定ができませんでした。');
+        }
       }
     };
 
