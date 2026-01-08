@@ -556,6 +556,80 @@ h2 {
   border: 1px solid var(--border);
 }
 
+.preview-mode-picker {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.mode-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.mode-button:hover {
+  transform: translateY(-1px);
+}
+
+.mode-button.is-active {
+  color: var(--fg);
+  border-color: var(--accent);
+  background: rgba(108, 99, 255, 0.15);
+}
+
+.mode-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.mode-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  border: 1.5px solid currentColor;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.mode-icon-pen {
+  border: none;
+}
+
+.mode-icon-pen::before {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 2px;
+  background: currentColor;
+  border-radius: 999px;
+  top: 8px;
+  left: 2px;
+  transform: rotate(-35deg);
+}
+
+.mode-icon-pen::after {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  top: 4px;
+  right: 2px;
+  transform: rotate(-35deg);
+}
+
 .card-thumb img {
   width: 100%;
   height: 100%;
@@ -864,9 +938,14 @@ h2 {
   z-index: 0;
 }
 
-body[data-admin-mode='post'] #preview-thumb,
-body[data-admin-mode='edit'] #preview-thumb {
+body[data-admin-mode='post'] #preview-thumb[data-preview-mode='frame'],
+body[data-admin-mode='edit'] #preview-thumb[data-preview-mode='frame'] {
   cursor: crosshair;
+}
+
+body[data-admin-mode='post'] #preview-thumb[data-preview-mode='pen'],
+body[data-admin-mode='edit'] #preview-thumb[data-preview-mode='pen'] {
+  cursor: pointer;
 }
 
 body[data-admin-mode='post'] #preview-thumb .focus-range,
