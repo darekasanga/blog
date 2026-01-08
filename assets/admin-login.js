@@ -10,15 +10,19 @@
   const ADMIN_AUTH_EXPIRY_KEY = 'admin-authenticated-expires';
   const AUTH_TTL_MS = 30 * 60 * 1000;
   const CREDENTIAL_ID_KEY = 'admin-biometric-credential-id';
+  const CREDENTIALS_KEY = 'admin-biometric-credentials';
 
   const authButton = document.getElementById('biometric-auth');
   const resetButton = document.getElementById('reset-biometric');
+  const registerButton = document.getElementById('register-biometric');
   const message = document.getElementById('login-message');
   const authLinks = document.getElementById('auth-links');
   const authStatus = document.getElementById('auth-status');
   const loginCard = document.getElementById('login-card');
   const siteThemePicker = document.getElementById('site-theme-picker');
   const hint = document.getElementById('biometric-hint');
+  const biometricList = document.getElementById('biometric-list');
+  const biometricLabelInput = document.getElementById('biometric-label');
 
   if (!authButton) return;
 
@@ -91,6 +95,65 @@
     return bytes.buffer;
   }
 
+  function readCredentialList() {
+    try {
+      const stored = JSON.parse(localStorage.getItem(CREDENTIALS_KEY) || '[]');
+      if (Array.isArray(stored)) {
+        return stored.filter((entry) => entry && typeof entry.id === 'string');
+      }
+    } catch (error) {
+      // ignore malformed data
+    }
+
+    const legacy = localStorage.getItem(CREDENTIAL_ID_KEY);
+    if (legacy) {
+      const migrated = [{ id: legacy, label: '管理者', createdAt: Date.now() }];
+      localStorage.setItem(CREDENTIALS_KEY, JSON.stringify(migrated));
+      return migrated;
+    }
+
+    return [];
+  }
+
+  function saveCredentialList(list) {
+    localStorage.setItem(CREDENTIALS_KEY, JSON.stringify(list));
+  }
+
+  function renderCredentialList() {
+    if (!biometricList) return;
+    const credentials = readCredentialList();
+    if (!credentials.length) {
+      biometricList.innerHTML = '<p class="muted-text">登録済みの生体認証ユーザーがいません。</p>';
+      return;
+    }
+
+    biometricList.innerHTML = credentials
+      .map(
+        (credential) => `
+          <div class="biometric-item" data-id="${credential.id}">
+            <div>
+              <strong>${credential.label || '管理者'}</strong>
+              <p class="muted-text">登録ID: ${credential.id.slice(0, 12)}...</p>
+            </div>
+            <button class="btn ghost" type="button" data-action="remove">削除</button>
+          </div>
+        `
+      )
+      .join('');
+
+    biometricList.querySelectorAll('button[data-action="remove"]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const item = button.closest('.biometric-item');
+        const id = item?.dataset.id;
+        if (!id) return;
+        const next = readCredentialList().filter((credential) => credential.id !== id);
+        saveCredentialList(next);
+        renderCredentialList();
+        showMessage('生体認証ユーザーを削除しました。', 'success');
+      });
+    });
+  }
+
   function getRedirectTarget() {
     const params = new URLSearchParams(window.location.search);
     const redirectParam = params.get('redirect');
@@ -133,12 +196,14 @@
     return PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
   }
 
-  async function registerCredential() {
+  async function registerCredential(label) {
     const challenge = new Uint8Array(32);
     window.crypto.getRandomValues(challenge);
 
     const userId = new Uint8Array(16);
     window.crypto.getRandomValues(userId);
+    const displayName = label?.trim() || `ユーザー${readCredentialList().length + 1}`;
+    const userName = `admin-${Date.now()}@emperor.news`;
 
     const credential = await navigator.credentials.create({
       publicKey: {
@@ -148,8 +213,8 @@
         },
         user: {
           id: userId,
-          name: 'admin@emperor.news',
-          displayName: '管理者',
+          name: userName,
+          displayName,
         },
         pubKeyCredParams: [
           { type: 'public-key', alg: -7 },
@@ -167,24 +232,29 @@
     if (!credential) {
       throw new Error('credential-missing');
     }
-
-    localStorage.setItem(CREDENTIAL_ID_KEY, bufferToBase64Url(credential.rawId));
+    const credentialId = bufferToBase64Url(credential.rawId);
+    const current = readCredentialList();
+    if (!current.find((item) => item.id === credentialId)) {
+      current.push({ id: credentialId, label: displayName, createdAt: Date.now() });
+      saveCredentialList(current);
+    }
+    renderCredentialList();
   }
 
-  async function authenticateCredential(credentialId) {
+  async function authenticateCredential(credentialIds) {
     const challenge = new Uint8Array(32);
     window.crypto.getRandomValues(challenge);
+
+    const allowCredentials = credentialIds.map((id) => ({
+      id: base64UrlToBuffer(id),
+      type: 'public-key',
+      transports: ['internal'],
+    }));
 
     const assertion = await navigator.credentials.get({
       publicKey: {
         challenge,
-        allowCredentials: [
-          {
-            id: base64UrlToBuffer(credentialId),
-            type: 'public-key',
-            transports: ['internal'],
-          },
-        ],
+        allowCredentials,
         userVerification: 'required',
         timeout: 60000,
       },
@@ -205,13 +275,12 @@
     }
 
     try {
-      const storedId = localStorage.getItem(CREDENTIAL_ID_KEY);
-      if (!storedId) {
-        showMessage('初回登録を開始します。', 'success');
-        await registerCredential();
-      } else {
-        await authenticateCredential(storedId);
+      const stored = readCredentialList();
+      if (!stored.length) {
+        showMessage('先に生体認証ユーザーを登録してください。', 'error');
+        return;
       }
+      await authenticateCredential(stored.map((item) => item.id));
 
       setAuthSession();
       updateAuthState(true);
@@ -229,9 +298,31 @@
   if (resetButton) {
     resetButton.addEventListener('click', () => {
       localStorage.removeItem(CREDENTIAL_ID_KEY);
+      localStorage.removeItem(CREDENTIALS_KEY);
       clearAuthSession();
       updateAuthState(false);
+      renderCredentialList();
       showMessage('登録情報をリセットしました。再度生体認証を実行してください。', 'success');
+    });
+  }
+
+  if (registerButton) {
+    registerButton.addEventListener('click', async () => {
+      clearMessage();
+      const available = await isBiometricAvailable();
+      if (!available) {
+        showMessage('この端末では生体認証が利用できません。', 'error');
+        return;
+      }
+      try {
+        await registerCredential(biometricLabelInput?.value || '');
+        if (biometricLabelInput) {
+          biometricLabelInput.value = '';
+        }
+        showMessage('生体認証ユーザーを登録しました。', 'success');
+      } catch (error) {
+        showMessage('登録に失敗しました。端末の生体認証を再度お試しください。', 'error');
+      }
     });
   }
 
@@ -244,6 +335,7 @@
   }
 
   renderSiteThemePicker();
+  renderCredentialList();
   updateAuthState(false);
 
   isBiometricAvailable().then((available) => {
