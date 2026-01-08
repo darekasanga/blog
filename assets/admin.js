@@ -63,8 +63,10 @@
   const footerDescriptionInput = document.getElementById('footer-description');
   const heroOverlayInput = document.getElementById('hero-overlay');
   const heroOverlayLabel = document.getElementById('hero-overlay-label');
-  const heroOverlayStopInput = document.getElementById('hero-overlay-stop');
-  const heroOverlayStopLabel = document.getElementById('hero-overlay-stop-label');
+  const heroOverlayStartInput = document.getElementById('hero-overlay-start');
+  const heroOverlayStartLabel = document.getElementById('hero-overlay-start-label');
+  const heroOverlayEndInput = document.getElementById('hero-overlay-end');
+  const heroOverlayEndLabel = document.getElementById('hero-overlay-end-label');
   const heroPositionInput = document.getElementById('hero-position');
   const heroPositionLabel = document.getElementById('hero-position-label');
   const resultMessage = document.getElementById('result-message');
@@ -275,30 +277,43 @@
 
   function resolveHeroPreviewSettings() {
     const overlayInput = Number(heroOverlayInput?.value);
-    const overlayStopInput = Number(heroOverlayStopInput?.value);
+    const overlayStartInput = Number(heroOverlayStartInput?.value);
+    const overlayEndInput = Number(heroOverlayEndInput?.value);
     const positionInput = Number(heroPositionInput?.value);
     const overlayOpacity = Number.isFinite(overlayInput) ? Math.min(Math.max(overlayInput, 0), 100) : DEFAULT_HERO_SETTINGS.overlayOpacity;
-    const overlayStop = Number.isFinite(overlayStopInput) ? Math.min(Math.max(overlayStopInput, 0), 100) : DEFAULT_HERO_SETTINGS.overlayStop;
+    let overlayStart = Number.isFinite(overlayStartInput) ? Math.min(Math.max(overlayStartInput, 0), 100) : DEFAULT_HERO_SETTINGS.overlayStart;
+    let overlayEnd = Number.isFinite(overlayEndInput) ? Math.min(Math.max(overlayEndInput, 0), 100) : DEFAULT_HERO_SETTINGS.overlayEnd;
+    if (overlayEnd - overlayStart < 5) {
+      if (overlayEnd >= 100) {
+        overlayStart = Math.max(overlayEnd - 5, 0);
+      } else {
+        overlayEnd = Math.min(overlayStart + 5, 100);
+      }
+    }
     const imagePosition = Number.isFinite(positionInput) ? Math.min(Math.max(positionInput, 0), 100) : DEFAULT_HERO_SETTINGS.imagePosition;
-    return { overlayOpacity, overlayStop, imagePosition };
+    return { overlayOpacity, overlayStart, overlayEnd, imagePosition };
   }
 
   function updateHeroPreview() {
     if (!previewHero) return;
-    const { overlayOpacity, overlayStop, imagePosition } = resolveHeroPreviewSettings();
+    const { overlayOpacity, overlayStart, overlayEnd, imagePosition } = resolveHeroPreviewSettings();
     const overlayStrong = overlayOpacity / 100;
     const overlayWeak = Math.min(Math.max(overlayStrong * 0.35, 0), 1);
     previewHero.style.setProperty('--hero-overlay-strong', overlayStrong.toFixed(2));
     previewHero.style.setProperty('--hero-overlay-weak', overlayWeak.toFixed(2));
-    previewHero.style.setProperty('--hero-overlay-stop', `${overlayStop}%`);
+    previewHero.style.setProperty('--hero-overlay-start', `${overlayStart}%`);
+    previewHero.style.setProperty('--hero-overlay-end', `${overlayEnd}%`);
     previewHero.style.setProperty('--hero-image-position', `${imagePosition}%`);
+    if (heroOverlayStartInput) heroOverlayStartInput.value = String(Math.round(overlayStart));
+    if (heroOverlayEndInput) heroOverlayEndInput.value = String(Math.round(overlayEnd));
     if (previewHeroTitle) previewHeroTitle.textContent = previewTitle?.textContent || '無題の投稿';
     if (previewHeroLead) previewHeroLead.textContent = previewExcerpt?.textContent || '本文からAIが要約します。';
     if (previewHeroKicker) {
       previewHeroKicker.textContent = `最新記事プレビュー ${previewDate?.textContent || today}`;
     }
     if (heroOverlayLabel) heroOverlayLabel.textContent = `${Math.round(overlayOpacity)}%`;
-    if (heroOverlayStopLabel) heroOverlayStopLabel.textContent = `${Math.round(overlayStop)}%`;
+    if (heroOverlayStartLabel) heroOverlayStartLabel.textContent = `${Math.round(overlayStart)}%`;
+    if (heroOverlayEndLabel) heroOverlayEndLabel.textContent = `${Math.round(overlayEnd)}%`;
     if (heroPositionLabel) heroPositionLabel.textContent = `${Math.round(imagePosition)}%`;
     if (resizedImageData) {
       previewHero.classList.add('has-image');
@@ -512,7 +527,8 @@
     if (focusEndEl) focusEndEl.value = '80';
     if (imageScaleEl) imageScaleEl.value = '1';
     if (heroOverlayInput) heroOverlayInput.value = String(DEFAULT_HERO_SETTINGS.overlayOpacity);
-    if (heroOverlayStopInput) heroOverlayStopInput.value = String(DEFAULT_HERO_SETTINGS.overlayStop);
+    if (heroOverlayStartInput) heroOverlayStartInput.value = String(DEFAULT_HERO_SETTINGS.overlayStart);
+    if (heroOverlayEndInput) heroOverlayEndInput.value = String(DEFAULT_HERO_SETTINGS.overlayEnd);
     if (heroPositionInput) heroPositionInput.value = String(DEFAULT_HERO_SETTINGS.imagePosition);
     applyArticleTheme(siteThemeKey);
     updatePreview();
@@ -553,7 +569,8 @@
     if (focusEndEl) focusEndEl.value = focus.end;
     if (imageScaleEl) imageScaleEl.value = normalizeScale(target.imageScale);
     if (heroOverlayInput) heroOverlayInput.value = String(target.heroOverlayOpacity ?? DEFAULT_HERO_SETTINGS.overlayOpacity);
-    if (heroOverlayStopInput) heroOverlayStopInput.value = String(target.heroOverlayStop ?? DEFAULT_HERO_SETTINGS.overlayStop);
+    if (heroOverlayStartInput) heroOverlayStartInput.value = String(target.heroOverlayStart ?? DEFAULT_HERO_SETTINGS.overlayStart);
+    if (heroOverlayEndInput) heroOverlayEndInput.value = String(target.heroOverlayEnd ?? DEFAULT_HERO_SETTINGS.overlayEnd);
     if (heroPositionInput) heroPositionInput.value = String(target.heroImagePosition ?? DEFAULT_HERO_SETTINGS.imagePosition);
     applyArticleTheme(target.theme || selectedTheme.key);
     if (submitButton) {
@@ -608,7 +625,7 @@
     });
   }
 
-  [heroOverlayInput, heroOverlayStopInput, heroPositionInput].filter(Boolean).forEach((input) => {
+  [heroOverlayInput, heroOverlayStartInput, heroOverlayEndInput, heroPositionInput].filter(Boolean).forEach((input) => {
     input.addEventListener('input', () => {
       updatePreview();
     });
@@ -691,7 +708,8 @@
         imageScale,
         theme,
         heroOverlayOpacity: heroSettings.overlayOpacity,
-        heroOverlayStop: heroSettings.overlayStop,
+        heroOverlayStart: heroSettings.overlayStart,
+        heroOverlayEnd: heroSettings.overlayEnd,
         heroImagePosition: heroSettings.imagePosition,
       },
       posts.length
