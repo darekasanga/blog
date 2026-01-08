@@ -8,6 +8,7 @@ const {
   applyThemeToDocument,
   themes,
   SITE_SETTINGS_KEY,
+  DEFAULT_HERO_SETTINGS,
 } = window.BlogData;
 let posts = readPosts();
 const track = document.getElementById('card-track');
@@ -62,15 +63,6 @@ function applyHomeSettings() {
   footerDescriptionTargets.forEach((el) => {
     el.textContent = settings.footerDescription;
   });
-  if (heroSection) {
-    const overlayValue = Number.isFinite(settings.heroOverlayOpacity) ? settings.heroOverlayOpacity : 70;
-    const overlayStrong = Math.min(Math.max(overlayValue, 0), 100) / 100;
-    const overlayWeak = Math.min(Math.max(overlayStrong * 0.35, 0), 1);
-    const imagePosition = Number.isFinite(settings.heroImagePosition) ? settings.heroImagePosition : 50;
-    heroSection.style.setProperty('--hero-overlay-strong', overlayStrong.toFixed(2));
-    heroSection.style.setProperty('--hero-overlay-weak', overlayWeak.toFixed(2));
-    heroSection.style.setProperty('--hero-image-position', `${imagePosition}%`);
-  }
 }
 
 const lightbox = document.createElement('div');
@@ -120,6 +112,23 @@ function renderCards() {
 
 function updateHeroContent() {
   const latest = latestVisiblePost();
+  if (heroSection) {
+    const overlayValue = Number.isFinite(latest?.heroOverlayOpacity)
+      ? latest.heroOverlayOpacity
+      : DEFAULT_HERO_SETTINGS.overlayOpacity;
+    const overlayStrong = Math.min(Math.max(overlayValue, 0), 100) / 100;
+    const overlayWeak = Math.min(Math.max(overlayStrong * 0.35, 0), 1);
+    const overlayStop = Number.isFinite(latest?.heroOverlayStop)
+      ? latest.heroOverlayStop
+      : DEFAULT_HERO_SETTINGS.overlayStop;
+    const imagePosition = Number.isFinite(latest?.heroImagePosition)
+      ? latest.heroImagePosition
+      : DEFAULT_HERO_SETTINGS.imagePosition;
+    heroSection.style.setProperty('--hero-overlay-strong', overlayStrong.toFixed(2));
+    heroSection.style.setProperty('--hero-overlay-weak', overlayWeak.toFixed(2));
+    heroSection.style.setProperty('--hero-overlay-stop', `${overlayStop}%`);
+    heroSection.style.setProperty('--hero-image-position', `${imagePosition}%`);
+  }
   if (!latest) {
     if (heroKicker) heroKicker.textContent = '最新記事';
     if (heroTitle) heroTitle.textContent = 'まだ記事がありません';
