@@ -1,4 +1,4 @@
-(() => {
+(async () => {
   const {
     readPosts,
     savePosts,
@@ -22,24 +22,23 @@
   const adminMode = document.body.dataset.adminMode || 'post';
   const isEditMode = adminMode === 'edit';
   const ADMIN_AUTH_KEY = 'admin-authenticated';
-  const ADMIN_PASSWORD = 'admin';
-  const redirectTarget = new URLSearchParams(window.location.search).get('redirect');
+  const ADMIN_AUTH_EXPIRY_KEY = 'admin-authenticated-expires';
 
   function ensureAdminAuth() {
-    if (sessionStorage.getItem(ADMIN_AUTH_KEY) === 'true') {
+    const authenticated = sessionStorage.getItem(ADMIN_AUTH_KEY) === 'true';
+    const expires = Number(sessionStorage.getItem(ADMIN_AUTH_EXPIRY_KEY) || 0);
+
+    if (authenticated && expires && Date.now() < expires) {
       return true;
     }
-    const entered = window.prompt('管理ページのパスワードを入力してください。');
-    if (entered === ADMIN_PASSWORD) {
-      sessionStorage.setItem(ADMIN_AUTH_KEY, 'true');
-      if (redirectTarget) {
-        window.location.href = redirectTarget;
-        return false;
-      }
-      return true;
-    }
-    alert('パスワードが一致しませんでした。トップへ戻ります。');
-    window.location.href = '../index.html';
+
+    sessionStorage.removeItem(ADMIN_AUTH_KEY);
+    sessionStorage.removeItem(ADMIN_AUTH_EXPIRY_KEY);
+
+    const redirectTarget = encodeURIComponent(
+      `${window.location.pathname}${window.location.search}${window.location.hash}`
+    );
+    window.location.href = `../admin/login.html?redirect=${redirectTarget}`;
     return false;
   }
 
@@ -85,6 +84,7 @@
   const previewThumb = document.getElementById('preview-thumb');
   const previewCard = document.getElementById('preview-card');
   const previewHero = document.getElementById('preview-hero');
+  const previewHeroImage = document.getElementById('preview-hero-image');
   const previewHeroKicker = document.getElementById('preview-hero-kicker');
   const previewHeroTitle = document.getElementById('preview-hero-title');
   const previewHeroLead = document.getElementById('preview-hero-lead');
@@ -93,12 +93,36 @@
   const siteThemePicker = document.getElementById('site-theme-picker');
   const imageScaleEl = document.getElementById('image-scale');
   const imageScaleLabel = document.getElementById('image-scale-label');
+  const previewModeButtons = document.querySelectorAll('.preview-mode-picker [data-preview-mode]');
 
   if (!form) return;
 
   previewTags.className = 'tag-row';
   if (previewThumb) {
     previewThumb.insertAdjacentElement('afterend', previewTags);
+  }
+
+  function setPreviewMode(mode) {
+    if (previewThumb) {
+      previewThumb.dataset.previewMode = mode;
+    }
+    previewModeButtons.forEach((button) => {
+      const isActive = button.dataset.previewMode === mode;
+      button.classList.toggle('is-active', isActive);
+      button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    });
+  }
+
+  if (previewModeButtons.length) {
+    const initialMode =
+      Array.from(previewModeButtons).find((button) => button.getAttribute('aria-pressed') === 'true')
+        ?.dataset.previewMode || previewModeButtons[0].dataset.previewMode;
+    setPreviewMode(initialMode || 'frame');
+    previewModeButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        setPreviewMode(button.dataset.previewMode || 'frame');
+      });
+    });
   }
 
   const today = new Date().toISOString().slice(0, 10);
@@ -296,12 +320,13 @@
       }
     }
     const imagePosition = Number.isFinite(positionInput) ? Math.min(Math.max(positionInput, 0), 100) : DEFAULT_HERO_SETTINGS.imagePosition;
-    return { overlayOpacity, overlayStart, overlayEnd, imagePosition };
+    const imageScale = normalizeScale(Number(imageScaleEl?.value));
+    return { overlayOpacity, overlayStart, overlayEnd, imagePosition, imageScale };
   }
 
   function updateHeroPreview() {
     if (!previewHero) return;
-    const { overlayOpacity, overlayStart, overlayEnd, imagePosition } = resolveHeroPreviewSettings();
+    const { overlayOpacity, overlayStart, overlayEnd, imagePosition, imageScale } = resolveHeroPreviewSettings();
     const overlayStrong = overlayOpacity / 100;
     const overlayWeak = Math.min(Math.max(overlayStrong * 0.35, 0), 1);
     previewHero.style.setProperty('--hero-overlay-strong', overlayStrong.toFixed(2));
@@ -309,6 +334,7 @@
     previewHero.style.setProperty('--hero-overlay-start', `${overlayStart}%`);
     previewHero.style.setProperty('--hero-overlay-end', `${overlayEnd}%`);
     previewHero.style.setProperty('--hero-image-position', `${imagePosition}%`);
+    previewHero.style.setProperty('--hero-image-scale', imageScale);
     if (heroOverlayStartInput) heroOverlayStartInput.value = String(Math.round(overlayStart));
     if (heroOverlayEndInput) heroOverlayEndInput.value = String(Math.round(overlayEnd));
     if (previewHeroTitle) previewHeroTitle.textContent = previewTitle?.textContent || '無題の投稿';
@@ -322,10 +348,16 @@
     if (heroPositionLabel) heroPositionLabel.textContent = `${Math.round(imagePosition)}%`;
     if (resizedImageData) {
       previewHero.classList.add('has-image');
-      previewHero.style.setProperty('--hero-image', `url("${resizedImageData}")`);
+      if (previewHeroImage) {
+        previewHeroImage.src = resizedImageData;
+        previewHeroImage.alt = `${previewHeroTitle?.textContent || '無題の投稿'}の画像`;
+      }
     } else {
       previewHero.classList.remove('has-image');
-      previewHero.style.removeProperty('--hero-image');
+      if (previewHeroImage) {
+        previewHeroImage.src = '';
+        previewHeroImage.alt = '';
+      }
     }
   }
 
@@ -358,6 +390,75 @@
       previewThumb.setAttribute('aria-hidden', 'true');
     }
     updateHeroPreview();
+  }
+
+  function clampPercentage(value) {
+    return Math.max(0, Math.min(100, value));
+  }
+
+  function applyFocusRange(start, end) {
+    if (!focusStartEl || !focusEndEl) return;
+    const focus = normalizeFocus({ start, end });
+    let adjustedStart = focus.start;
+    let adjustedEnd = focus.end;
+    if (adjustedEnd - adjustedStart < 5) {
+      if (start <= end) {
+        adjustedEnd = Math.min(100, adjustedStart + 5);
+      } else {
+        adjustedStart = Math.max(0, adjustedEnd - 5);
+      }
+    }
+    focusStartEl.value = String(adjustedStart);
+    focusEndEl.value = String(adjustedEnd);
+    updatePreview();
+  }
+
+  function setupFocusRangeEditor() {
+    if (!previewThumb || !focusStartEl || !focusEndEl) return;
+
+    let dragStart = null;
+    let isDragging = false;
+
+    const getPercentageFromEvent = (event) => {
+      const rect = previewThumb.getBoundingClientRect();
+      if (!rect.height) return 0;
+      const raw = ((event.clientY - rect.top) / rect.height) * 100;
+      return Math.round(clampPercentage(raw));
+    };
+
+    previewThumb.addEventListener('pointerdown', (event) => {
+      if (previewThumb.dataset.previewMode === 'pen') return;
+      if (event.button !== undefined && event.button !== 0) return;
+      if (!event.isPrimary) return;
+      const start = getPercentageFromEvent(event);
+      event.preventDefault();
+      previewThumb.setPointerCapture(event.pointerId);
+      dragStart = start;
+      isDragging = true;
+      previewThumb.classList.add('is-selecting');
+      applyFocusRange(start, start);
+    });
+
+    previewThumb.addEventListener('pointermove', (event) => {
+      if (!isDragging || dragStart === null) return;
+      const current = getPercentageFromEvent(event);
+      event.preventDefault();
+      applyFocusRange(dragStart, current);
+    });
+
+    const stopDrag = (event) => {
+      if (!isDragging) return;
+      isDragging = false;
+      dragStart = null;
+      previewThumb.classList.remove('is-selecting');
+      if (event?.pointerId !== undefined) {
+        previewThumb.releasePointerCapture(event.pointerId);
+      }
+    };
+
+    previewThumb.addEventListener('pointerup', stopDrag);
+    previewThumb.addEventListener('pointercancel', stopDrag);
+    previewThumb.addEventListener('pointerleave', stopDrag);
   }
 
   function updateReadTime() {
@@ -623,6 +724,8 @@
       updatePreview();
     });
   });
+
+  setupFocusRangeEditor();
 
   if (imageScaleEl) {
     imageScaleEl.addEventListener('input', () => {
