@@ -842,6 +842,225 @@ h2 {
   box-shadow: var(--shadow);
 }
 
+.info-card--sticky {
+  position: sticky;
+  top: 24px;
+  align-self: start;
+}
+
+@media (max-width: 900px) {
+  .info-card--sticky {
+    position: static;
+  }
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.decode-status {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-weight: 600;
+  min-height: 20px;
+}
+
+.handwriting-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#handwriting-canvas {
+  width: 100%;
+  height: 280px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: #fff;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  box-shadow: var(--shadow);
+}
+
+.handwriting-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.output-panel {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--fg);
+  min-height: 220px;
+  white-space: pre-wrap;
+  line-height: 1.6;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.layered-output {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  white-space: normal;
+}
+
+.layered-output__stack {
+  position: relative;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: #0d0f16;
+  min-height: 260px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.layered-output__stack img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.layered-output__stack canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.layered-output__characters {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+
+#analysis-layer {
+  z-index: 1;
+}
+
+#correction-layer {
+  z-index: 2;
+}
+
+.character-annotation {
+  position: absolute;
+  border: 2px solid #ef4444;
+  background: rgba(239, 68, 68, 0.12);
+  border-radius: 4px;
+  padding: 0;
+  margin: 0;
+  pointer-events: auto;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.character-annotation__label {
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  transform: none;
+  background: rgba(15, 23, 42, 0.9);
+  color: #f8fafc;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 6px;
+  border: 1px solid rgba(239, 68, 68, 0.65);
+  white-space: nowrap;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.character-annotation__remove {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 1px solid rgba(248, 113, 113, 0.9);
+  background: rgba(15, 23, 42, 0.95);
+  color: #fca5a5;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translate(50%, -50%);
+  cursor: pointer;
+  padding: 0;
+  pointer-events: auto;
+  box-shadow: 0 6px 12px rgba(15, 23, 42, 0.35);
+}
+
+.character-annotation--active {
+  border-color: #f97316;
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.35);
+}
+
+.character-annotation--registered .character-annotation__label {
+  background: rgba(16, 185, 129, 0.9);
+  border-color: rgba(16, 185, 129, 0.9);
+}
+
+#analysis-layer {
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+#correction-layer {
+  cursor: crosshair;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.layered-output__placeholder {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-align: center;
+  padding: 20px;
+}
+
+.layered-output__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.layered-output__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.decoded-text {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px dashed var(--border);
+  background: color-mix(in srgb, var(--panel) 70%, transparent);
+}
+
 .info-card ul {
   padding-left: 18px;
   color: var(--muted);
