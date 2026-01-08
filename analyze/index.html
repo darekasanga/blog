@@ -35,7 +35,7 @@
           右側の赤ペン修正では、赤枠表示をタップし修正を赤ペンでしたものを手書き文字判定により、蓄積データまたはOCRにより出力項目に出力する。
         </p>
         <div class="info-grid" style="align-items: stretch;">
-          <form class="info-card" id="decode-form">
+          <form class="info-card info-card--sticky" id="decode-form">
             <div class="field">
               <label for="handwriting-canvas">ORIGINAL_INPUT (筆記入力)</label>
               <div class="handwriting-panel">
@@ -150,6 +150,8 @@
     let analysisVisible = true;
     let lastOcrData = null;
     let hasCorrections = false;
+    let activeAnnotation = null;
+    let activeCorrectionStroke = false;
 
     const resizeCanvasForDisplay = () => {
       const ratio = window.devicePixelRatio || 1;
@@ -245,11 +247,28 @@
       correctionContext.stroke();
       lastCorrectionPoint = currentPoint;
       hasCorrections = true;
+      if (activeAnnotation) {
+        activeCorrectionStroke = true;
+      }
     };
 
-    const stopCorrection = () => {
+    const stopCorrection = async () => {
       isAnnotating = false;
       lastCorrectionPoint = null;
+      if (activeAnnotation && activeCorrectionStroke) {
+        announceStatus('赤ペン修正を再判定中…');
+        const updatedText = await runOcrForRegion(activeAnnotation.bbox);
+        if (updatedText) {
+          activeAnnotation.label.textContent = updatedText;
+          activeAnnotation.element.classList.remove('character-annotation--registered');
+          announceStatus(`修正結果「${updatedText}」を表示しました。`);
+        } else {
+          announceStatus('修正結果が判定できませんでした。');
+        }
+        activeAnnotation.element.classList.remove('character-annotation--active');
+        activeAnnotation = null;
+        activeCorrectionStroke = false;
+      }
     };
 
     const clearLayer = (context) => {
@@ -258,6 +277,63 @@
 
     const clearCharacterAnnotations = () => {
       characterAnnotations.innerHTML = '';
+      activeAnnotation = null;
+    };
+
+    const announceStatus = (message) => {
+      status.textContent = message;
+    };
+
+    const buildCompositeCanvas = () => {
+      const compositeCanvas = document.createElement('canvas');
+      compositeCanvas.width = handwritingCanvas.width;
+      compositeCanvas.height = handwritingCanvas.height;
+      const compositeContext = compositeCanvas.getContext('2d');
+      compositeContext.drawImage(handwritingCanvas, 0, 0);
+      if (hasCorrections && correctionCanvas.width && correctionCanvas.height) {
+        const scaleX = handwritingCanvas.width / correctionCanvas.width;
+        const scaleY = handwritingCanvas.height / correctionCanvas.height;
+        compositeContext.save();
+        compositeContext.scale(scaleX, scaleY);
+        compositeContext.drawImage(correctionCanvas, 0, 0);
+        compositeContext.restore();
+      }
+      return compositeCanvas;
+    };
+
+    const normalizeBbox = (bbox, padding = 6) => {
+      const maxWidth = handwritingCanvas.width;
+      const maxHeight = handwritingCanvas.height;
+      const x0 = Math.max(0, Math.floor(bbox.x0 - padding));
+      const y0 = Math.max(0, Math.floor(bbox.y0 - padding));
+      const x1 = Math.min(maxWidth, Math.ceil(bbox.x1 + padding));
+      const y1 = Math.min(maxHeight, Math.ceil(bbox.y1 + padding));
+      return { x0, y0, x1, y1 };
+    };
+
+    const runOcrForRegion = async (bbox) => {
+      if (!window.Tesseract) return '';
+      const normalized = normalizeBbox(bbox);
+      const width = Math.max(1, normalized.x1 - normalized.x0);
+      const height = Math.max(1, normalized.y1 - normalized.y0);
+      const compositeCanvas = buildCompositeCanvas();
+      const cropCanvas = document.createElement('canvas');
+      cropCanvas.width = width;
+      cropCanvas.height = height;
+      const cropContext = cropCanvas.getContext('2d');
+      cropContext.drawImage(
+        compositeCanvas,
+        normalized.x0,
+        normalized.y0,
+        width,
+        height,
+        0,
+        0,
+        width,
+        height,
+      );
+      const result = await window.Tesseract.recognize(cropCanvas.toDataURL('image/png'), 'jpn+eng');
+      return result.data.text.trim();
     };
 
     const renderAnalysisLayer = (ocrData) => {
@@ -293,7 +369,7 @@
       const rect = analysisCanvas.getBoundingClientRect();
       const scaleX = rect.width / handwritingCanvas.width;
       const scaleY = rect.height / handwritingCanvas.height;
-      ocrData.symbols.forEach((symbol) => {
+      ocrData.symbols.forEach((symbol, index) => {
         if (!symbol.bbox) return;
         const text = (symbol.text || '').trim();
         if (!text) return;
@@ -308,12 +384,29 @@
         annotation.style.top = `${y}px`;
         annotation.style.width = `${width}px`;
         annotation.style.height = `${height}px`;
+        annotation.dataset.index = String(index);
+        annotation.dataset.bbox = JSON.stringify(symbol.bbox);
         const label = document.createElement('span');
         label.className = 'character-annotation__label';
         label.textContent = text;
         annotation.appendChild(label);
+        label.addEventListener('click', (event) => {
+          event.stopPropagation();
+          annotation.classList.add('character-annotation--registered');
+          announceStatus(`判定「${label.textContent}」を登録しました。`);
+        });
         annotation.addEventListener('click', () => {
-          label.hidden = true;
+          if (activeAnnotation?.element) {
+            activeAnnotation.element.classList.remove('character-annotation--active');
+          }
+          activeAnnotation = {
+            element: annotation,
+            label,
+            bbox: symbol.bbox,
+          };
+          activeCorrectionStroke = false;
+          announceStatus('赤枠の上から赤ペンで修正してください。');
+          annotation.classList.add('character-annotation--active');
         });
         characterAnnotations.appendChild(annotation);
       });
@@ -394,18 +487,7 @@
       if (!hasCorrections || !correctionCanvas.width || !correctionCanvas.height) {
         return handwritingCanvas.toDataURL('image/png');
       }
-      const compositeCanvas = document.createElement('canvas');
-      compositeCanvas.width = handwritingCanvas.width;
-      compositeCanvas.height = handwritingCanvas.height;
-      const compositeContext = compositeCanvas.getContext('2d');
-      compositeContext.drawImage(handwritingCanvas, 0, 0);
-      const scaleX = handwritingCanvas.width / correctionCanvas.width;
-      const scaleY = handwritingCanvas.height / correctionCanvas.height;
-      compositeContext.save();
-      compositeContext.scale(scaleX, scaleY);
-      compositeContext.drawImage(correctionCanvas, 0, 0);
-      compositeContext.restore();
-      return compositeCanvas.toDataURL('image/png');
+      return buildCompositeCanvas().toDataURL('image/png');
     };
 
     const runOcr = async () => {
