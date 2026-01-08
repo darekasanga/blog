@@ -53,8 +53,8 @@
           </div>
         </div>
         <div class="analysis-handwriting" aria-live="polite">
-          <p class="kicker">手書き判定</p>
-          <p class="muted-text" id="handwriting-status" data-handwriting="clear">手書き判定なし</p>
+          <p class="kicker">手書きモード</p>
+          <p class="muted-text" id="handwriting-status" data-handwriting="active">両枠とも手書き入力中</p>
         </div>
 
         <div class="analysis-editor">
@@ -62,24 +62,40 @@
             <div>
               <p class="kicker">Handwriting</p>
               <h2 id="analysis-source-title">手書き文字</h2>
-              <p class="muted-text">左側に手書き文字の内容を入力して記録します。</p>
+              <p class="muted-text">左側は手書き入力専用です。ペンで自由に書き込んでください。</p>
             </div>
-            <label for="analysis-source" class="field">
-              <span>本文</span>
-              <textarea id="analysis-source" name="analysis-source" rows="12" placeholder="解析対象の文章を入力"></textarea>
-            </label>
+            <canvas id="handwriting-left" class="handwriting-canvas" aria-label="左側の手書きキャンバス"></canvas>
+            <div class="handwriting-actions">
+              <button class="btn muted" type="button" data-action="clear-left">左側をクリア</button>
+            </div>
           </section>
 
           <section class="analysis-panel correction-panel" data-panel-role="analysis" aria-labelledby="analysis-correction-title">
             <div>
               <p class="kicker">Analysis</p>
               <h2 id="analysis-correction-title">解析メモ</h2>
-              <p class="muted-text">右側に解析の補足や修正ポイントをまとめます。</p>
+              <p class="muted-text">右側で文字認識を行い、1文字ずつ枠指定して確定します。</p>
             </div>
-            <label for="analysis-correction" class="field">
-              <span>補正内容</span>
-              <textarea id="analysis-correction" name="analysis-correction" rows="12" placeholder="修正したいポイントを入力"></textarea>
-            </label>
+            <div class="layered-output">
+              <div class="layered-output__stack" id="handwriting-stack">
+                <canvas id="analysis-layer" aria-label="右側の手書きキャンバス"></canvas>
+                <canvas id="correction-layer" aria-label="枠指定キャンバス"></canvas>
+                <div class="layered-output__characters" id="character-layer" aria-live="polite"></div>
+                <div class="layered-output__placeholder" id="handwriting-placeholder">
+                  手書き入力後、枠指定モードで1文字ずつ囲ってください。
+                </div>
+              </div>
+              <div class="layered-output__meta">
+                <p class="muted-text">枠指定で1文字ずつ囲むとOCR候補が表示されます。正しければタップして確定してください。</p>
+                <div class="layered-output__actions">
+                  <button class="btn muted" type="button" data-action="clear-right">右側をクリア</button>
+                  <button class="btn muted" type="button" data-action="clear-frames">枠をリセット</button>
+                  <button class="btn" type="button" data-action="finalize-training">最終確定</button>
+                </div>
+                <p class="decoded-text" id="recognized-text">OCR候補: -</p>
+                <p class="decode-status" id="training-status"></p>
+              </div>
+            </div>
           </section>
         </div>
       </div>
@@ -98,35 +114,5 @@
 
   <script src="../assets/header-auth.js"></script>
   <script src="../assets/analyze.js"></script>
-  <script>
-    (() => {
-      const sourceInput = document.getElementById('analysis-source');
-      const correctionInput = document.getElementById('analysis-correction');
-      const status = document.getElementById('handwriting-status');
-
-      if (!sourceInput || !correctionInput || !status) return;
-
-      const keywordRegex = /(手書き|直筆|手描き|走り書き|ラフ)/;
-      const symbolRegex = /[✍✎✐✏🖊🖋🖍]/;
-      const markerRegex = /(\[手書き\]|\(手書き\)|（手書き）|手書き[:：])/;
-
-      const detectHandwriting = (text) => {
-        const trimmed = text.trim();
-        if (!trimmed) return false;
-        return keywordRegex.test(trimmed) || symbolRegex.test(trimmed) || markerRegex.test(trimmed);
-      };
-
-      const updateStatus = () => {
-        const combinedText = `${sourceInput.value}\n${correctionInput.value}`;
-        const hasHandwriting = detectHandwriting(combinedText);
-        status.dataset.handwriting = hasHandwriting ? 'suspected' : 'clear';
-        status.textContent = hasHandwriting ? '手書きの可能性あり' : '手書き判定なし';
-      };
-
-      sourceInput.addEventListener('input', updateStatus);
-      correctionInput.addEventListener('input', updateStatus);
-      updateStatus();
-    })();
-  </script>
 </body>
 </html>
