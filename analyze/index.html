@@ -33,8 +33,14 @@
         <div class="info-grid" style="align-items: stretch;">
           <form class="info-card" id="decode-form">
             <div class="field">
-              <label for="original-input">ORIGINAL_INPUT</label>
-              <textarea id="original-input" rows="7" placeholder="[ORIGINAL_INPUT]\nここに原文を入力"></textarea>
+              <label for="handwriting-canvas">ORIGINAL_INPUT (筆記入力)</label>
+              <div class="handwriting-panel">
+                <canvas id="handwriting-canvas" width="640" height="280" aria-label="原文の筆記入力エリア"></canvas>
+                <div class="handwriting-actions">
+                  <p class="muted-text">左側に手書きで文章を入力してください。描き終わったら「解読」を押してください。</p>
+                  <button class="btn ghost" type="button" id="clear-drawing">筆記をクリア</button>
+                </div>
+              </div>
             </div>
             <div class="field">
               <label for="learning-items">LEARNING_ITEMS</label>
@@ -46,7 +52,7 @@
             </div>
             <p class="decode-status" id="decode-status" role="status" aria-live="polite"></p>
             <div class="form-actions">
-              <button class="btn primary" type="submit">Decode</button>
+              <button class="btn primary" type="submit">解読</button>
               <button class="btn ghost" type="button" id="clear-button">Clear</button>
             </div>
           </form>
@@ -115,12 +121,83 @@
 
   <script>
     const form = document.getElementById('decode-form');
-    const originalInput = document.getElementById('original-input');
+    const handwritingCanvas = document.getElementById('handwriting-canvas');
+    const clearDrawingButton = document.getElementById('clear-drawing');
     const learningItems = document.getElementById('learning-items');
     const userCorrection = document.getElementById('user-correction');
     const output = document.getElementById('decoded-output');
     const status = document.getElementById('decode-status');
     const clearButton = document.getElementById('clear-button');
+    const handwritingContext = handwritingCanvas.getContext('2d');
+    let isDrawing = false;
+    let hasDrawing = false;
+    let lastPoint = null;
+
+    const resizeCanvasForDisplay = () => {
+      const ratio = window.devicePixelRatio || 1;
+      const { width, height } = handwritingCanvas.getBoundingClientRect();
+      handwritingCanvas.width = Math.max(1, Math.floor(width * ratio));
+      handwritingCanvas.height = Math.max(1, Math.floor(height * ratio));
+      handwritingContext.setTransform(ratio, 0, 0, ratio, 0, 0);
+      handwritingContext.lineWidth = 4;
+      handwritingContext.lineCap = 'round';
+      handwritingContext.lineJoin = 'round';
+      handwritingContext.strokeStyle = '#111';
+      handwritingContext.fillStyle = '#fff';
+      handwritingContext.fillRect(0, 0, width, height);
+      hasDrawing = false;
+    };
+
+    const resetCanvas = () => {
+      const { width, height } = handwritingCanvas.getBoundingClientRect();
+      handwritingContext.setTransform(window.devicePixelRatio || 1, 0, 0, window.devicePixelRatio || 1, 0, 0);
+      handwritingContext.fillStyle = '#fff';
+      handwritingContext.fillRect(0, 0, width, height);
+      hasDrawing = false;
+    };
+
+    const startDrawing = (event) => {
+      isDrawing = true;
+      const rect = handwritingCanvas.getBoundingClientRect();
+      lastPoint = {
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
+      };
+    };
+
+    const drawStroke = (event) => {
+      if (!isDrawing || !lastPoint) return;
+      const rect = handwritingCanvas.getBoundingClientRect();
+      const currentPoint = {
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
+      };
+      handwritingContext.beginPath();
+      handwritingContext.moveTo(lastPoint.x, lastPoint.y);
+      handwritingContext.lineTo(currentPoint.x, currentPoint.y);
+      handwritingContext.stroke();
+      lastPoint = currentPoint;
+      hasDrawing = true;
+    };
+
+    const stopDrawing = () => {
+      isDrawing = false;
+      lastPoint = null;
+    };
+
+    handwritingCanvas.addEventListener('pointerdown', (event) => {
+      handwritingCanvas.setPointerCapture(event.pointerId);
+      startDrawing(event);
+    });
+    handwritingCanvas.addEventListener('pointermove', drawStroke);
+    handwritingCanvas.addEventListener('pointerup', stopDrawing);
+    handwritingCanvas.addEventListener('pointercancel', stopDrawing);
+    handwritingCanvas.addEventListener('pointerleave', stopDrawing);
+
+    clearDrawingButton.addEventListener('click', () => {
+      resetCanvas();
+      status.textContent = '筆記入力をクリアしました。';
+    });
 
     const extractBlock = (label, text) => {
       const pattern = new RegExp(`\\[${label}\\]([\\s\\S]*?)(?=\\n\\[[A-Z_]+\\]|$)`, 'i');
@@ -157,9 +234,29 @@
       }, text);
     };
 
-    form.addEventListener('submit', (event) => {
+    const runOcr = async () => {
+      if (!hasDrawing) {
+        return '';
+      }
+      status.textContent = '解読中…';
+      const imageData = handwritingCanvas.toDataURL('image/png');
+      if (!window.Tesseract) {
+        status.textContent = 'OCR ライブラリの読み込みに失敗しました。';
+        return '';
+      }
+      const result = await window.Tesseract.recognize(imageData, 'jpn+eng', {
+        logger: (message) => {
+          if (message.status === 'recognizing text') {
+            status.textContent = `解読中…${Math.round(message.progress * 100)}%`;
+          }
+        },
+      });
+      return result.data.text.trim();
+    };
+
+    form.addEventListener('submit', async (event) => {
       event.preventDefault();
-      const rawText = originalInput.value.trim();
+      const rawText = await runOcr();
       const blockInput = extractBlock('ORIGINAL_INPUT', rawText) || rawText;
       let learningBlock = learningItems.value.trim();
       if (!learningBlock && rawText.includes('[LEARNING_ITEMS]')) {
@@ -173,18 +270,24 @@
       output.textContent = `[DECODED_OUTPUT]\n${resultText}`;
       if (correction) {
         status.textContent = '補正入力を検出しました。デコード結果を更新しました。';
+      } else if (!rawText && !hasDrawing) {
+        status.textContent = '筆記入力がありません。';
       } else {
         status.textContent = 'デコードが完了しました。';
       }
     });
 
     clearButton.addEventListener('click', () => {
-      originalInput.value = '';
       learningItems.value = '';
       userCorrection.value = '';
+      resetCanvas();
       output.textContent = '[DECODED_OUTPUT]\n（ここに結果が表示されます）';
       status.textContent = '';
     });
+
+    window.addEventListener('resize', resizeCanvasForDisplay);
+    resizeCanvasForDisplay();
   </script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js" defer></script>
 </body>
 </html>
