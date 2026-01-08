@@ -1670,6 +1670,41 @@ body[data-admin-mode='edit'] #preview-thumb.is-selecting .focus-range {
   overflow: hidden;
 }
 
+.login-auth-hero {
+  display: grid;
+  gap: 12px;
+}
+
+.fingerprint-mark {
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background:
+    radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.1) 0 18px, transparent 18px 100%),
+    repeating-radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.2) 0 2px, transparent 2px 6px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow);
+}
+
+.fingerprint-mark--button {
+  width: 20px;
+  height: 20px;
+  border-radius: 8px;
+  margin-right: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background:
+    radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.2) 0 6px, transparent 6px 100%),
+    repeating-radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.5) 0 1px, transparent 1px 3px);
+  box-shadow: none;
+}
+
+.btn .fingerprint-mark--button {
+  flex-shrink: 0;
+}
+
 .login-card.is-authenticated::after {
   content: '';
   position: absolute;
