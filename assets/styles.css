@@ -858,6 +858,17 @@ h2 {
   z-index: 0;
 }
 
+body[data-admin-mode='post'] #preview-thumb,
+body[data-admin-mode='edit'] #preview-thumb {
+  cursor: crosshair;
+}
+
+body[data-admin-mode='post'] #preview-thumb .focus-range,
+body[data-admin-mode='edit'] #preview-thumb .focus-range {
+  pointer-events: auto;
+  border-color: rgba(255, 82, 82, 0.7);
+}
+
 .card-thumb > :not(.focus-range),
 .scroll-thumb > :not(.focus-range),
 .article-thumb > :not(.focus-range) {
@@ -1163,6 +1174,34 @@ h2 {
   font-size: 12px;
 }
 
+.analysis-editor {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.analysis-panel {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  box-shadow: var(--shadow);
+}
+
+.analysis-panel textarea {
+  width: 100%;
+  min-height: 240px;
+  resize: vertical;
+}
+
+.analysis-panel.correction-panel {
+  border-color: rgba(255, 82, 82, 0.7);
+  box-shadow: 0 0 0 1px rgba(255, 82, 82, 0.25);
+}
+
 .lightbox {
   position: fixed;
   inset: 0;
@@ -1305,6 +1344,33 @@ h2 {
 .login-list {
   display: grid;
   gap: 12px;
+}
+
+.biometric-manager {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.biometric-list {
+  display: grid;
+  gap: 10px;
+}
+
+.biometric-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px dashed var(--border);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.biometric-item .muted-text {
+  margin: 4px 0 0;
+  font-size: 12px;
 }
 
 .login-item {

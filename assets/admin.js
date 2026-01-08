@@ -368,6 +368,72 @@
     updateHeroPreview();
   }
 
+  function clampPercentage(value) {
+    return Math.max(0, Math.min(100, value));
+  }
+
+  function applyFocusRange(start, end) {
+    if (!focusStartEl || !focusEndEl) return;
+    const focus = normalizeFocus({ start, end });
+    let adjustedStart = focus.start;
+    let adjustedEnd = focus.end;
+    if (adjustedEnd - adjustedStart < 5) {
+      if (start <= end) {
+        adjustedEnd = Math.min(100, adjustedStart + 5);
+      } else {
+        adjustedStart = Math.max(0, adjustedEnd - 5);
+      }
+    }
+    focusStartEl.value = String(adjustedStart);
+    focusEndEl.value = String(adjustedEnd);
+    updatePreview();
+  }
+
+  function setupFocusRangeEditor() {
+    if (!previewThumb || !focusStartEl || !focusEndEl) return;
+
+    let dragStart = null;
+    let isDragging = false;
+
+    const getPercentageFromEvent = (event) => {
+      const rect = previewThumb.getBoundingClientRect();
+      if (!rect.height) return 0;
+      const raw = ((event.clientY - rect.top) / rect.height) * 100;
+      return Math.round(clampPercentage(raw));
+    };
+
+    previewThumb.addEventListener('pointerdown', (event) => {
+      if (event.button !== undefined && event.button !== 0) return;
+      if (!event.isPrimary) return;
+      const start = getPercentageFromEvent(event);
+      event.preventDefault();
+      previewThumb.setPointerCapture(event.pointerId);
+      dragStart = start;
+      isDragging = true;
+      applyFocusRange(start, start);
+    });
+
+    previewThumb.addEventListener('pointermove', (event) => {
+      if (!isDragging || dragStart === null) return;
+      const current = getPercentageFromEvent(event);
+      event.preventDefault();
+      applyFocusRange(dragStart, current);
+    });
+
+    const stopDrag = (event) => {
+      if (!isDragging) return;
+      isDragging = false;
+      dragStart = null;
+      if (event?.pointerId !== undefined) {
+        previewThumb.releasePointerCapture(event.pointerId);
+      }
+    };
+
+    previewThumb.addEventListener('pointerup', stopDrag);
+    previewThumb.addEventListener('pointercancel', stopDrag);
+    previewThumb.addEventListener('pointerleave', stopDrag);
+  }
+
   function updateReadTime() {
     if (!readEl || !previewRead) return;
     const minutes = estimateReadMinutes(`${titleEl?.value || ''}\n${contentEl?.value || ''}`);
@@ -631,6 +697,8 @@
       updatePreview();
     });
   });
+
+  setupFocusRangeEditor();
 
   if (imageScaleEl) {
     imageScaleEl.addEventListener('input', () => {

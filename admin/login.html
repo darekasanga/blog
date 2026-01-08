@@ -52,6 +52,15 @@
             <button class="btn ghost" type="button" id="reset-biometric">生体認証を再登録</button>
           </div>
           <p class="muted-text" id="biometric-hint">対応端末ではTouch ID / Face IDなどが利用できます。</p>
+          <div class="biometric-manager">
+            <p class="kicker">ユーザー管理</p>
+            <label for="biometric-label">登録ユーザー名</label>
+            <input id="biometric-label" type="text" placeholder="例）管理者A" />
+            <div class="form-actions">
+              <button class="btn ghost" type="button" id="register-biometric">新しいユーザーを登録</button>
+            </div>
+            <div class="biometric-list" id="biometric-list" aria-live="polite"></div>
+          </div>
         </div>
 
         <div class="info-card login-info">
