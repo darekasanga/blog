@@ -15,6 +15,7 @@
   const handwritingStatus = document.getElementById('handwriting-status');
   const trainingStatus = document.getElementById('training-status');
   const recognizedText = document.getElementById('recognized-text');
+  const trainingList = document.getElementById('training-list');
 
   if (!leftCanvas || !rightCanvas || !frameCanvas || !stack || !characterLayer) return;
 
@@ -26,6 +27,7 @@
   let leftHasInk = false;
   let rightHasInk = false;
   let annotations = [];
+  let activeAnnotationId = null;
   const defaultHandwritingStatus = handwritingStatus?.textContent || '';
 
   const createId = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -48,16 +50,23 @@
 
   const getSuggestionPool = () => {
     const training = readTrainingData().samples
-      .filter((sample) => sample && typeof sample.char === 'string')
+      .filter((sample) => sample && typeof sample.char === 'string' && !sample.unknown)
       .sort((a, b) => (b.count || 0) - (a.count || 0))
       .map((sample) => sample.char);
     if (!training.length) return BASE_CHARACTERS;
     return Array.from(new Set([...training, ...BASE_CHARACTERS]));
   };
 
-  const getSuggestion = (index) => {
+  const getSuggestionCandidates = (seed) => {
     const pool = getSuggestionPool();
-    return pool[index % pool.length];
+    if (!pool.length) return ['?'];
+    const count = Math.min(3, pool.length);
+    const start = typeof seed === 'number' ? seed : Math.floor(Math.random() * pool.length);
+    const candidates = [];
+    for (let i = 0; i < count; i += 1) {
+      candidates.push(pool[(start + i) % pool.length]);
+    }
+    return candidates;
   };
 
   const resizeCanvas = (canvas, width, height) => {
@@ -102,8 +111,13 @@
 
   const updateRecognizedText = () => {
     if (!recognizedText) return;
-    const confirmed = annotations.filter((item) => item.confirmed).map((item) => item.char);
-    const pending = annotations.filter((item) => !item.confirmed).map((item) => item.char);
+    const confirmed = annotations
+      .filter((item) => item.confirmed)
+      .map((item) => (item.unknown ? '？' : item.char))
+      .filter(Boolean);
+    const pending = annotations
+      .filter((item) => !item.confirmed && item.char)
+      .map((item) => item.char);
     if (!confirmed.length && !pending.length) {
       recognizedText.textContent = 'OCR候補: -';
       return;
@@ -126,6 +140,45 @@
     });
   };
 
+  const renderAnnotationState = (annotation, wrapper) => {
+    const statusLabel = wrapper.querySelector('.character-annotation__status');
+    const choiceList = wrapper.querySelector('.character-annotation__choices');
+    wrapper.classList.toggle('character-annotation--registered', annotation.confirmed);
+    wrapper.classList.toggle('character-annotation--active', annotation.needsReview);
+    wrapper.classList.toggle('character-annotation--unknown', annotation.unknown);
+    if (statusLabel) {
+      if (annotation.confirmed) {
+        statusLabel.textContent = annotation.unknown ? '未確定' : `確定: ${annotation.char}`;
+      } else if (annotation.needsReview) {
+        statusLabel.textContent = '再解析待ち';
+      } else {
+        statusLabel.textContent = '候補を選択';
+      }
+    }
+    if (choiceList) {
+      choiceList.innerHTML = '';
+      if (!annotation.confirmed && !annotation.needsReview) {
+        annotation.candidates.forEach((candidate) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'character-annotation__choice';
+          button.textContent = candidate;
+          button.addEventListener('click', () => {
+            annotation.char = candidate;
+            annotation.confirmed = true;
+            annotation.unknown = false;
+            annotation.needsReview = false;
+            activeAnnotationId = null;
+            renderAnnotationState(annotation, wrapper);
+            updateRecognizedText();
+          });
+          choiceList.appendChild(button);
+        });
+      }
+    }
+    updateRecognizedText();
+  };
+
   const buildAnnotationElement = (item) => {
     const wrapper = document.createElement('div');
     wrapper.className = 'character-annotation';
@@ -135,10 +188,11 @@
     wrapper.style.width = `${item.width * 100}%`;
     wrapper.style.height = `${item.height * 100}%`;
 
-    const labelButton = document.createElement('button');
-    labelButton.type = 'button';
-    labelButton.className = 'character-annotation__label';
-    labelButton.textContent = item.confirmed ? `確定: ${item.char}` : item.char;
+    const statusLabel = document.createElement('div');
+    statusLabel.className = 'character-annotation__status';
+
+    const choiceList = document.createElement('div');
+    choiceList.className = 'character-annotation__choices';
 
     const removeButton = document.createElement('button');
     removeButton.type = 'button';
@@ -146,43 +200,71 @@
     removeButton.setAttribute('aria-label', '枠を削除');
     removeButton.textContent = '×';
 
-    if (item.confirmed) {
-      wrapper.classList.add('character-annotation--registered');
-    }
+    const unknownButton = document.createElement('button');
+    unknownButton.type = 'button';
+    unknownButton.className = 'character-annotation__unknown';
+    unknownButton.setAttribute('aria-label', '未確定として登録');
+    unknownButton.textContent = '?';
 
-    labelButton.addEventListener('click', () => {
+    wrapper.addEventListener('click', (event) => {
+      if (event.target.closest('button')) return;
       const target = annotations.find((annotation) => annotation.id === item.id);
-      if (!target || target.confirmed) return;
-      target.confirmed = true;
-      wrapper.classList.add('character-annotation--registered');
-      labelButton.textContent = `確定: ${target.char}`;
+      if (!target) return;
+      target.confirmed = false;
+      target.unknown = false;
+      target.needsReview = true;
+      target.candidates = [];
+      target.char = '';
+      activeAnnotationId = target.id;
+      renderAnnotationState(target, wrapper);
       updateRecognizedText();
     });
 
     removeButton.addEventListener('click', () => {
       annotations = annotations.filter((annotation) => annotation.id !== item.id);
+      if (activeAnnotationId === item.id) {
+        activeAnnotationId = null;
+      }
       wrapper.remove();
       updateRecognizedText();
       updatePlaceholder();
     });
 
-    wrapper.appendChild(labelButton);
+    unknownButton.addEventListener('click', () => {
+      const target = annotations.find((annotation) => annotation.id === item.id);
+      if (!target) return;
+      target.char = '？';
+      target.confirmed = true;
+      target.unknown = true;
+      target.needsReview = false;
+      activeAnnotationId = null;
+      renderAnnotationState(target, wrapper);
+    });
+
+    wrapper.appendChild(statusLabel);
+    wrapper.appendChild(choiceList);
     wrapper.appendChild(removeButton);
+    wrapper.appendChild(unknownButton);
     characterLayer.appendChild(wrapper);
+    renderAnnotationState(item, wrapper);
   };
 
   const addAnnotation = (x, y, width, height) => {
     const stackRect = stack.getBoundingClientRect();
     const clampedWidth = Math.max(1, Math.min(width, stackRect.width - x));
     const clampedHeight = Math.max(1, Math.min(height, stackRect.height - y));
+    const candidates = getSuggestionCandidates(annotations.length);
     const item = {
       id: createId(),
       x: x / stackRect.width,
       y: y / stackRect.height,
       width: clampedWidth / stackRect.width,
       height: clampedHeight / stackRect.height,
-      char: getSuggestion(annotations.length),
+      char: candidates[0] || '',
+      candidates,
       confirmed: false,
+      unknown: false,
+      needsReview: false,
     };
     annotations.push(item);
     buildAnnotationElement(item);
@@ -190,7 +272,7 @@
     updatePlaceholder();
   };
 
-  const createPenDrawer = (canvas, isEnabled, onInk) => {
+  const createPenDrawer = (canvas, isEnabled, onInk, onComplete) => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     let drawing = false;
@@ -222,6 +304,7 @@
       drawing = false;
       lastPoint = null;
       canvas.releasePointerCapture(event.pointerId);
+      if (onComplete) onComplete();
     };
 
     canvas.addEventListener('pointerdown', start);
@@ -348,8 +431,78 @@
   const clearAnnotations = () => {
     annotations = [];
     characterLayer.innerHTML = '';
+    activeAnnotationId = null;
     updateRecognizedText();
     updatePlaceholder();
+  };
+
+  const renderTrainingSummary = () => {
+    if (!trainingList) return;
+    const training = readTrainingData();
+    if (!training.samples.length) {
+      trainingList.innerHTML = '<p class="muted-text">蓄積データはまだありません。</p>';
+      return;
+    }
+    trainingList.innerHTML = '';
+    const sorted = [...training.samples].sort((a, b) => (b.count || 0) - (a.count || 0));
+    sorted.forEach((sample) => {
+      const card = document.createElement('div');
+      card.className = 'training-card';
+
+      const charLabel = document.createElement('p');
+      charLabel.className = 'training-card__char';
+      charLabel.textContent = sample.unknown ? '？' : sample.char;
+
+      const countLabel = document.createElement('p');
+      countLabel.className = 'training-card__count';
+      countLabel.textContent = `${sample.count || 0}件`;
+
+      const sampleList = document.createElement('div');
+      sampleList.className = 'training-card__samples';
+      const sampleChar = sample.unknown ? '？' : sample.char;
+      const sampleCount = Math.max(1, Math.min(sample.count || 0, 6));
+      for (let i = 0; i < sampleCount; i += 1) {
+        const chip = document.createElement('span');
+        chip.className = 'training-sample';
+        chip.textContent = sampleChar;
+        sampleList.appendChild(chip);
+      }
+      if ((sample.count || 0) > sampleCount) {
+        const more = document.createElement('span');
+        more.className = 'training-sample training-sample--more';
+        more.textContent = `+${(sample.count || 0) - sampleCount}`;
+        sampleList.appendChild(more);
+      }
+
+      const meta = document.createElement('p');
+      meta.className = 'training-card__meta';
+      meta.textContent = `手書きサンプル: ${sample.count || 0}件`;
+
+      if (sample.unknown) {
+        const badge = document.createElement('span');
+        badge.className = 'training-card__badge';
+        badge.textContent = '未確定';
+        card.appendChild(badge);
+      }
+
+      card.appendChild(charLabel);
+      card.appendChild(countLabel);
+      card.appendChild(sampleList);
+      card.appendChild(meta);
+      trainingList.appendChild(card);
+    });
+  };
+
+  const reanalyzeAnnotation = (annotation) => {
+    if (!annotation || !annotation.needsReview) return;
+    annotation.candidates = getSuggestionCandidates(Math.floor(Math.random() * 100));
+    annotation.char = annotation.candidates[0] || '';
+    annotation.needsReview = false;
+    const element = characterLayer.querySelector(`[data-annotation-id="${annotation.id}"]`);
+    if (element) {
+      renderAnnotationState(annotation, element);
+    }
+    updateRecognizedText();
   };
 
   const setMode = (mode) => {
@@ -386,10 +539,21 @@
     leftHasInk = true;
   });
 
-  createPenDrawer(rightCanvas, () => currentMode === 'pen', () => {
-    rightHasInk = true;
-    updatePlaceholder();
-  });
+  createPenDrawer(
+    rightCanvas,
+    () => currentMode === 'pen',
+    () => {
+      rightHasInk = true;
+      updatePlaceholder();
+    },
+    () => {
+      if (currentMode !== 'pen') return;
+      const target = annotations.find((annotation) => annotation.id === activeAnnotationId);
+      if (target) {
+        reanalyzeAnnotation(target);
+      }
+    },
+  );
 
   const frameCtx = frameCanvas.getContext('2d');
   let framing = false;
@@ -457,6 +621,7 @@
     clearRightButton.addEventListener('click', () => {
       clearCanvas(rightCanvas);
       rightHasInk = false;
+      clearAnnotations();
       updatePlaceholder();
     });
   }
@@ -478,11 +643,13 @@
       }
       const trainingData = readTrainingData();
       confirmed.forEach((item) => {
-        const existing = trainingData.samples.find((sample) => sample.char === item.char);
+        const existing = trainingData.samples.find(
+          (sample) => sample.char === item.char && Boolean(sample.unknown) === Boolean(item.unknown),
+        );
         if (existing) {
           existing.count = (existing.count || 0) + 1;
         } else {
-          trainingData.samples.push({ char: item.char, count: 1 });
+          trainingData.samples.push({ char: item.char, count: 1, unknown: item.unknown || false });
         }
       });
       trainingData.updatedAt = new Date().toISOString();
@@ -490,6 +657,7 @@
       if (trainingStatus) {
         trainingStatus.textContent = `${confirmed.length}件の文字を学習データとして保存しました。`;
       }
+      renderTrainingSummary();
     });
   }
 
@@ -507,4 +675,5 @@
   resizeAll();
   updateRecognizedText();
   updatePlaceholder();
+  renderTrainingSummary();
 })();
