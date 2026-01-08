@@ -11,6 +11,8 @@
   const clearRightButton = document.querySelector('[data-action="clear-right"]');
   const clearFramesButton = document.querySelector('[data-action="clear-frames"]');
   const finalizeButton = document.querySelector('[data-action="finalize-training"]');
+  const analyzeLeftButton = document.querySelector('[data-action="analyze-left"]');
+  const handwritingStatus = document.getElementById('handwriting-status');
   const trainingStatus = document.getElementById('training-status');
   const recognizedText = document.getElementById('recognized-text');
 
@@ -24,6 +26,7 @@
   let leftHasInk = false;
   let rightHasInk = false;
   let annotations = [];
+  const defaultHandwritingStatus = handwritingStatus?.textContent || '';
 
   const createId = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
@@ -233,6 +236,28 @@
     ctx.clearRect(0, 0, canvas.width, canvas.height);
   };
 
+  const updateHandwritingStatus = (message) => {
+    if (!handwritingStatus) return;
+    handwritingStatus.textContent = message;
+  };
+
+  const copyLeftToRight = () => {
+    if (!leftHasInk) {
+      updateHandwritingStatus('左側に手書きしてから解析してください。');
+      return;
+    }
+    clearCanvas(rightCanvas);
+    clearCanvas(frameCanvas);
+    clearAnnotations();
+    const ctx = rightCanvas.getContext('2d');
+    if (ctx) {
+      ctx.drawImage(leftCanvas, 0, 0, rightCanvas.width, rightCanvas.height);
+    }
+    rightHasInk = true;
+    updatePlaceholder();
+    updateHandwritingStatus('左側の手書きを解析枠に転送しました。');
+  };
+
   const clearAnnotations = () => {
     annotations = [];
     characterLayer.innerHTML = '';
@@ -337,6 +362,7 @@
     clearLeftButton.addEventListener('click', () => {
       clearCanvas(leftCanvas);
       leftHasInk = false;
+      updateHandwritingStatus(defaultHandwritingStatus || '両枠とも手書き入力中');
     });
   }
 
@@ -377,6 +403,12 @@
       if (trainingStatus) {
         trainingStatus.textContent = `${confirmed.length}件の文字を学習データとして保存しました。`;
       }
+    });
+  }
+
+  if (analyzeLeftButton) {
+    analyzeLeftButton.addEventListener('click', () => {
+      copyLeftToRight();
     });
   }
 

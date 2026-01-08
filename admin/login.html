@@ -32,58 +32,28 @@
       <div class="inner admin-login-grid">
         <div class="info-card login-card" id="login-card">
           <p class="kicker">管理認証</p>
-          <h1>生体認証でアクセス</h1>
-          <p class="lead">端末の指紋や顔認証を使って管理機能へ安全にログインします。</p>
-
-          <div class="login-list" aria-label="認証の流れ">
-            <div class="login-item">
-              <strong>ログインコード発行</strong>
-              <span class="muted-text">管理者がログインコードを発行して登録を承認します。</span>
-            </div>
-            <div class="login-item">
-              <strong>登録</strong>
-              <span class="muted-text">ログインコードと生体認証でユーザー登録します。</span>
-            </div>
-            <div class="login-item">
-              <strong>自動遷移</strong>
-              <span class="muted-text">認証後は目的のページへ自動で移動します。</span>
-            </div>
+          <div class="login-auth-hero">
+            <div class="fingerprint-mark" aria-hidden="true"></div>
+            <h1>認証を実行</h1>
+            <p class="lead">指紋マークをタップして生体認証を開始します。</p>
           </div>
 
           <p class="form-message" id="login-message" role="status" aria-live="polite" hidden></p>
           <div class="form-actions">
-            <button class="btn primary" type="button" id="biometric-auth">生体認証を開始</button>
-            <button class="btn ghost" type="button" id="reset-biometric">生体認証を再登録</button>
+            <button class="btn primary" type="button" id="biometric-auth">
+              <span class="fingerprint-mark fingerprint-mark--button" aria-hidden="true"></span>
+              生体認証を開始
+            </button>
           </div>
           <p class="muted-text" id="biometric-hint">対応端末ではTouch ID / Face IDなどが利用できます。</p>
-          <div class="form-actions" style="margin-top: 16px;">
-            <a class="btn ghost" href="manage.html">admin管理ページへ</a>
-          </div>
         </div>
 
         <div class="info-card login-info">
-          <p class="kicker">管理機能</p>
-          <h2>認証後に進めるメニュー</h2>
-          <p class="muted-text">記事投稿・編集・専用リンクに直接アクセスできます。</p>
-          <div class="login-list">
-            <div class="login-item">
-              <strong>記事投稿</strong>
-              <span class="muted-text">新規記事の作成とプレビュー</span>
-            </div>
-            <div class="login-item">
-              <strong>記事編集</strong>
-              <span class="muted-text">公開済み記事の更新や非表示操作</span>
-            </div>
-            <div class="login-item">
-              <strong>blog#68</strong>
-              <span class="muted-text">ログイン後のみアクセスできる専用リンク</span>
-            </div>
-          </div>
-          <div class="auth-status" id="auth-status" aria-live="polite">ログインするとリンクが表示されます。</div>
-          <div class="auth-links" id="auth-links" hidden>
-            <a class="btn primary" href="index.html">記事投稿へ</a>
-            <a class="btn ghost" href="edit.html">記事編集へ</a>
-            <a class="btn ghost" href="/blog#68">blog#68へ</a>
+          <p class="kicker">管理者メニュー</p>
+          <h2>管理者メニューログイン</h2>
+          <p class="muted-text">生体認証ユーザーの登録や権限の管理を行います。</p>
+          <div class="form-actions">
+            <a class="btn ghost" href="manage.html">管理者メニューへ</a>
           </div>
         </div>
       </div>
