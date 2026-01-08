@@ -2,6 +2,7 @@
   const modeButtons = document.querySelectorAll('[data-analysis-mode]');
   const editor = document.querySelector('.analysis-editor');
   const leftCanvas = document.getElementById('handwriting-left');
+  const mirrorCanvas = document.getElementById('mirror-layer');
   const rightCanvas = document.getElementById('analysis-layer');
   const frameCanvas = document.getElementById('correction-layer');
   const stack = document.getElementById('handwriting-stack');
@@ -17,7 +18,7 @@
   const recognizedText = document.getElementById('recognized-text');
   const trainingList = document.getElementById('training-list');
 
-  if (!leftCanvas || !rightCanvas || !frameCanvas || !stack || !characterLayer) return;
+  if (!leftCanvas || !mirrorCanvas || !rightCanvas || !frameCanvas || !stack || !characterLayer) return;
 
   const MODE_STORAGE_KEY = 'analysis-mode';
   const TRAINING_STORAGE_KEY = 'analysis-training-data';
@@ -90,6 +91,7 @@
     }
     const stackRect = stack.getBoundingClientRect();
     if (stackRect.width && stackRect.height) {
+      resizeCanvas(mirrorCanvas, stackRect.width, stackRect.height);
       resizeCanvas(rightCanvas, stackRect.width, stackRect.height);
       resizeCanvas(frameCanvas, stackRect.width, stackRect.height);
     }
@@ -106,7 +108,7 @@
 
   const updatePlaceholder = () => {
     if (!placeholder) return;
-    placeholder.hidden = rightHasInk || annotations.length > 0;
+    placeholder.hidden = leftHasInk || rightHasInk || annotations.length > 0;
   };
 
   const updateRecognizedText = () => {
@@ -325,9 +327,9 @@
   };
 
   const detectInkRegions = () => {
-    const ctx = rightCanvas.getContext('2d');
+    const ctx = mirrorCanvas.getContext('2d');
     if (!ctx) return [];
-    const { width, height } = rightCanvas;
+    const { width, height } = mirrorCanvas;
     const { data } = ctx.getImageData(0, 0, width, height);
     const visited = new Uint8Array(width * height);
     const regions = [];
@@ -397,28 +399,21 @@
     regions
       .sort((a, b) => (a.minY === b.minY ? a.minX - b.minX : a.minY - b.minY))
       .forEach((region) => {
-        const x = (region.minX / rightCanvas.width) * stackRect.width;
-        const y = (region.minY / rightCanvas.height) * stackRect.height;
-        const width = ((region.maxX - region.minX) / rightCanvas.width) * stackRect.width;
-        const height = ((region.maxY - region.minY) / rightCanvas.height) * stackRect.height;
+        const x = (region.minX / mirrorCanvas.width) * stackRect.width;
+        const y = (region.minY / mirrorCanvas.height) * stackRect.height;
+        const width = ((region.maxX - region.minX) / mirrorCanvas.width) * stackRect.width;
+        const height = ((region.maxY - region.minY) / mirrorCanvas.height) * stackRect.height;
         addAnnotation(x, y, width, height);
       });
   };
 
-  const copyLeftToRight = () => {
+  const analyzeLeftHandwriting = () => {
     if (!leftHasInk) {
       updateHandwritingStatus('左側に手書きしてから解析してください。');
       return;
     }
-    clearCanvas(rightCanvas);
     clearCanvas(frameCanvas);
     clearAnnotations();
-    const ctx = rightCanvas.getContext('2d');
-    if (ctx) {
-      ctx.drawImage(leftCanvas, 0, 0, rightCanvas.width, rightCanvas.height);
-    }
-    rightHasInk = true;
-    updatePlaceholder();
     const regions = detectInkRegions();
     if (regions.length) {
       addDetectedAnnotations(regions);
@@ -537,6 +532,7 @@
 
   createPenDrawer(leftCanvas, () => true, () => {
     leftHasInk = true;
+    updatePlaceholder();
   });
 
   createPenDrawer(
@@ -614,6 +610,7 @@
       clearCanvas(leftCanvas);
       leftHasInk = false;
       updateHandwritingStatus(defaultHandwritingStatus || '両枠とも手書き入力中');
+      updatePlaceholder();
     });
   }
 
@@ -663,9 +660,20 @@
 
   if (analyzeLeftButton) {
     analyzeLeftButton.addEventListener('click', () => {
-      copyLeftToRight();
+      analyzeLeftHandwriting();
     });
   }
+
+  const renderMirrorLayer = () => {
+    const ctx = mirrorCanvas.getContext('2d');
+    if (ctx) {
+      ctx.clearRect(0, 0, mirrorCanvas.width, mirrorCanvas.height);
+      if (leftHasInk) {
+        ctx.drawImage(leftCanvas, 0, 0, mirrorCanvas.width, mirrorCanvas.height);
+      }
+    }
+    requestAnimationFrame(renderMirrorLayer);
+  };
 
   const resizeObserver = new ResizeObserver(() => {
     resizeAll();
@@ -676,4 +684,5 @@
   updateRecognizedText();
   updatePlaceholder();
   renderTrainingSummary();
+  renderMirrorLayer();
 })();
