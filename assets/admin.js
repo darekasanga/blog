@@ -23,6 +23,7 @@
   const isEditMode = adminMode === 'edit';
   const ADMIN_AUTH_KEY = 'admin-authenticated';
   const ADMIN_PASSWORD = 'admin';
+  const redirectTarget = new URLSearchParams(window.location.search).get('redirect');
 
   function ensureAdminAuth() {
     if (sessionStorage.getItem(ADMIN_AUTH_KEY) === 'true') {
@@ -31,6 +32,10 @@
     const entered = window.prompt('管理ページのパスワードを入力してください。');
     if (entered === ADMIN_PASSWORD) {
       sessionStorage.setItem(ADMIN_AUTH_KEY, 'true');
+      if (redirectTarget) {
+        window.location.href = redirectTarget;
+        return false;
+      }
       return true;
     }
     alert('パスワードが一致しませんでした。トップへ戻ります。');

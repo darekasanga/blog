@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>EMPEROR.NEWS | AI COVE-kun</title>
   <link rel="stylesheet" href="../assets/styles.css" />
+  <script>
+    const ADMIN_AUTH_KEY = 'admin-authenticated';
+    if (sessionStorage.getItem(ADMIN_AUTH_KEY) !== 'true') {
+      window.location.replace('../admin/index.html?redirect=../analyze/index.html');
+    }
+  </script>
 </head>
 <body class="home-page">
   <header class="site-header">
