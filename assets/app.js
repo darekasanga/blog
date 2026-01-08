@@ -23,6 +23,7 @@ const heroListLink = document.getElementById('hero-list-link');
 const footerListLink = document.getElementById('footer-list-link');
 const heroTitle = document.getElementById('hero-title');
 const heroLead = document.getElementById('hero-lead');
+const heroImage = document.getElementById('hero-image');
 const siteTitleTargets = document.querySelectorAll('[data-site-title]');
 const footerDescriptionTargets = document.querySelectorAll('[data-footer-description]');
 let siteThemeKey = readSiteTheme();
@@ -129,11 +130,13 @@ function updateHeroContent() {
       : Number.isFinite(latest?.imagePosition)
         ? latest.imagePosition
         : DEFAULT_HERO_SETTINGS.imagePosition;
+    const imageScale = Number.isFinite(latest?.imageScale) ? latest.imageScale : 1;
     heroSection.style.setProperty('--hero-overlay-strong', overlayStrong.toFixed(2));
     heroSection.style.setProperty('--hero-overlay-weak', overlayWeak.toFixed(2));
     heroSection.style.setProperty('--hero-overlay-start', `${overlayStart}%`);
     heroSection.style.setProperty('--hero-overlay-end', `${overlayEnd}%`);
     heroSection.style.setProperty('--hero-image-position', `${imagePosition}%`);
+    heroSection.style.setProperty('--hero-image-scale', imageScale);
   }
   if (!latest) {
     if (heroKicker) heroKicker.textContent = '最新記事';
@@ -141,7 +144,10 @@ function updateHeroContent() {
     if (heroLead) heroLead.textContent = '記事投稿ページから最初の記事を登録してください。';
     if (heroSection) {
       heroSection.classList.remove('has-image');
-      heroSection.style.removeProperty('--hero-image');
+    }
+    if (heroImage) {
+      heroImage.src = '';
+      heroImage.alt = '';
     }
     if (heroListLink) {
       heroListLink.href = '#article-list';
@@ -156,10 +162,16 @@ function updateHeroContent() {
   if (heroSection) {
     if (latest.image) {
       heroSection.classList.add('has-image');
-      heroSection.style.setProperty('--hero-image', `url("${latest.image}")`);
+      if (heroImage) {
+        heroImage.src = latest.image;
+        heroImage.alt = `${latest.title}の画像`;
+      }
     } else {
       heroSection.classList.remove('has-image');
-      heroSection.style.removeProperty('--hero-image');
+      if (heroImage) {
+        heroImage.src = '';
+        heroImage.alt = '';
+      }
     }
   }
   if (heroListLink) {
