@@ -143,6 +143,7 @@
     let lastCorrectionPoint = null;
     let analysisVisible = true;
     let lastOcrData = null;
+    let hasCorrections = false;
 
     const resizeCanvasForDisplay = () => {
       const ratio = window.devicePixelRatio || 1;
@@ -237,6 +238,7 @@
       correctionContext.lineTo(currentPoint.x, currentPoint.y);
       correctionContext.stroke();
       lastCorrectionPoint = currentPoint;
+      hasCorrections = true;
     };
 
     const stopCorrection = () => {
@@ -277,6 +279,7 @@
         layeredPlaceholder.hidden = false;
         clearLayer(analysisContext);
         clearLayer(correctionContext);
+        hasCorrections = false;
         return;
       }
       sourcePreview.src = imageData;
@@ -340,18 +343,37 @@
       return match ? match[1].trim() : '';
     };
 
+    const buildCompositeImage = () => {
+      if (!hasCorrections || !correctionCanvas.width || !correctionCanvas.height) {
+        return handwritingCanvas.toDataURL('image/png');
+      }
+      const compositeCanvas = document.createElement('canvas');
+      compositeCanvas.width = handwritingCanvas.width;
+      compositeCanvas.height = handwritingCanvas.height;
+      const compositeContext = compositeCanvas.getContext('2d');
+      compositeContext.drawImage(handwritingCanvas, 0, 0);
+      const scaleX = handwritingCanvas.width / correctionCanvas.width;
+      const scaleY = handwritingCanvas.height / correctionCanvas.height;
+      compositeContext.save();
+      compositeContext.scale(scaleX, scaleY);
+      compositeContext.drawImage(correctionCanvas, 0, 0);
+      compositeContext.restore();
+      return compositeCanvas.toDataURL('image/png');
+    };
+
     const runOcr = async () => {
       if (!hasDrawing) {
         return null;
       }
       status.textContent = '解読中…';
-      const imageData = handwritingCanvas.toDataURL('image/png');
-      updatePreviewImage(imageData);
+      const baseImageData = handwritingCanvas.toDataURL('image/png');
+      updatePreviewImage(baseImageData);
+      const ocrImageData = buildCompositeImage();
       if (!window.Tesseract) {
         status.textContent = 'OCR ライブラリの読み込みに失敗しました。';
         return null;
       }
-      const result = await window.Tesseract.recognize(imageData, 'jpn+eng', {
+      const result = await window.Tesseract.recognize(ocrImageData, 'jpn+eng', {
         logger: (message) => {
           if (message.status === 'recognizing text') {
             status.textContent = `解読中…${Math.round(message.progress * 100)}%`;
@@ -392,6 +414,7 @@
       lastOcrData = null;
       clearLayer(analysisContext);
       clearLayer(correctionContext);
+      hasCorrections = false;
       status.textContent = '';
     });
 
@@ -402,6 +425,7 @@
 
     clearCorrectionsButton.addEventListener('click', () => {
       clearLayer(correctionContext);
+      hasCorrections = false;
     });
 
     window.addEventListener('resize', () => {
