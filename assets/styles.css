@@ -788,6 +788,9 @@ h2 {
   border: 1px solid var(--border);
   background: #fff;
   touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
   box-shadow: var(--shadow);
 }
 

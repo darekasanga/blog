@@ -29,7 +29,7 @@
       <div class="inner">
         <p class="kicker">AI COVE-kun</p>
         <h1>多言語デコード・アシスタント</h1>
-        <p class="lead">原文と学習ルールを入力すると、指定フォーマットでデコード結果を整形して表示します。</p>
+        <p class="lead">原文を入力すると、指定フォーマットでデコード結果を整形して表示します。</p>
         <div class="info-grid" style="align-items: stretch;">
           <form class="info-card" id="decode-form">
             <div class="field">
@@ -41,14 +41,6 @@
                   <button class="btn ghost" type="button" id="clear-drawing">筆記をクリア</button>
                 </div>
               </div>
-            </div>
-            <div class="field">
-              <label for="learning-items">LEARNING_ITEMS</label>
-              <textarea id="learning-items" rows="6" placeholder="- language: ja\n  source: 読\n  target: よみ\n  note: 例"></textarea>
-            </div>
-            <div class="field">
-              <label for="user-correction">USER_CORRECTION (任意)</label>
-              <textarea id="user-correction" rows="4" placeholder="ユーザー補正があれば入力"></textarea>
             </div>
             <p class="decode-status" id="decode-status" role="status" aria-live="polite"></p>
             <div class="form-actions">
@@ -96,14 +88,6 @@
               <li>多言語の混在を維持。</li>
             </ul>
           </div>
-          <div class="info-card">
-            <h3>学習抽出</h3>
-            <ul>
-              <li>USER_CORRECTION が確定した場合のみ抽出。</li>
-              <li>再利用できる最小単位のルールを追加。</li>
-              <li>言語タグは ISO/BCP-47 を使用。</li>
-            </ul>
-          </div>
         </div>
       </div>
     </section>
@@ -123,8 +107,6 @@
     const form = document.getElementById('decode-form');
     const handwritingCanvas = document.getElementById('handwriting-canvas');
     const clearDrawingButton = document.getElementById('clear-drawing');
-    const learningItems = document.getElementById('learning-items');
-    const userCorrection = document.getElementById('user-correction');
     const output = document.getElementById('decoded-output');
     const status = document.getElementById('decode-status');
     const clearButton = document.getElementById('clear-button');
@@ -205,35 +187,6 @@
       return match ? match[1].trim() : '';
     };
 
-    const parseLearningItems = (block) => {
-      if (!block) {
-        return [];
-      }
-      return block
-        .split(/\n(?=-\s*language:)/)
-        .map((chunk) => {
-          const sourceMatch = chunk.match(/source:\s*(.+)/);
-          const targetMatch = chunk.match(/target:\s*(.+)/);
-          if (!sourceMatch || !targetMatch) {
-            return null;
-          }
-          return {
-            source: sourceMatch[1].trim(),
-            target: targetMatch[1].trim(),
-          };
-        })
-        .filter(Boolean);
-    };
-
-    const applyReplacements = (text, items) => {
-      return items.reduce((result, item) => {
-        if (!item.source) {
-          return result;
-        }
-        return result.split(item.source).join(item.target);
-      }, text);
-    };
-
     const runOcr = async () => {
       if (!hasDrawing) {
         return '';
@@ -258,19 +211,10 @@
       event.preventDefault();
       const rawText = await runOcr();
       const blockInput = extractBlock('ORIGINAL_INPUT', rawText) || rawText;
-      let learningBlock = learningItems.value.trim();
-      if (!learningBlock && rawText.includes('[LEARNING_ITEMS]')) {
-        learningBlock = extractBlock('LEARNING_ITEMS', rawText);
-      }
-
-      const decoded = applyReplacements(blockInput, parseLearningItems(learningBlock));
-      const correction = userCorrection.value.trim();
-      const resultText = decoded || '（入力がありません）';
+      const resultText = blockInput || '（入力がありません）';
 
       output.textContent = `[DECODED_OUTPUT]\n${resultText}`;
-      if (correction) {
-        status.textContent = '補正入力を検出しました。デコード結果を更新しました。';
-      } else if (!rawText && !hasDrawing) {
+      if (!rawText && !hasDrawing) {
         status.textContent = '筆記入力がありません。';
       } else {
         status.textContent = 'デコードが完了しました。';
@@ -278,8 +222,6 @@
     });
 
     clearButton.addEventListener('click', () => {
-      learningItems.value = '';
-      userCorrection.value = '';
       resetCanvas();
       output.textContent = '[DECODED_OUTPUT]\n（ここに結果が表示されます）';
       status.textContent = '';
