@@ -241,6 +241,87 @@
     handwritingStatus.textContent = message;
   };
 
+  const detectInkRegions = () => {
+    const ctx = rightCanvas.getContext('2d');
+    if (!ctx) return [];
+    const { width, height } = rightCanvas;
+    const { data } = ctx.getImageData(0, 0, width, height);
+    const visited = new Uint8Array(width * height);
+    const regions = [];
+    const alphaThreshold = 16;
+    const minPixelCount = Math.max(60, Math.floor((width * height) / 20000));
+    const padding = Math.max(2, Math.floor(Math.min(width, height) * 0.004));
+
+    const stackIndices = [];
+
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const index = y * width + x;
+        if (visited[index]) continue;
+        const alpha = data[index * 4 + 3];
+        if (alpha <= alphaThreshold) continue;
+
+        let minX = x;
+        let maxX = x;
+        let minY = y;
+        let maxY = y;
+        let count = 0;
+        stackIndices.length = 0;
+        stackIndices.push(index);
+        visited[index] = 1;
+
+        while (stackIndices.length) {
+          const current = stackIndices.pop();
+          const currentX = current % width;
+          const currentY = Math.floor(current / width);
+          count += 1;
+          if (currentX < minX) minX = currentX;
+          if (currentX > maxX) maxX = currentX;
+          if (currentY < minY) minY = currentY;
+          if (currentY > maxY) maxY = currentY;
+
+          const neighbors = [
+            current - 1,
+            current + 1,
+            current - width,
+            current + width,
+          ];
+          neighbors.forEach((next) => {
+            if (next < 0 || next >= width * height) return;
+            if (visited[next]) return;
+            const nextAlpha = data[next * 4 + 3];
+            if (nextAlpha <= alphaThreshold) return;
+            visited[next] = 1;
+            stackIndices.push(next);
+          });
+        }
+
+        if (count < minPixelCount) continue;
+        regions.push({
+          minX: Math.max(0, minX - padding),
+          minY: Math.max(0, minY - padding),
+          maxX: Math.min(width - 1, maxX + padding),
+          maxY: Math.min(height - 1, maxY + padding),
+        });
+      }
+    }
+
+    return regions;
+  };
+
+  const addDetectedAnnotations = (regions) => {
+    const stackRect = stack.getBoundingClientRect();
+    regions
+      .sort((a, b) => (a.minY === b.minY ? a.minX - b.minX : a.minY - b.minY))
+      .forEach((region) => {
+        const x = (region.minX / rightCanvas.width) * stackRect.width;
+        const y = (region.minY / rightCanvas.height) * stackRect.height;
+        const width = ((region.maxX - region.minX) / rightCanvas.width) * stackRect.width;
+        const height = ((region.maxY - region.minY) / rightCanvas.height) * stackRect.height;
+        addAnnotation(x, y, width, height);
+      });
+  };
+
   const copyLeftToRight = () => {
     if (!leftHasInk) {
       updateHandwritingStatus('左側に手書きしてから解析してください。');
@@ -255,7 +336,13 @@
     }
     rightHasInk = true;
     updatePlaceholder();
-    updateHandwritingStatus('左側の手書きを解析枠に転送しました。');
+    const regions = detectInkRegions();
+    if (regions.length) {
+      addDetectedAnnotations(regions);
+      updateHandwritingStatus(`文字判定で${regions.length}件を赤枠で囲みました。`);
+    } else {
+      updateHandwritingStatus('左側の手書きを解析枠に転送しました。');
+    }
   };
 
   const clearAnnotations = () => {
