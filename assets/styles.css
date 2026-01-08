@@ -1490,6 +1490,12 @@ body[data-admin-mode='edit'] #preview-thumb.is-selecting .focus-range {
   margin-top: 16px;
 }
 
+.analysis-mode {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+
 .analysis-panel {
   display: grid;
   gap: 8px;

@@ -39,6 +39,19 @@
           </div>
         </div>
         <p class="lead">MFA認証後に、解析対象の記事と補正ポイントを記録できます。</p>
+        <div class="analysis-mode">
+          <p class="kicker">解析モード</p>
+          <div class="preview-mode-picker" role="group" aria-label="解析プレビューのモード">
+            <button class="mode-button is-active" type="button" data-analysis-mode="frame" aria-pressed="true">
+              <span class="mode-icon mode-icon-frame" aria-hidden="true"></span>
+              <span>文字枠指定</span>
+            </button>
+            <button class="mode-button" type="button" data-analysis-mode="pen" aria-pressed="false">
+              <span class="mode-icon mode-icon-pen" aria-hidden="true"></span>
+              <span>赤ペン</span>
+            </button>
+          </div>
+        </div>
 
         <div class="analysis-editor">
           <section class="analysis-panel" aria-labelledby="analysis-source-title">
