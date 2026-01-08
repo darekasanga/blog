@@ -410,6 +410,7 @@
       previewThumb.setPointerCapture(event.pointerId);
       dragStart = start;
       isDragging = true;
+      previewThumb.classList.add('is-selecting');
       applyFocusRange(start, start);
     });
 
@@ -424,6 +425,7 @@
       if (!isDragging) return;
       isDragging = false;
       dragStart = null;
+      previewThumb.classList.remove('is-selecting');
       if (event?.pointerId !== undefined) {
         previewThumb.releasePointerCapture(event.pointerId);
       }
