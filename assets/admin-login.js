@@ -119,22 +119,7 @@
   }
 
   function getRedirectTarget() {
-    const params = new URLSearchParams(window.location.search);
-    const redirectParam = params.get('redirect');
-    if (!redirectParam) return './index.html';
-
-    let targetUrl;
-    try {
-      targetUrl = new URL(redirectParam, window.location.origin);
-    } catch (error) {
-      return './index.html';
-    }
-
-    if (targetUrl.origin !== window.location.origin) {
-      return './index.html';
-    }
-
-    return `${targetUrl.pathname}${targetUrl.search}${targetUrl.hash}`;
+    return '../index.html';
   }
 
   function setAuthSession(credentialId) {
