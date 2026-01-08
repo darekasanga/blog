@@ -1,4 +1,4 @@
-(() => {
+(async () => {
   const {
     readPosts,
     savePosts,
@@ -23,14 +23,112 @@
   const isEditMode = adminMode === 'edit';
   const ADMIN_AUTH_KEY = 'admin-authenticated';
   const ADMIN_PASSWORD = 'admin';
+  const ADMIN_BIOMETRIC_KEY = 'admin-biometric-credential';
 
-  function ensureAdminAuth() {
+  const encodeBase64 = (buffer) => btoa(String.fromCharCode(...new Uint8Array(buffer)));
+  const decodeBase64 = (value) => Uint8Array.from(atob(value), (char) => char.charCodeAt(0)).buffer;
+  const randomBuffer = (length) => {
+    const bytes = new Uint8Array(length);
+    window.crypto.getRandomValues(bytes);
+    return bytes.buffer;
+  };
+
+  async function isBiometricSupported() {
+    if (!window.PublicKeyCredential) {
+      return false;
+    }
+    try {
+      return await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+    } catch (error) {
+      console.warn('Biometric availability check failed', error);
+      return false;
+    }
+  }
+
+  async function authenticateWithBiometric() {
+    const stored = localStorage.getItem(ADMIN_BIOMETRIC_KEY);
+    if (!stored) return false;
+    const supported = await isBiometricSupported();
+    if (!supported) return false;
+    const proceed = window.confirm('生体認証でログインしますか？');
+    if (!proceed) return false;
+    try {
+      const { id } = JSON.parse(stored);
+      if (!id) return false;
+      const assertion = await navigator.credentials.get({
+        publicKey: {
+          challenge: randomBuffer(32),
+          allowCredentials: [
+            {
+              id: decodeBase64(id),
+              type: 'public-key',
+            },
+          ],
+          userVerification: 'required',
+          timeout: 60000,
+        },
+      });
+      if (assertion) {
+        sessionStorage.setItem(ADMIN_AUTH_KEY, 'true');
+        return true;
+      }
+    } catch (error) {
+      console.warn('Biometric auth failed', error);
+      alert('生体認証に失敗しました。パスワードでログインしてください。');
+    }
+    return false;
+  }
+
+  async function registerBiometric() {
+    const supported = await isBiometricSupported();
+    if (!supported) return;
+    const wants = window.confirm('次回から生体認証でログインしますか？');
+    if (!wants) return;
+    try {
+      const credential = await navigator.credentials.create({
+        publicKey: {
+          challenge: randomBuffer(32),
+          rp: { name: 'EMPEROR.NEWS Admin' },
+          user: {
+            id: randomBuffer(16),
+            name: 'admin',
+            displayName: '管理者',
+          },
+          pubKeyCredParams: [
+            { type: 'public-key', alg: -7 },
+            { type: 'public-key', alg: -257 },
+          ],
+          authenticatorSelection: {
+            authenticatorAttachment: 'platform',
+            userVerification: 'required',
+          },
+          timeout: 60000,
+        },
+      });
+      if (credential) {
+        localStorage.setItem(
+          ADMIN_BIOMETRIC_KEY,
+          JSON.stringify({ id: encodeBase64(credential.rawId) })
+        );
+        alert('生体認証を有効にしました。次回から利用できます。');
+      }
+    } catch (error) {
+      console.warn('Biometric registration failed', error);
+      alert('生体認証の登録に失敗しました。');
+    }
+  }
+
+  async function ensureAdminAuth() {
     if (sessionStorage.getItem(ADMIN_AUTH_KEY) === 'true') {
+      return true;
+    }
+    if (await authenticateWithBiometric()) {
       return true;
     }
     const entered = window.prompt('管理ページのパスワードを入力してください。');
     if (entered === ADMIN_PASSWORD) {
       sessionStorage.setItem(ADMIN_AUTH_KEY, 'true');
+      registerBiometric();
       return true;
     }
     alert('パスワードが一致しませんでした。トップへ戻ります。');
@@ -38,7 +136,7 @@
     return false;
   }
 
-  if (!ensureAdminAuth()) return;
+  if (!(await ensureAdminAuth())) return;
 
   const form = document.getElementById('post-form');
   const titleEl = document.getElementById('title');
