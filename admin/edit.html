@@ -44,15 +44,6 @@
             </div>
           </div>
           <div class="info-card">
-            <label for="hero-overlay">最新記事の背景透過率</label>
-            <input id="hero-overlay" type="range" min="0" max="100" value="70" />
-            <p class="muted-text" style="margin: 6px 0 0;">現在: <strong id="hero-overlay-label">70%</strong></p>
-            <label for="hero-position" style="margin-top: 12px;">最新記事画像の表示位置</label>
-            <input id="hero-position" type="range" min="0" max="100" value="50" />
-            <p class="muted-text" style="margin: 6px 0 0;">現在: <strong id="hero-position-label">50%</strong></p>
-            <p class="muted-text" style="margin: 6px 0 0;">文字エリアほど背景が見えにくくなるように反映されます。</p>
-          </div>
-          <div class="info-card">
             <label>注目の記事を選択</label>
             <p class="muted-text" style="margin: 6px 0 0;">投稿一覧の「注目に設定」チェックで最大30件まで指定できます。</p>
             <p class="muted-text" id="featured-count" style="margin: 6px 0 0;"></p>
@@ -152,6 +143,19 @@
               <p class="muted-text" style="margin: 6px 0 0;">0.5x 〜 2x で拡大率を調整します。現在: <strong id="image-scale-label">1.00x</strong></p>
             </div>
             <div class="field">
+              <label>最新記事プレビュー設定</label>
+              <p class="muted-text" style="margin: 4px 0 8px;">トップページの最新記事に表示されます。</p>
+              <label for="hero-overlay">全体透過率</label>
+              <input id="hero-overlay" type="range" min="0" max="100" value="70" />
+              <p class="muted-text" style="margin: 6px 0 0;">現在: <strong id="hero-overlay-label">70%</strong></p>
+              <label for="hero-overlay-stop" style="margin-top: 12px;">透過場所</label>
+              <input id="hero-overlay-stop" type="range" min="40" max="90" value="68" />
+              <p class="muted-text" style="margin: 6px 0 0;">現在: <strong id="hero-overlay-stop-label">68%</strong></p>
+              <label for="hero-position" style="margin-top: 12px;">表示部分</label>
+              <input id="hero-position" type="range" min="0" max="100" value="50" />
+              <p class="muted-text" style="margin: 6px 0 0;">現在: <strong id="hero-position-label">50%</strong></p>
+            </div>
+            <div class="field">
               <label>記事テーマ</label>
               <p class="muted-text" style="margin: 0;">この記事だけに適用されるカラーを選択できます。</p>
               <div class="theme-grid" id="theme-options"></div>
@@ -166,6 +170,16 @@
 
           <div class="info-card">
             <p class="kicker">プレビュー</p>
+            <section class="hero preview-hero" id="preview-hero" aria-label="最新記事プレビュー">
+              <div class="inner">
+                <p class="kicker" id="preview-hero-kicker">最新記事プレビュー</p>
+                <h2 id="preview-hero-title">デザインシステムで統一感を作る</h2>
+                <p class="lead" id="preview-hero-lead">本文からAIが要約します。</p>
+                <div class="hero-actions">
+                  <button class="btn ghost" type="button">記事を読む</button>
+                </div>
+              </div>
+            </section>
             <article class="card" id="preview-card">
               <div class="card-thumb placeholder" id="preview-thumb" aria-hidden="true" style="--focus-start:20%;--focus-end:80%;">
                 <div class="focus-range" aria-hidden="true"></div>

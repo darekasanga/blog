@@ -125,8 +125,11 @@
     showFeatured: true,
     siteTitle: 'EMPEROR.NEWS',
     footerDescription: 'シンプルで統一感のあるブログ体験を届けます。',
-    heroOverlayOpacity: 70,
-    heroImagePosition: 50,
+  };
+  const DEFAULT_HERO_SETTINGS = {
+    overlayOpacity: 70,
+    overlayStop: 68,
+    imagePosition: 50,
   };
   const storage = (() => {
     const memory = new Map();
@@ -287,8 +290,6 @@
   }
 
   function normalizeSiteSettings(settings = {}) {
-    const overlay = Number(settings.heroOverlayOpacity);
-    const position = Number(settings.heroImagePosition);
     return {
       showHero: typeof settings.showHero === 'boolean' ? settings.showHero : DEFAULT_SITE_SETTINGS.showHero,
       showFeatured:
@@ -301,12 +302,6 @@
         typeof settings.footerDescription === 'string' && settings.footerDescription.trim()
           ? settings.footerDescription.trim()
           : DEFAULT_SITE_SETTINGS.footerDescription,
-      heroOverlayOpacity: Number.isFinite(overlay)
-        ? Math.min(Math.max(overlay, 0), 100)
-        : DEFAULT_SITE_SETTINGS.heroOverlayOpacity,
-      heroImagePosition: Number.isFinite(position)
-        ? Math.min(Math.max(position, 0), 100)
-        : DEFAULT_SITE_SETTINGS.heroImagePosition,
     };
   }
 
@@ -426,6 +421,9 @@
     const isFeatured = post.isFeatured === true;
     const hidden = post.hidden === true;
     const order = Number.isFinite(Number(post.order)) ? Number(post.order) : index;
+    const overlayOpacity = Number(post.heroOverlayOpacity);
+    const overlayStop = Number(post.heroOverlayStop);
+    const heroImagePosition = Number(post.heroImagePosition);
     return {
       id,
       title: post.title || '無題の投稿',
@@ -443,6 +441,15 @@
       isFeatured,
       hidden,
       order,
+      heroOverlayOpacity: Number.isFinite(overlayOpacity)
+        ? Math.min(Math.max(overlayOpacity, 0), 100)
+        : DEFAULT_HERO_SETTINGS.overlayOpacity,
+      heroOverlayStop: Number.isFinite(overlayStop)
+        ? Math.min(Math.max(overlayStop, 0), 100)
+        : DEFAULT_HERO_SETTINGS.overlayStop,
+      heroImagePosition: Number.isFinite(heroImagePosition)
+        ? Math.min(Math.max(heroImagePosition, 0), 100)
+        : DEFAULT_HERO_SETTINGS.imagePosition,
     };
   }
 
@@ -502,5 +509,6 @@
     normalizeScale,
     summarizeContent,
     normalizeSummaryHistory,
+    DEFAULT_HERO_SETTINGS,
   };
 })();
