@@ -1511,6 +1511,9 @@ body[data-admin-mode='edit'] #preview-thumb.is-selecting .focus-range {
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 16px;
   margin-top: 16px;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .analysis-mode {
