@@ -178,6 +178,7 @@
   const previewThumb = document.getElementById('preview-thumb');
   const previewCard = document.getElementById('preview-card');
   const previewHero = document.getElementById('preview-hero');
+  const previewHeroImage = document.getElementById('preview-hero-image');
   const previewHeroKicker = document.getElementById('preview-hero-kicker');
   const previewHeroTitle = document.getElementById('preview-hero-title');
   const previewHeroLead = document.getElementById('preview-hero-lead');
@@ -389,12 +390,13 @@
       }
     }
     const imagePosition = Number.isFinite(positionInput) ? Math.min(Math.max(positionInput, 0), 100) : DEFAULT_HERO_SETTINGS.imagePosition;
-    return { overlayOpacity, overlayStart, overlayEnd, imagePosition };
+    const imageScale = normalizeScale(Number(imageScaleEl?.value));
+    return { overlayOpacity, overlayStart, overlayEnd, imagePosition, imageScale };
   }
 
   function updateHeroPreview() {
     if (!previewHero) return;
-    const { overlayOpacity, overlayStart, overlayEnd, imagePosition } = resolveHeroPreviewSettings();
+    const { overlayOpacity, overlayStart, overlayEnd, imagePosition, imageScale } = resolveHeroPreviewSettings();
     const overlayStrong = overlayOpacity / 100;
     const overlayWeak = Math.min(Math.max(overlayStrong * 0.35, 0), 1);
     previewHero.style.setProperty('--hero-overlay-strong', overlayStrong.toFixed(2));
@@ -402,6 +404,7 @@
     previewHero.style.setProperty('--hero-overlay-start', `${overlayStart}%`);
     previewHero.style.setProperty('--hero-overlay-end', `${overlayEnd}%`);
     previewHero.style.setProperty('--hero-image-position', `${imagePosition}%`);
+    previewHero.style.setProperty('--hero-image-scale', imageScale);
     if (heroOverlayStartInput) heroOverlayStartInput.value = String(Math.round(overlayStart));
     if (heroOverlayEndInput) heroOverlayEndInput.value = String(Math.round(overlayEnd));
     if (previewHeroTitle) previewHeroTitle.textContent = previewTitle?.textContent || '無題の投稿';
@@ -415,10 +418,16 @@
     if (heroPositionLabel) heroPositionLabel.textContent = `${Math.round(imagePosition)}%`;
     if (resizedImageData) {
       previewHero.classList.add('has-image');
-      previewHero.style.setProperty('--hero-image', `url("${resizedImageData}")`);
+      if (previewHeroImage) {
+        previewHeroImage.src = resizedImageData;
+        previewHeroImage.alt = `${previewHeroTitle?.textContent || '無題の投稿'}の画像`;
+      }
     } else {
       previewHero.classList.remove('has-image');
-      previewHero.style.removeProperty('--hero-image');
+      if (previewHeroImage) {
+        previewHeroImage.src = '';
+        previewHeroImage.alt = '';
+      }
     }
   }
 

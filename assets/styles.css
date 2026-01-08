@@ -341,9 +341,6 @@ h1 {
   padding: 48px 0 40px;
   min-height: var(--hero-height);
   margin-bottom: 16px;
-  background-position: center var(--hero-image-position);
-  background-repeat: no-repeat;
-  background-size: cover;
 }
 
 .preview-hero .inner {
@@ -352,10 +349,6 @@ h1 {
 
 .preview-hero .hero-actions .btn {
   pointer-events: none;
-}
-
-.preview-hero.has-image {
-  background-image: var(--hero-image);
 }
 
 h2 {
