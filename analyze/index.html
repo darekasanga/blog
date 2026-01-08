@@ -283,48 +283,119 @@
       };
     };
 
-    const renderSelectionAnnotation = (bbox, text) => {
-      clearLayer(analysisContext);
-      clearCharacterAnnotations();
+    const bboxOverlaps = (current, other) =>
+      current.x0 < other.x1 &&
+      current.x1 > other.x0 &&
+      current.y0 < other.y1 &&
+      current.y1 > other.y0;
+
+    const getAnnotationBbox = (annotation) => {
+      if (!annotation?.dataset?.bbox) return null;
+      try {
+        return JSON.parse(annotation.dataset.bbox);
+      } catch (error) {
+        return null;
+      }
+    };
+
+    const positionAnnotationElement = (annotation, bbox) => {
       const rect = analysisCanvas.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
       const scaleX = rect.width / handwritingCanvas.width;
       const scaleY = rect.height / handwritingCanvas.height;
       const width = (bbox.x1 - bbox.x0) * scaleX;
       const height = (bbox.y1 - bbox.y0) * scaleY;
       const x = bbox.x0 * scaleX;
       const y = bbox.y0 * scaleY;
-      analysisContext.fillStyle = 'rgba(239, 68, 68, 0.18)';
-      analysisContext.strokeStyle = 'rgba(239, 68, 68, 0.9)';
-      analysisContext.lineWidth = 1.5;
-      analysisContext.fillRect(x, y, width, height);
-      analysisContext.strokeRect(x, y, width, height);
-      if (!text) return;
-      const annotation = document.createElement('button');
-      annotation.type = 'button';
-      annotation.className = 'character-annotation';
       annotation.style.left = `${x}px`;
       annotation.style.top = `${y}px`;
       annotation.style.width = `${width}px`;
       annotation.style.height = `${height}px`;
       annotation.dataset.bbox = JSON.stringify(bbox);
+    };
+
+    const setAnnotationActive = (annotation, label) => {
+      if (activeAnnotation?.element) {
+        activeAnnotation.element.classList.remove('character-annotation--active');
+      }
+      const bbox = getAnnotationBbox(annotation);
+      activeAnnotation = {
+        element: annotation,
+        label,
+        bbox,
+      };
+      activeCorrectionStroke = false;
+      announceStatus('赤枠の上から赤ペンで修正してください。');
+      annotation.classList.add('character-annotation--active');
+    };
+
+    const createAnnotationElement = (bbox, text) => {
+      const annotation = document.createElement('button');
+      annotation.type = 'button';
+      annotation.className = 'character-annotation';
+      positionAnnotationElement(annotation, bbox);
       const label = document.createElement('span');
       label.className = 'character-annotation__label';
       label.textContent = text;
-      annotation.appendChild(label);
-      annotation.addEventListener('click', () => {
-        if (activeAnnotation?.element) {
-          activeAnnotation.element.classList.remove('character-annotation--active');
-        }
-        activeAnnotation = {
-          element: annotation,
-          label,
-          bbox,
-        };
-        activeCorrectionStroke = false;
-        announceStatus('赤枠の上から赤ペンで修正してください。');
-        annotation.classList.add('character-annotation--active');
+      const removeButton = document.createElement('button');
+      removeButton.type = 'button';
+      removeButton.className = 'character-annotation__remove';
+      removeButton.setAttribute('aria-label', '範囲を削除');
+      removeButton.textContent = '❌';
+      annotation.append(label, removeButton);
+      label.addEventListener('click', (event) => {
+        event.stopPropagation();
+        annotation.classList.add('character-annotation--registered');
+        const labelText = label.textContent || '（未判定）';
+        announceStatus(`判定「${labelText}」を登録しました。`);
       });
+      annotation.addEventListener('click', () => {
+        setAnnotationActive(annotation, label);
+      });
+      removeButton.addEventListener('click', (event) => {
+        event.stopPropagation();
+        if (activeAnnotation?.element === annotation) {
+          activeAnnotation = null;
+        }
+        annotation.remove();
+        announceStatus('範囲を削除しました。');
+      });
+      return { annotation, label };
+    };
+
+    const updateAnnotationElement = (annotation, bbox, text) => {
+      positionAnnotationElement(annotation, bbox);
+      const label = annotation.querySelector('.character-annotation__label');
+      if (label) {
+        label.textContent = text;
+      }
+      if (activeAnnotation?.element === annotation) {
+        activeAnnotation.bbox = bbox;
+      }
+    };
+
+    const findOverlappingAnnotation = (bbox) => {
+      const annotations = Array.from(
+        characterAnnotations.querySelectorAll('.character-annotation'),
+      );
+      return (
+        annotations.find((annotation) => {
+          const existing = getAnnotationBbox(annotation);
+          if (!existing) return false;
+          return bboxOverlaps(bbox, existing);
+        }) || null
+      );
+    };
+
+    const addOrUpdateSelectionAnnotation = (bbox, text) => {
+      const existing = findOverlappingAnnotation(bbox);
+      if (existing) {
+        updateAnnotationElement(existing, bbox, text);
+        return existing;
+      }
+      const { annotation } = createAnnotationElement(bbox, text);
       characterAnnotations.appendChild(annotation);
+      return annotation;
     };
 
     const stopCorrection = async () => {
@@ -364,10 +435,10 @@
         const text = await runOcrForRegion(bbox);
         const normalized = normalizeBbox(bbox);
         if (text) {
-          renderSelectionAnnotation(normalized, text);
+          addOrUpdateSelectionAnnotation(normalized, text);
           announceStatus(`指定範囲の判定結果「${text}」を表示しました。`);
         } else {
-          renderSelectionAnnotation(normalized, '');
+          addOrUpdateSelectionAnnotation(normalized, '');
           announceStatus('指定範囲の判定ができませんでした。');
         }
       }
@@ -468,48 +539,12 @@
       if (!ocrData || !ocrData.symbols || !ocrData.symbols.length) {
         return;
       }
-      const rect = analysisCanvas.getBoundingClientRect();
-      const scaleX = rect.width / handwritingCanvas.width;
-      const scaleY = rect.height / handwritingCanvas.height;
       ocrData.symbols.forEach((symbol, index) => {
         if (!symbol.bbox) return;
         const text = (symbol.text || '').trim();
         if (!text) return;
-        const width = (symbol.bbox.x1 - symbol.bbox.x0) * scaleX;
-        const height = (symbol.bbox.y1 - symbol.bbox.y0) * scaleY;
-        const x = symbol.bbox.x0 * scaleX;
-        const y = symbol.bbox.y0 * scaleY;
-        const annotation = document.createElement('button');
-        annotation.type = 'button';
-        annotation.className = 'character-annotation';
-        annotation.style.left = `${x}px`;
-        annotation.style.top = `${y}px`;
-        annotation.style.width = `${width}px`;
-        annotation.style.height = `${height}px`;
+        const { annotation } = createAnnotationElement(symbol.bbox, text);
         annotation.dataset.index = String(index);
-        annotation.dataset.bbox = JSON.stringify(symbol.bbox);
-        const label = document.createElement('span');
-        label.className = 'character-annotation__label';
-        label.textContent = text;
-        annotation.appendChild(label);
-        label.addEventListener('click', (event) => {
-          event.stopPropagation();
-          annotation.classList.add('character-annotation--registered');
-          announceStatus(`判定「${label.textContent}」を登録しました。`);
-        });
-        annotation.addEventListener('click', () => {
-          if (activeAnnotation?.element) {
-            activeAnnotation.element.classList.remove('character-annotation--active');
-          }
-          activeAnnotation = {
-            element: annotation,
-            label,
-            bbox: symbol.bbox,
-          };
-          activeCorrectionStroke = false;
-          announceStatus('赤枠の上から赤ペンで修正してください。');
-          annotation.classList.add('character-annotation--active');
-        });
         characterAnnotations.appendChild(annotation);
       });
     };
