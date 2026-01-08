@@ -217,6 +217,12 @@ textarea {
   transition: 0.2s ease;
 }
 
+.nav-button {
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+}
+
 .nav-link:hover {
   color: var(--fg);
   border-color: var(--border);

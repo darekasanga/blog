@@ -18,9 +18,11 @@
       </div>
       <nav class="nav-links" aria-label="メインナビゲーション">
         <a href="../index.html" class="nav-link">トップ</a>
-        <a href="index.html" class="nav-link">管理メニュー</a>
-        <a href="edit.html" class="nav-link active">記事編集</a>
-        <a href="../index.html#analysis-room" class="nav-link">AI COVEくん解読</a>
+        <a href="login.html" class="nav-link" data-auth="guest">ログイン</a>
+        <a href="index.html" class="nav-link" data-auth="auth" hidden>記事投稿</a>
+        <a href="edit.html" class="nav-link active" data-auth="auth" hidden>記事編集</a>
+        <a href="../index.html#analysis-room" class="nav-link" data-auth="auth" hidden>AI COVE解析</a>
+        <button class="nav-link nav-button" type="button" data-auth="auth" data-action="logout" hidden>ログアウト</button>
       </nav>
     </div>
   </header>
@@ -222,6 +224,7 @@
   </footer>
 
   <script src="../assets/data.js"></script>
+  <script src="../assets/header-auth.js"></script>
   <script src="../assets/admin.js"></script>
 </body>
 </html>

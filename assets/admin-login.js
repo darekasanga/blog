@@ -12,25 +12,15 @@
   const AUTH_TTL_MS = 30 * 60 * 1000;
   const CREDENTIAL_ID_KEY = 'admin-biometric-credential-id';
   const CREDENTIALS_KEY = 'admin-biometric-credentials';
-  const LOGIN_CODE_KEY = 'admin-login-codes';
-  const LOGIN_CODE_TTL_MS = 30 * 60 * 1000;
 
   const authButton = document.getElementById('biometric-auth');
   const resetButton = document.getElementById('reset-biometric');
-  const registerButton = document.getElementById('register-biometric');
   const message = document.getElementById('login-message');
   const authLinks = document.getElementById('auth-links');
   const authStatus = document.getElementById('auth-status');
   const loginCard = document.getElementById('login-card');
   const siteThemePicker = document.getElementById('site-theme-picker');
   const hint = document.getElementById('biometric-hint');
-  const biometricList = document.getElementById('biometric-list');
-  const biometricLabelInput = document.getElementById('biometric-label');
-  const biometricAdminHint = document.getElementById('biometric-admin-hint');
-  const loginCodeInput = document.getElementById('login-code');
-  const issueLoginCodeButton = document.getElementById('issue-login-code');
-  const loginCodeList = document.getElementById('login-code-list');
-  const loginCodeHint = document.getElementById('login-code-hint');
 
   if (!authButton) return;
 
@@ -107,7 +97,7 @@
     try {
       const stored = JSON.parse(localStorage.getItem(CREDENTIALS_KEY) || '[]');
       if (Array.isArray(stored)) {
-        const normalized = stored
+        return stored
           .filter((entry) => entry && typeof entry.id === 'string')
           .map((entry) => ({
             id: entry.id,
@@ -115,11 +105,6 @@
             createdAt: entry.createdAt || Date.now(),
             canManageUsers: Boolean(entry.canManageUsers),
           }));
-        if (normalized.length && !normalized.some((entry) => entry.canManageUsers)) {
-          normalized[0].canManageUsers = true;
-          saveCredentialList(normalized);
-        }
-        return normalized;
       }
     } catch (error) {
       // ignore malformed data
@@ -127,221 +112,10 @@
 
     const legacy = localStorage.getItem(CREDENTIAL_ID_KEY);
     if (legacy) {
-      const migrated = [{ id: legacy, label: '管理者', createdAt: Date.now(), canManageUsers: true }];
-      localStorage.setItem(CREDENTIALS_KEY, JSON.stringify(migrated));
-      return migrated;
+      return [{ id: legacy, label: '管理者', createdAt: Date.now(), canManageUsers: true }];
     }
 
     return [];
-  }
-
-  function saveCredentialList(list) {
-    localStorage.setItem(CREDENTIALS_KEY, JSON.stringify(list));
-  }
-
-  function getAuthenticatedCredentialId() {
-    return sessionStorage.getItem(ADMIN_AUTH_ID_KEY) || '';
-  }
-
-  function canManageUsers(authId) {
-    if (!authId) return false;
-    return readCredentialList().some((credential) => credential.id === authId && credential.canManageUsers);
-  }
-
-  function canRegisterUsers() {
-    const credentials = readCredentialList();
-    if (!credentials.length) return true;
-    return canManageUsers(getAuthenticatedCredentialId());
-  }
-
-  function updateManagementControls() {
-    const allowed = canRegisterUsers();
-    if (registerButton) registerButton.disabled = !allowed;
-    if (biometricLabelInput) biometricLabelInput.disabled = !allowed;
-    if (resetButton) resetButton.disabled = !allowed;
-    if (biometricAdminHint) {
-      biometricAdminHint.hidden = allowed;
-    }
-
-    const canIssueCodes = canManageUsers(getAuthenticatedCredentialId());
-    if (issueLoginCodeButton) issueLoginCodeButton.disabled = !canIssueCodes;
-    if (loginCodeHint) {
-      loginCodeHint.hidden = canIssueCodes;
-    }
-  }
-
-  function renderCredentialList() {
-    if (!biometricList) return;
-    const credentials = readCredentialList();
-    if (!credentials.length) {
-      biometricList.innerHTML = '<p class="muted-text">登録済みの生体認証ユーザーがいません。</p>';
-      return;
-    }
-
-    const allowManage = canManageUsers(getAuthenticatedCredentialId());
-    biometricList.innerHTML = credentials
-      .map(
-        (credential) => `
-          <div class="biometric-item" data-id="${credential.id}">
-            <div class="biometric-summary">
-              <strong>${credential.label || '管理者'}</strong>
-              <p class="muted-text">登録ID: ${credential.id.slice(0, 12)}...</p>
-              <div class="status-row">
-                <span class="pill ${credential.canManageUsers ? 'pill-accent' : 'pill-muted'}">ユーザー管理</span>
-              </div>
-            </div>
-            ${
-              allowManage
-                ? `
-            <div class="biometric-actions">
-              <label class="flag-toggle biometric-role-toggle">
-                <input type="checkbox" data-action="toggle-manage" ${credential.canManageUsers ? 'checked' : ''} />
-                <span>ユーザー管理権</span>
-              </label>
-              <button class="btn ghost" type="button" data-action="remove">削除</button>
-            </div>
-            `
-                : ''
-            }
-          </div>
-        `
-      )
-      .join('');
-
-    biometricList.querySelectorAll('button[data-action="remove"]').forEach((button) => {
-      button.addEventListener('click', () => {
-        const item = button.closest('.biometric-item');
-        const id = item?.dataset.id;
-        if (!id) return;
-        const list = readCredentialList();
-        const managers = list.filter((credential) => credential.canManageUsers);
-        if (managers.length <= 1 && managers[0]?.id === id) {
-          showMessage('最後のユーザー管理者は削除できません。', 'error');
-          return;
-        }
-        const next = list.filter((credential) => credential.id !== id);
-        saveCredentialList(next);
-        renderCredentialList();
-        showMessage('生体認証ユーザーを削除しました。', 'success');
-      });
-    });
-
-    biometricList.querySelectorAll('input[data-action="toggle-manage"]').forEach((input) => {
-      input.addEventListener('change', () => {
-        const item = input.closest('.biometric-item');
-        const id = item?.dataset.id;
-        if (!id) return;
-        const list = readCredentialList();
-        const managers = list.filter((credential) => credential.canManageUsers);
-        if (managers.length <= 1 && managers[0]?.id === id && !input.checked) {
-          input.checked = true;
-          showMessage('最後のユーザー管理者の権限は解除できません。', 'error');
-          return;
-        }
-        const next = list.map((credential) =>
-          credential.id === id ? { ...credential, canManageUsers: input.checked } : credential
-        );
-        saveCredentialList(next);
-        renderCredentialList();
-        showMessage(input.checked ? 'ユーザー管理権を付与しました。' : 'ユーザー管理権を解除しました。', 'success');
-      });
-    });
-  }
-
-  function readLoginCodeList() {
-    try {
-      const stored = JSON.parse(localStorage.getItem(LOGIN_CODE_KEY) || '[]');
-      if (Array.isArray(stored)) {
-        return stored
-          .filter((entry) => entry && typeof entry.code === 'string' && typeof entry.expiresAt === 'number')
-          .filter((entry) => Date.now() < entry.expiresAt);
-      }
-    } catch (error) {
-      // ignore malformed data
-    }
-    return [];
-  }
-
-  function saveLoginCodeList(list) {
-    localStorage.setItem(LOGIN_CODE_KEY, JSON.stringify(list));
-  }
-
-  function generateLoginCode() {
-    const value = new Uint32Array(1);
-    window.crypto.getRandomValues(value);
-    return String(value[0] % 1000000).padStart(6, '0');
-  }
-
-  function renderLoginCodeList() {
-    if (!loginCodeList) return;
-    const codes = readLoginCodeList();
-    if (!codes.length) {
-      loginCodeList.innerHTML = '<p class="muted-text">発行済みのログインコードはありません。</p>';
-      return;
-    }
-
-    const allowManage = canManageUsers(getAuthenticatedCredentialId());
-    loginCodeList.innerHTML = codes
-      .map(
-        (entry) => `
-          <div class="login-code-item" data-code="${entry.code}">
-            <div>
-              <strong>${entry.code}</strong>
-              <p class="muted-text">有効期限: ${new Date(entry.expiresAt).toLocaleTimeString('ja-JP', {
-                hour: '2-digit',
-                minute: '2-digit',
-              })}</p>
-            </div>
-            ${allowManage ? '<button class="btn ghost" type="button" data-action="remove">無効にする</button>' : ''}
-          </div>
-        `
-      )
-      .join('');
-
-    if (allowManage) {
-      loginCodeList.querySelectorAll('button[data-action="remove"]').forEach((button) => {
-        button.addEventListener('click', () => {
-          const item = button.closest('.login-code-item');
-          const code = item?.dataset.code;
-          if (!code) return;
-          const next = readLoginCodeList().filter((entry) => entry.code !== code);
-          saveLoginCodeList(next);
-          renderLoginCodeList();
-          showMessage('ログインコードを無効にしました。', 'success');
-        });
-      });
-    }
-  }
-
-  function issueLoginCode() {
-    const code = generateLoginCode();
-    const next = readLoginCodeList();
-    next.push({
-      code,
-      issuedAt: Date.now(),
-      expiresAt: Date.now() + LOGIN_CODE_TTL_MS,
-    });
-    saveLoginCodeList(next);
-    renderLoginCodeList();
-    return code;
-  }
-
-  function isLoginCodeValid(code) {
-    const trimmed = code.trim();
-    if (!trimmed) return false;
-    const codes = readLoginCodeList();
-    return codes.some((entry) => entry.code === trimmed);
-  }
-
-  function consumeLoginCode(code) {
-    const trimmed = code.trim();
-    if (!trimmed) return false;
-    const codes = readLoginCodeList();
-    if (!codes.some((entry) => entry.code === trimmed)) return false;
-    const next = codes.filter((entry) => entry.code !== trimmed);
-    saveLoginCodeList(next);
-    renderLoginCodeList();
-    return true;
   }
 
   function getRedirectTarget() {
@@ -390,57 +164,6 @@
     return PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
   }
 
-  async function registerCredential(label) {
-    const challenge = new Uint8Array(32);
-    window.crypto.getRandomValues(challenge);
-
-    const userId = new Uint8Array(16);
-    window.crypto.getRandomValues(userId);
-    const displayName = label?.trim() || `ユーザー${readCredentialList().length + 1}`;
-    const userName = `admin-${Date.now()}@emperor.news`;
-
-    const credential = await navigator.credentials.create({
-      publicKey: {
-        challenge,
-        rp: {
-          name: 'EMPEROR.NEWS',
-        },
-        user: {
-          id: userId,
-          name: userName,
-          displayName,
-        },
-        pubKeyCredParams: [
-          { type: 'public-key', alg: -7 },
-          { type: 'public-key', alg: -257 },
-        ],
-        authenticatorSelection: {
-          authenticatorAttachment: 'platform',
-          userVerification: 'required',
-        },
-        timeout: 60000,
-        attestation: 'none',
-      },
-    });
-
-    if (!credential) {
-      throw new Error('credential-missing');
-    }
-    const credentialId = bufferToBase64Url(credential.rawId);
-    const current = readCredentialList();
-    if (!current.find((item) => item.id === credentialId)) {
-      const hasManager = current.some((item) => item.canManageUsers);
-      current.push({
-        id: credentialId,
-        label: displayName,
-        createdAt: Date.now(),
-        canManageUsers: !hasManager,
-      });
-      saveCredentialList(current);
-    }
-    renderCredentialList();
-  }
-
   async function authenticateCredential(credentialIds) {
     const challenge = new Uint8Array(32);
     window.crypto.getRandomValues(challenge);
@@ -479,23 +202,13 @@
     try {
       const stored = readCredentialList();
       if (!stored.length) {
-        showMessage('先に生体認証ユーザーを登録してください。', 'error');
+        showMessage('先にadmin管理ページで生体認証ユーザーを登録してください。', 'error');
         return;
       }
       const assertion = await authenticateCredential(stored.map((item) => item.id));
       const credentialId = bufferToBase64Url(assertion.rawId);
-      const current = readCredentialList();
-      if (current.length && !current.some((entry) => entry.canManageUsers)) {
-        const updated = current.map((entry, index) =>
-          index === 0 ? { ...entry, canManageUsers: true } : entry
-        );
-        saveCredentialList(updated);
-      }
-
       setAuthSession(credentialId);
       updateAuthState(true);
-      updateManagementControls();
-      renderCredentialList();
       showMessage('認証に成功しました。', 'success');
       window.location.href = getRedirectTarget();
     } catch (error) {
@@ -509,85 +222,23 @@
 
   if (resetButton) {
     resetButton.addEventListener('click', () => {
-      if (!canRegisterUsers()) {
-        showMessage('ユーザー管理権限がありません。', 'error');
-        return;
-      }
       localStorage.removeItem(CREDENTIAL_ID_KEY);
       localStorage.removeItem(CREDENTIALS_KEY);
       clearAuthSession();
       updateAuthState(false);
-      renderCredentialList();
-      updateManagementControls();
       showMessage('登録情報をリセットしました。再度生体認証を実行してください。', 'success');
-    });
-  }
-
-  if (registerButton) {
-    registerButton.addEventListener('click', async () => {
-      clearMessage();
-      if (!canRegisterUsers()) {
-        showMessage('ユーザー管理権限がありません。', 'error');
-        return;
-      }
-      const credentials = readCredentialList();
-      const requiresLoginCode = credentials.length > 0;
-      const loginCodeValue = loginCodeInput?.value?.trim() || '';
-      if (requiresLoginCode && !isLoginCodeValid(loginCodeValue)) {
-        showMessage('ログインコードが無効です。管理者から発行されたコードを入力してください。', 'error');
-        return;
-      }
-      const available = await isBiometricAvailable();
-      if (!available) {
-        showMessage('この端末では生体認証が利用できません。', 'error');
-        return;
-      }
-      try {
-        await registerCredential(biometricLabelInput?.value || '');
-        if (requiresLoginCode) {
-          consumeLoginCode(loginCodeValue);
-        }
-        if (biometricLabelInput) {
-          biometricLabelInput.value = '';
-        }
-        if (loginCodeInput) {
-          loginCodeInput.value = '';
-        }
-        showMessage('生体認証ユーザーを登録しました。', 'success');
-      } catch (error) {
-        showMessage('登録に失敗しました。端末の生体認証を再度お試しください。', 'error');
-      }
-    });
-  }
-
-  if (issueLoginCodeButton) {
-    issueLoginCodeButton.addEventListener('click', () => {
-      clearMessage();
-      if (!canManageUsers(getAuthenticatedCredentialId())) {
-        showMessage('ユーザー管理権限がありません。', 'error');
-        return;
-      }
-      const code = issueLoginCode();
-      if (loginCodeInput) {
-        loginCodeInput.value = code;
-      }
-      showMessage('ログインコードを発行しました。', 'success');
     });
   }
 
   const redirectTarget = getRedirectTarget();
   if (isAuthSessionValid()) {
     updateAuthState(true);
-    updateManagementControls();
     showMessage('認証済みのため、目的のページへ移動します。', 'success');
     window.location.href = redirectTarget;
     return;
   }
 
   renderSiteThemePicker();
-  renderCredentialList();
-  renderLoginCodeList();
-  updateManagementControls();
   updateAuthState(false);
 
   isBiometricAvailable().then((available) => {

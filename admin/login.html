@@ -18,7 +18,11 @@
       </div>
       <nav class="nav-links" aria-label="メインナビゲーション">
         <a href="../index.html" class="nav-link">トップ</a>
-        <a href="login.html" class="nav-link active">管理認証</a>
+        <a href="login.html" class="nav-link active" data-auth="guest">ログイン</a>
+        <a href="index.html" class="nav-link" data-auth="auth" hidden>記事投稿</a>
+        <a href="edit.html" class="nav-link" data-auth="auth" hidden>記事編集</a>
+        <a href="../index.html#analysis-room" class="nav-link" data-auth="auth" hidden>AI COVE解析</a>
+        <button class="nav-link nav-button" type="button" data-auth="auth" data-action="logout" hidden>ログアウト</button>
       </nav>
     </div>
   </header>
@@ -52,25 +56,8 @@
             <button class="btn ghost" type="button" id="reset-biometric">生体認証を再登録</button>
           </div>
           <p class="muted-text" id="biometric-hint">対応端末ではTouch ID / Face IDなどが利用できます。</p>
-          <div class="biometric-manager">
-            <p class="kicker">ユーザー管理</p>
-            <div class="login-code-panel">
-              <label for="login-code">ログインコード</label>
-              <input id="login-code" type="text" placeholder="発行されたログインコードを入力" autocomplete="one-time-code" />
-              <p class="muted-text">ログインコードと生体認証でユーザー登録ができます。</p>
-              <div class="form-actions">
-                <button class="btn ghost" type="button" id="issue-login-code">ログインコードを発行</button>
-              </div>
-              <p class="muted-text" id="login-code-hint">ユーザー管理権限を持つ管理者のみが発行できます。</p>
-              <div class="login-code-list" id="login-code-list" aria-live="polite"></div>
-            </div>
-            <label for="biometric-label">登録ユーザー名</label>
-            <input id="biometric-label" type="text" placeholder="例）管理者A" />
-            <div class="form-actions">
-              <button class="btn ghost" type="button" id="register-biometric">新しいユーザーを登録</button>
-            </div>
-            <p class="muted-text" id="biometric-admin-hint">ユーザー管理権限を持つ管理者のみが登録・削除・権限付与を行えます。</p>
-            <div class="biometric-list" id="biometric-list" aria-live="polite"></div>
+          <div class="form-actions" style="margin-top: 16px;">
+            <a class="btn ghost" href="manage.html">admin管理ページへ</a>
           </div>
         </div>
 
@@ -114,6 +101,7 @@
   </footer>
 
   <script src="../assets/data.js"></script>
+  <script src="../assets/header-auth.js"></script>
   <script src="../assets/admin-login.js"></script>
 </body>
 </html>

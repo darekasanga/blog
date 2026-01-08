@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EMPEROR.NEWS | Admin管理</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="inner">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true"></div>
+        <div>
+          <p class="brand-kicker">BLOG</p>
+          <p class="brand-title" data-site-title>EMPEROR.NEWS</p>
+        </div>
+      </div>
+      <nav class="nav-links" aria-label="メインナビゲーション">
+        <a href="../index.html" class="nav-link">トップ</a>
+        <a href="login.html" class="nav-link" data-auth="guest">ログイン</a>
+        <a href="index.html" class="nav-link" data-auth="auth" hidden>記事投稿</a>
+        <a href="edit.html" class="nav-link" data-auth="auth" hidden>記事編集</a>
+        <a href="../index.html#analysis-room" class="nav-link" data-auth="auth" hidden>AI COVE解析</a>
+        <button class="nav-link nav-button" type="button" data-auth="auth" data-action="logout" hidden>ログアウト</button>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="section">
+      <div class="inner admin-login-grid">
+        <div class="info-card login-card" id="manager-auth-card">
+          <p class="kicker">Admin管理</p>
+          <h1>管理者パスワード</h1>
+          <p class="lead">ユーザー管理とログインコード発行は管理者パスワードが必要です。</p>
+          <div class="field">
+            <label for="admin-password">パスワード</label>
+            <input id="admin-password" type="password" placeholder="管理者パスワードを入力" autocomplete="current-password" />
+            <p class="muted-text" style="margin-top: 6px;">初期パスワード: administrater</p>
+          </div>
+          <p class="form-message" id="manager-message" role="status" aria-live="polite" hidden></p>
+          <div class="form-actions">
+            <button class="btn primary" type="button" id="admin-password-submit">管理ページを開く</button>
+            <a class="btn ghost" href="login.html">ログインに戻る</a>
+          </div>
+        </div>
+
+        <div class="info-card login-card" id="manager-panel" hidden>
+          <p class="kicker">ユーザー管理</p>
+          <h2>生体認証ユーザーとログインコード</h2>
+          <p class="muted-text">ユーザー登録・権限付与・ログインコード発行が行えます。</p>
+
+          <p class="form-message" id="manager-action-message" role="status" aria-live="polite" hidden></p>
+          <div class="form-actions" style="margin-bottom: 12px;">
+            <button class="btn ghost" type="button" id="reset-biometric">登録情報をリセット</button>
+          </div>
+
+          <div class="login-code-panel">
+            <label for="login-code">ログインコード</label>
+            <input id="login-code" type="text" placeholder="発行されたログインコードを入力" autocomplete="one-time-code" />
+            <p class="muted-text">新しいユーザー登録時に入力するコードです。</p>
+            <div class="form-actions">
+              <button class="btn ghost" type="button" id="issue-login-code">ログインコードを発行</button>
+            </div>
+            <div class="login-code-list" id="login-code-list" aria-live="polite"></div>
+          </div>
+
+          <label for="biometric-label">登録ユーザー名</label>
+          <input id="biometric-label" type="text" placeholder="例）管理者A" />
+          <div class="form-actions">
+            <button class="btn ghost" type="button" id="register-biometric">新しいユーザーを登録</button>
+          </div>
+          <div class="biometric-list" id="biometric-list" aria-live="polite"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="inner footer-grid">
+      <div>
+        <p class="brand-title" data-site-title>EMPEROR.NEWS</p>
+        <p class="muted-text" data-footer-description>シンプルで統一感のあるブログ体験を届けます。</p>
+      </div>
+      <div id="site-theme-picker" class="footer-theme-picker" aria-label="表示テーマ選択"></div>
+    </div>
+  </footer>
+
+  <script src="../assets/data.js"></script>
+  <script src="../assets/header-auth.js"></script>
+  <script src="../assets/admin-manager.js"></script>
+</body>
+</html>
