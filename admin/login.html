@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>EMPEROR.NEWS | 管理ログイン</title>
+  <title>EMPEROR.NEWS | 管理認証</title>
   <link rel="stylesheet" href="../assets/styles.css" />
 </head>
 <body data-admin-mode="login">
@@ -18,7 +18,7 @@
       </div>
       <nav class="nav-links" aria-label="メインナビゲーション">
         <a href="../index.html" class="nav-link">トップ</a>
-        <a href="login.html" class="nav-link active">管理ログイン</a>
+        <a href="login.html" class="nav-link active">管理認証</a>
       </nav>
     </div>
   </header>
@@ -27,33 +27,31 @@
     <section class="section">
       <div class="inner admin-login-grid">
         <div class="info-card login-card" id="login-card">
-          <p class="kicker">管理ログイン</p>
-          <h1>安全な管理アクセス</h1>
-          <p class="lead">パスワードとワンタイムコードの2段階でログインします。</p>
+          <p class="kicker">管理認証</p>
+          <h1>生体認証でアクセス</h1>
+          <p class="lead">端末の指紋や顔認証を使って管理機能へ安全にログインします。</p>
 
-          <form class="login-form" id="admin-login-form">
-            <div class="field">
-              <label for="admin-user">管理者ID</label>
-              <input id="admin-user" name="admin-user" type="text" value="admin" autocomplete="username" required />
+          <div class="login-list" aria-label="認証の流れ">
+            <div class="login-item">
+              <strong>初回登録</strong>
+              <span class="muted-text">最初に生体認証の登録を行います。</span>
             </div>
-            <div class="field">
-              <label for="admin-password">パスワード</label>
-              <input id="admin-password" name="admin-password" type="password" placeholder="パスワードを入力" autocomplete="current-password" required />
+            <div class="login-item">
+              <strong>認証</strong>
+              <span class="muted-text">次回からは生体認証のみで素早くアクセスできます。</span>
             </div>
-            <div class="field">
-              <label for="mfa-code">ワンタイムコード</label>
-              <div class="mfa-row">
-                <input id="mfa-code" name="mfa-code" type="text" inputmode="numeric" pattern="[0-9]{6}" placeholder="6桁のコード" required />
-                <button class="btn ghost" type="button" id="send-mfa">認証コードを送る</button>
-              </div>
-              <p class="muted-text" id="mfa-hint">認証コードを送ると5分間有効なコードが発行されます。</p>
+            <div class="login-item">
+              <strong>自動遷移</strong>
+              <span class="muted-text">認証後は目的のページへ自動で移動します。</span>
             </div>
-            <p class="form-message" id="login-message" role="status" aria-live="polite" hidden></p>
-            <div class="form-actions">
-              <button class="btn primary" type="submit">ログイン</button>
-              <button class="btn ghost" type="button" id="reset-login">入力をリセット</button>
-            </div>
-          </form>
+          </div>
+
+          <p class="form-message" id="login-message" role="status" aria-live="polite" hidden></p>
+          <div class="form-actions">
+            <button class="btn primary" type="button" id="biometric-auth">生体認証を開始</button>
+            <button class="btn ghost" type="button" id="reset-biometric">生体認証を再登録</button>
+          </div>
+          <p class="muted-text" id="biometric-hint">対応端末ではTouch ID / Face IDなどが利用できます。</p>
         </div>
 
         <div class="info-card login-info">
