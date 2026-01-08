@@ -22,8 +22,6 @@ const heroListLink = document.getElementById('hero-list-link');
 const footerListLink = document.getElementById('footer-list-link');
 const heroTitle = document.getElementById('hero-title');
 const heroLead = document.getElementById('hero-lead');
-const heroImage = document.getElementById('hero-image');
-const heroMedia = document.querySelector('.hero-media');
 const siteTitleTargets = document.querySelectorAll('[data-site-title]');
 const footerDescriptionTargets = document.querySelectorAll('[data-footer-description]');
 let siteThemeKey = readSiteTheme();
@@ -117,11 +115,10 @@ function updateHeroContent() {
     if (heroKicker) heroKicker.textContent = '最新記事';
     if (heroTitle) heroTitle.textContent = 'まだ記事がありません';
     if (heroLead) heroLead.textContent = '記事投稿ページから最初の記事を登録してください。';
-    if (heroImage) {
-      heroImage.removeAttribute('src');
-      heroImage.alt = '';
+    if (heroSection) {
+      heroSection.classList.remove('has-image');
+      heroSection.style.removeProperty('--hero-image');
     }
-    if (heroMedia) heroMedia.classList.add('is-empty');
     if (heroListLink) {
       heroListLink.href = '#article-list';
       heroListLink.setAttribute('aria-disabled', 'true');
@@ -132,16 +129,15 @@ function updateHeroContent() {
   if (heroKicker) heroKicker.textContent = `最新記事 ${latest.date}`;
   if (heroTitle) heroTitle.textContent = latest.title;
   if (heroLead) heroLead.textContent = latest.excerpt || '最新記事の概要がまだありません。';
-  if (heroImage) {
+  if (heroSection) {
     if (latest.image) {
-      heroImage.src = latest.image;
-      heroImage.alt = `${latest.title}の画像`;
+      heroSection.classList.add('has-image');
+      heroSection.style.setProperty('--hero-image', `url("${latest.image}")`);
     } else {
-      heroImage.removeAttribute('src');
-      heroImage.alt = '';
+      heroSection.classList.remove('has-image');
+      heroSection.style.removeProperty('--hero-image');
     }
   }
-  if (heroMedia) heroMedia.classList.toggle('is-empty', !latest.image);
   if (heroListLink) {
     heroListLink.href = `article.html?id=${encodeURIComponent(latest.id)}`;
     heroListLink.removeAttribute('aria-disabled');
