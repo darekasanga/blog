@@ -239,6 +239,7 @@ textarea {
   position: relative;
   overflow: hidden;
   border-radius: 0;
+  min-height: 320px;
   --hero-overlay-strong: 0.7;
   --hero-overlay-weak: 0.25;
   --hero-image-position: 50%;
@@ -309,6 +310,7 @@ h1 {
 .preview-hero {
   border-radius: 0;
   padding: 48px 0 40px;
+  min-height: 320px;
   margin-bottom: 16px;
 }
 
