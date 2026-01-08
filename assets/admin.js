@@ -60,6 +60,10 @@
   const featuredCount = document.getElementById('featured-count');
   const siteTitleInput = document.getElementById('site-title');
   const footerDescriptionInput = document.getElementById('footer-description');
+  const heroOverlayInput = document.getElementById('hero-overlay');
+  const heroOverlayLabel = document.getElementById('hero-overlay-label');
+  const heroPositionInput = document.getElementById('hero-position');
+  const heroPositionLabel = document.getElementById('hero-position-label');
   const resultMessage = document.getElementById('result-message');
   const siteTitleTargets = document.querySelectorAll('[data-site-title]');
   const footerDescriptionTargets = document.querySelectorAll('[data-footer-description]');
@@ -196,6 +200,10 @@
     if (toggleFeatured) toggleFeatured.checked = settings.showFeatured;
     if (siteTitleInput) siteTitleInput.value = settings.siteTitle;
     if (footerDescriptionInput) footerDescriptionInput.value = settings.footerDescription;
+    if (heroOverlayInput) heroOverlayInput.value = settings.heroOverlayOpacity ?? 70;
+    if (heroPositionInput) heroPositionInput.value = settings.heroImagePosition ?? 50;
+    if (heroOverlayLabel) heroOverlayLabel.textContent = `${settings.heroOverlayOpacity ?? 70}%`;
+    if (heroPositionLabel) heroPositionLabel.textContent = `${settings.heroImagePosition ?? 50}%`;
     applySiteText(settings);
   }
 
@@ -215,6 +223,15 @@
     if (siteTitleInput) siteTitleInput.value = settings.siteTitle;
     if (footerDescriptionInput) footerDescriptionInput.value = settings.footerDescription;
     applySiteText(settings);
+  }
+
+  function persistHeroVisualSettings() {
+    const settings = saveSiteSettings({
+      heroOverlayOpacity: Number(heroOverlayInput?.value),
+      heroImagePosition: Number(heroPositionInput?.value),
+    });
+    if (heroOverlayLabel) heroOverlayLabel.textContent = `${settings.heroOverlayOpacity}%`;
+    if (heroPositionLabel) heroPositionLabel.textContent = `${settings.heroImagePosition}%`;
   }
 
   function persistPosts(nextPosts) {
@@ -590,6 +607,9 @@
   });
   [siteTitleInput, footerDescriptionInput].filter(Boolean).forEach((input) => {
     input.addEventListener('input', persistSiteInfo);
+  });
+  [heroOverlayInput, heroPositionInput].filter(Boolean).forEach((input) => {
+    input.addEventListener('input', persistHeroVisualSettings);
   });
 
   form.addEventListener('submit', (e) => {

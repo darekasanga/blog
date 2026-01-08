@@ -62,6 +62,15 @@ function applyHomeSettings() {
   footerDescriptionTargets.forEach((el) => {
     el.textContent = settings.footerDescription;
   });
+  if (heroSection) {
+    const overlayValue = Number.isFinite(settings.heroOverlayOpacity) ? settings.heroOverlayOpacity : 70;
+    const overlayStrong = Math.min(Math.max(overlayValue, 0), 100) / 100;
+    const overlayWeak = Math.min(Math.max(overlayStrong * 0.35, 0), 1);
+    const imagePosition = Number.isFinite(settings.heroImagePosition) ? settings.heroImagePosition : 50;
+    heroSection.style.setProperty('--hero-overlay-strong', overlayStrong.toFixed(2));
+    heroSection.style.setProperty('--hero-overlay-weak', overlayWeak.toFixed(2));
+    heroSection.style.setProperty('--hero-image-position', `${imagePosition}%`);
+  }
 }
 
 const lightbox = document.createElement('div');

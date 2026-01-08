@@ -125,6 +125,8 @@
     showFeatured: true,
     siteTitle: 'EMPEROR.NEWS',
     footerDescription: 'シンプルで統一感のあるブログ体験を届けます。',
+    heroOverlayOpacity: 70,
+    heroImagePosition: 50,
   };
   const storage = (() => {
     const memory = new Map();
@@ -285,6 +287,8 @@
   }
 
   function normalizeSiteSettings(settings = {}) {
+    const overlay = Number(settings.heroOverlayOpacity);
+    const position = Number(settings.heroImagePosition);
     return {
       showHero: typeof settings.showHero === 'boolean' ? settings.showHero : DEFAULT_SITE_SETTINGS.showHero,
       showFeatured:
@@ -297,6 +301,12 @@
         typeof settings.footerDescription === 'string' && settings.footerDescription.trim()
           ? settings.footerDescription.trim()
           : DEFAULT_SITE_SETTINGS.footerDescription,
+      heroOverlayOpacity: Number.isFinite(overlay)
+        ? Math.min(Math.max(overlay, 0), 100)
+        : DEFAULT_SITE_SETTINGS.heroOverlayOpacity,
+      heroImagePosition: Number.isFinite(position)
+        ? Math.min(Math.max(position, 0), 100)
+        : DEFAULT_SITE_SETTINGS.heroImagePosition,
     };
   }
 

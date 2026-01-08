@@ -44,6 +44,15 @@
             </div>
           </div>
           <div class="info-card">
+            <label for="hero-overlay">最新記事の背景透過率</label>
+            <input id="hero-overlay" type="range" min="0" max="100" value="70" />
+            <p class="muted-text" style="margin: 6px 0 0;">現在: <strong id="hero-overlay-label">70%</strong></p>
+            <label for="hero-position" style="margin-top: 12px;">最新記事画像の表示位置</label>
+            <input id="hero-position" type="range" min="0" max="100" value="50" />
+            <p class="muted-text" style="margin: 6px 0 0;">現在: <strong id="hero-position-label">50%</strong></p>
+            <p class="muted-text" style="margin: 6px 0 0;">文字エリアほど背景が見えにくくなるように反映されます。</p>
+          </div>
+          <div class="info-card">
             <label>注目の記事を選択</label>
             <p class="muted-text" style="margin: 6px 0 0;">投稿一覧の「注目に設定」チェックで最大30件まで指定できます。</p>
             <p class="muted-text" id="featured-count" style="margin: 6px 0 0;"></p>

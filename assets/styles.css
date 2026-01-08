@@ -238,7 +238,10 @@ textarea {
   padding: 48px 0 40px;
   position: relative;
   overflow: hidden;
-  border-radius: var(--radius);
+  border-radius: 0;
+  --hero-overlay-strong: 0.7;
+  --hero-overlay-weak: 0.25;
+  --hero-image-position: 50%;
   background: linear-gradient(140deg, rgba(108, 99, 255, 0.2), rgba(15, 17, 25, 0.85));
 }
 
@@ -246,21 +249,21 @@ textarea {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(11, 12, 16, 0.2), rgba(11, 12, 16, 0.78));
+  background: linear-gradient(
+    95deg,
+    rgba(11, 12, 16, var(--hero-overlay-strong)) 0%,
+    rgba(11, 12, 16, var(--hero-overlay-strong)) 35%,
+    rgba(11, 12, 16, var(--hero-overlay-weak)) 68%,
+    rgba(11, 12, 16, 0) 100%
+  );
   pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.3s ease;
+  opacity: 1;
 }
 
 .hero.has-image {
-  background-image: linear-gradient(140deg, rgba(108, 99, 255, 0.35), rgba(11, 12, 16, 0.85)),
-    var(--hero-image);
+  background-image: var(--hero-image);
   background-size: cover;
-  background-position: center;
-}
-
-.hero.has-image::before {
-  opacity: 1;
+  background-position: center var(--hero-image-position);
 }
 
 .hero .inner {
