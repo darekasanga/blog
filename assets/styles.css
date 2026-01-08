@@ -761,6 +761,33 @@ h2 {
   box-shadow: var(--shadow);
 }
 
+.form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.decode-status {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-weight: 600;
+  min-height: 20px;
+}
+
+.output-panel {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--fg);
+  min-height: 220px;
+  white-space: pre-wrap;
+  line-height: 1.6;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
 .info-card ul {
   padding-left: 18px;
   color: var(--muted);
