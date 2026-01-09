@@ -46,10 +46,6 @@
               <span class="mode-icon mode-icon-frame" aria-hidden="true"></span>
               <span>文字枠指定</span>
             </button>
-            <button class="mode-button" type="button" data-analysis-mode="pen" aria-pressed="false">
-              <span class="mode-icon mode-icon-pen" aria-hidden="true"></span>
-              <span>赤ペン</span>
-            </button>
             <button class="mode-button" type="button" data-analysis-mode="handwriting" aria-pressed="false">
               <span class="mode-icon mode-icon-handwriting" aria-hidden="true"></span>
               <span>青ペン</span>
@@ -63,6 +59,20 @@
         <div class="analysis-handwriting" aria-live="polite">
           <p class="kicker">手書きモード</p>
           <p class="muted-text" id="handwriting-status" data-handwriting="active">両枠とも手書き入力中</p>
+          <div class="handwriting-tool-picker" role="group" aria-label="手書きペンの選択">
+            <button class="mode-button is-active" type="button" data-handwriting-tool="pencil" aria-pressed="true">
+              <span class="mode-icon mode-icon-handwriting" aria-hidden="true"></span>
+              <span>鉛筆</span>
+            </button>
+            <button class="mode-button" type="button" data-handwriting-tool="ballpen" aria-pressed="false">
+              <span class="mode-icon mode-icon-pen" aria-hidden="true"></span>
+              <span>ボールペン</span>
+            </button>
+            <button class="mode-button" type="button" data-handwriting-tool="brush" aria-pressed="false">
+              <span class="mode-icon mode-icon-pen" aria-hidden="true"></span>
+              <span>筆ペン</span>
+            </button>
+          </div>
         </div>
 
         <div class="analysis-editor">
@@ -74,7 +84,7 @@
             </div>
             <canvas id="handwriting-left" class="handwriting-canvas" aria-label="左側の手書きキャンバス"></canvas>
             <div class="handwriting-actions">
-              <button class="btn primary" type="button" data-action="analyze-left">解析を実行</button>
+              <button class="btn primary" type="button" data-action="analyze-left">解読を実行</button>
               <button class="btn muted" type="button" data-action="clear-left">クリア</button>
             </div>
           </section>
@@ -83,7 +93,7 @@
             <div>
               <p class="kicker">Analysis</p>
               <h2 id="analysis-correction-title">解析メモ</h2>
-              <p class="muted-text">右側で文字認識を行い、1文字ずつ枠指定して確定します。判定と違う場合は青ペンで書き直してください。</p>
+              <p class="muted-text">右側で文字認識を行い、1文字ずつ枠指定して確定します。判定と違う場合は鉛筆で清書、字ボタンで直接入力できます。</p>
             </div>
             <div class="layered-output">
               <div class="layered-output__stack" id="handwriting-stack">
@@ -96,7 +106,7 @@
                 </div>
               </div>
               <div class="layered-output__meta">
-                <p class="muted-text">枠指定で1文字ずつ囲むとOCR候補が表示されます。正しければタップして確定してください。</p>
+                <p class="muted-text">枠指定で1文字ずつ囲むとOCR候補が表示されます。正しければ候補を選択し、✔︎で蓄積します。</p>
                 <div class="layered-output__actions">
                   <button class="btn muted" type="button" data-action="clear-right">クリア</button>
                   <button class="btn muted" type="button" data-action="clear-frames">枠をリセット</button>
