@@ -1,5 +1,6 @@
 (() => {
   const modeButtons = document.querySelectorAll('[data-analysis-mode]');
+  const handwritingToolButtons = document.querySelectorAll('[data-handwriting-tool]');
   const editor = document.querySelector('.analysis-editor');
   const leftCanvas = document.getElementById('handwriting-left');
   const mirrorCanvas = document.getElementById('mirror-layer');
@@ -21,6 +22,7 @@
   if (!leftCanvas || !mirrorCanvas || !rightCanvas || !frameCanvas || !stack || !characterLayer) return;
 
   const MODE_STORAGE_KEY = 'analysis-mode';
+  const HANDWRITING_TOOL_KEY = 'analysis-handwriting-tool';
   const TRAINING_STORAGE_KEY = 'analysis-training-data';
   const BASE_CHARACTERS = [
     'あ',
@@ -76,8 +78,10 @@
     '點',
     '点',
   ];
+  const FRAME_COLORS = ['#ef4444', '#f97316', '#facc15', '#10b981', '#38bdf8', '#6366f1', '#ec4899'];
 
   let currentMode = 'frame';
+  let currentHandwritingTool = 'pencil';
   let leftHasInk = false;
   let rightHasInk = false;
   let annotations = [];
@@ -90,7 +94,14 @@
     try {
       const stored = JSON.parse(localStorage.getItem(TRAINING_STORAGE_KEY) || '{}');
       return {
-        samples: Array.isArray(stored.samples) ? stored.samples : [],
+        samples: Array.isArray(stored.samples)
+          ? stored.samples.map((sample) => ({
+              char: sample.char,
+              unknown: Boolean(sample.unknown),
+              count: sample.count || 0,
+              samples: Array.isArray(sample.samples) ? sample.samples.filter(Boolean) : [],
+            }))
+          : [],
         updatedAt: stored.updatedAt || null,
       };
     } catch (error) {
@@ -105,7 +116,7 @@
   const getSuggestionPool = () => {
     const training = readTrainingData().samples
       .filter((sample) => sample && typeof sample.char === 'string' && !sample.unknown)
-      .sort((a, b) => (b.count || 0) - (a.count || 0))
+      .sort((a, b) => (b.samples?.length || b.count || 0) - (a.samples?.length || a.count || 0))
       .map((sample) => sample.char);
     if (!training.length) return BASE_CHARACTERS;
     return Array.from(new Set([...training, ...BASE_CHARACTERS]));
@@ -198,11 +209,13 @@
   const renderAnnotationState = (annotation, wrapper) => {
     const statusLabel = wrapper.querySelector('.character-annotation__status');
     const choiceList = wrapper.querySelector('.character-annotation__choices');
-    wrapper.classList.toggle('character-annotation--registered', annotation.confirmed);
+    wrapper.classList.toggle('character-annotation--registered', annotation.registered);
     wrapper.classList.toggle('character-annotation--active', annotation.needsReview);
     wrapper.classList.toggle('character-annotation--unknown', annotation.unknown);
     if (statusLabel) {
-      if (annotation.confirmed) {
+      if (annotation.registered) {
+        statusLabel.textContent = annotation.unknown ? '未確定登録' : `登録済み: ${annotation.char}`;
+      } else if (annotation.confirmed) {
         statusLabel.textContent = annotation.unknown ? '未確定' : `確定: ${annotation.char}`;
       } else if (annotation.needsReview) {
         statusLabel.textContent = '再解析待ち';
@@ -223,6 +236,7 @@
             annotation.confirmed = true;
             annotation.unknown = false;
             annotation.needsReview = false;
+            annotation.registered = false;
             activeAnnotationId = null;
             renderAnnotationState(annotation, wrapper);
             updateRecognizedText();
@@ -242,6 +256,7 @@
     wrapper.style.top = `${item.y * 100}%`;
     wrapper.style.width = `${item.width * 100}%`;
     wrapper.style.height = `${item.height * 100}%`;
+    wrapper.style.setProperty('--frame-color', item.color);
 
     const statusLabel = document.createElement('div');
     statusLabel.className = 'character-annotation__status';
@@ -255,11 +270,23 @@
     removeButton.setAttribute('aria-label', '枠を削除');
     removeButton.textContent = '×';
 
-    const unknownButton = document.createElement('button');
-    unknownButton.type = 'button';
-    unknownButton.className = 'character-annotation__unknown';
-    unknownButton.setAttribute('aria-label', '未確定として登録');
-    unknownButton.textContent = '?';
+    const inputButton = document.createElement('button');
+    inputButton.type = 'button';
+    inputButton.className = 'character-annotation__input';
+    inputButton.setAttribute('aria-label', 'キーボードで文字を入力');
+    inputButton.textContent = '字';
+
+    const editButton = document.createElement('button');
+    editButton.type = 'button';
+    editButton.className = 'character-annotation__edit';
+    editButton.setAttribute('aria-label', '青ペンで清書する');
+    editButton.textContent = '✎';
+
+    const confirmButton = document.createElement('button');
+    confirmButton.type = 'button';
+    confirmButton.className = 'character-annotation__confirm';
+    confirmButton.setAttribute('aria-label', '学習データに確定');
+    confirmButton.textContent = '✔';
 
     const markForReview = () => {
       const target = annotations.find((annotation) => annotation.id === item.id);
@@ -267,6 +294,7 @@
       target.confirmed = false;
       target.unknown = false;
       target.needsReview = true;
+      target.registered = false;
       target.candidates = [];
       target.char = '';
       activeAnnotationId = target.id;
@@ -338,21 +366,50 @@
       updatePlaceholder();
     });
 
-    unknownButton.addEventListener('click', () => {
+    inputButton.addEventListener('click', () => {
       const target = annotations.find((annotation) => annotation.id === item.id);
       if (!target) return;
-      target.char = '？';
+      const value = window.prompt('判定文字を入力してください。', target.char || '');
+      if (value === null) return;
+      const trimmed = value.trim();
+      if (!trimmed) return;
+      target.char = trimmed[0];
       target.confirmed = true;
-      target.unknown = true;
+      target.unknown = false;
+      target.needsReview = false;
+      target.registered = false;
+      activeAnnotationId = null;
+      renderAnnotationState(target, wrapper);
+      updateRecognizedText();
+    });
+
+    editButton.addEventListener('click', () => {
+      const target = annotations.find((annotation) => annotation.id === item.id);
+      if (!target) return;
+      markAnnotationForReview(target);
+      setMode('handwriting');
+      updateHandwritingStatus('青ペンで枠内を清書し、解読ボタンで再解析してください。');
+    });
+
+    confirmButton.addEventListener('click', () => {
+      const target = annotations.find((annotation) => annotation.id === item.id);
+      if (!target || !target.char) return;
+      const sample = captureAnnotationSample(target);
+      addTrainingSample(target.char, target.unknown, sample);
+      target.confirmed = true;
+      target.registered = true;
       target.needsReview = false;
       activeAnnotationId = null;
       renderAnnotationState(target, wrapper);
+      updateRecognizedText();
     });
 
     wrapper.appendChild(statusLabel);
     wrapper.appendChild(choiceList);
     wrapper.appendChild(removeButton);
-    wrapper.appendChild(unknownButton);
+    wrapper.appendChild(inputButton);
+    wrapper.appendChild(editButton);
+    wrapper.appendChild(confirmButton);
     characterLayer.appendChild(wrapper);
     renderAnnotationState(item, wrapper);
   };
@@ -373,6 +430,8 @@
       confirmed: false,
       unknown: false,
       needsReview: false,
+      registered: false,
+      color: FRAME_COLORS[annotations.length % FRAME_COLORS.length],
     };
     annotations.push(item);
     buildAnnotationElement(item);
@@ -537,12 +596,56 @@
       updateHandwritingStatus('左側に手書きしてから解析してください。');
       return;
     }
-    clearCanvas(frameCanvas);
-    clearAnnotations();
     const regions = detectInkRegions();
+    let addedCount = 0;
     if (regions.length) {
-      addDetectedAnnotations(regions);
-      updateHandwritingStatus(`文字判定で${regions.length}件を赤枠で囲みました。`);
+      const stackRect = stack.getBoundingClientRect();
+      const existingRects = annotations.map((annotation) => ({
+        x: annotation.x * stackRect.width,
+        y: annotation.y * stackRect.height,
+        width: annotation.width * stackRect.width,
+        height: annotation.height * stackRect.height,
+      }));
+      const overlaps = (region) =>
+        existingRects.some((rect) => {
+          const regionRect = {
+            x: (region.minX / mirrorCanvas.width) * stackRect.width,
+            y: (region.minY / mirrorCanvas.height) * stackRect.height,
+            width: ((region.maxX - region.minX) / mirrorCanvas.width) * stackRect.width,
+            height: ((region.maxY - region.minY) / mirrorCanvas.height) * stackRect.height,
+          };
+          const overlapX = Math.max(
+            0,
+            Math.min(rect.x + rect.width, regionRect.x + regionRect.width) -
+              Math.max(rect.x, regionRect.x),
+          );
+          const overlapY = Math.max(
+            0,
+            Math.min(rect.y + rect.height, regionRect.y + regionRect.height) -
+              Math.max(rect.y, regionRect.y),
+          );
+          const overlapArea = overlapX * overlapY;
+          const regionArea = regionRect.width * regionRect.height || 1;
+          return overlapArea / regionArea > 0.4;
+        });
+      const newRegions = regions.filter((region) => !overlaps(region));
+      if (newRegions.length) {
+        addDetectedAnnotations(newRegions);
+        addedCount = newRegions.length;
+      }
+    }
+
+    const reviewTargets = annotations.filter((item) => item.needsReview);
+    reviewTargets.forEach((item) => {
+      reanalyzeAnnotation(item);
+    });
+
+    if (regions.length) {
+      updateHandwritingStatus(
+        `文字判定で${addedCount}件を追加し、${reviewTargets.length}件を再解析しました。`,
+      );
+    } else if (reviewTargets.length) {
+      updateHandwritingStatus(`枠の再解析を${reviewTargets.length}件行いました。`);
     } else {
       updateHandwritingStatus('左側の手書きを解析枠に転送しました。');
     }
@@ -556,6 +659,95 @@
     updatePlaceholder();
   };
 
+  const captureAnnotationSample = (annotation) => {
+    if (!annotation) return '';
+    const stackRect = stack.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    const sampleWidth = annotation.width * stackRect.width;
+    const sampleHeight = annotation.height * stackRect.height;
+    if (sampleWidth <= 0 || sampleHeight <= 0) return '';
+    const sampleCanvas = document.createElement('canvas');
+    sampleCanvas.width = sampleWidth * dpr;
+    sampleCanvas.height = sampleHeight * dpr;
+    const ctx = sampleCanvas.getContext('2d');
+    if (!ctx) return '';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const offsetX = -annotation.x * stackRect.width;
+    const offsetY = -annotation.y * stackRect.height;
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, sampleWidth, sampleHeight);
+    ctx.drawImage(mirrorCanvas, offsetX, offsetY, stackRect.width, stackRect.height);
+    ctx.drawImage(rightCanvas, offsetX, offsetY, stackRect.width, stackRect.height);
+    return sampleCanvas.toDataURL('image/png');
+  };
+
+  const addTrainingSample = (char, unknown, sample) => {
+    if (!char) return;
+    const trainingData = readTrainingData();
+    const target = trainingData.samples.find(
+      (item) => item.char === char && Boolean(item.unknown) === Boolean(unknown),
+    );
+    const safeSample = typeof sample === 'string' ? sample : '';
+    if (target) {
+      const existingCount = Math.max(target.samples?.length || 0, target.count || 0);
+      if (safeSample) {
+        target.samples = [...(target.samples || []), safeSample];
+        target.count = target.samples.length;
+      } else {
+        target.count = existingCount + 1;
+      }
+    } else {
+      trainingData.samples.push({
+        char,
+        unknown: Boolean(unknown),
+        samples: safeSample ? [safeSample] : [],
+        count: safeSample ? 1 : 1,
+      });
+    }
+    trainingData.updatedAt = new Date().toISOString();
+    saveTrainingData(trainingData);
+    renderTrainingSummary();
+  };
+
+  const removeTrainingSample = (char, unknown, index) => {
+    const trainingData = readTrainingData();
+    const target = trainingData.samples.find(
+      (item) => item.char === char && Boolean(item.unknown) === Boolean(unknown),
+    );
+    if (!target) return;
+    if (Array.isArray(target.samples)) {
+      target.samples.splice(index, 1);
+    }
+    target.count = target.samples?.length || 0;
+    if (!target.samples?.length) {
+      trainingData.samples = trainingData.samples.filter((item) => item !== target);
+    }
+    trainingData.updatedAt = new Date().toISOString();
+    saveTrainingData(trainingData);
+    renderTrainingSummary();
+  };
+
+  const removeTrainingEntry = (char, unknown) => {
+    const trainingData = readTrainingData();
+    trainingData.samples = trainingData.samples.filter(
+      (item) => !(item.char === char && Boolean(item.unknown) === Boolean(unknown)),
+    );
+    trainingData.updatedAt = new Date().toISOString();
+    saveTrainingData(trainingData);
+    renderTrainingSummary();
+  };
+
+  const addTrainingSampleFromFile = (char, unknown, file) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        addTrainingSample(char, unknown, reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   const renderTrainingSummary = () => {
     if (!trainingList) return;
     const training = readTrainingData();
@@ -564,7 +756,9 @@
       return;
     }
     trainingList.innerHTML = '';
-    const sorted = [...training.samples].sort((a, b) => (b.count || 0) - (a.count || 0));
+    const sorted = [...training.samples].sort(
+      (a, b) => (b.samples?.length || b.count || 0) - (a.samples?.length || a.count || 0),
+    );
     sorted.forEach((sample) => {
       const card = document.createElement('div');
       card.className = 'training-card';
@@ -575,28 +769,77 @@
 
       const countLabel = document.createElement('p');
       countLabel.className = 'training-card__count';
-      countLabel.textContent = `${sample.count || 0}件`;
+      const totalCount = sample.samples?.length || sample.count || 0;
+      countLabel.textContent = `${totalCount}件`;
 
       const sampleList = document.createElement('div');
       sampleList.className = 'training-card__samples';
       const sampleChar = sample.unknown ? '？' : sample.char;
-      const sampleCount = Math.max(1, Math.min(sample.count || 0, 6));
-      for (let i = 0; i < sampleCount; i += 1) {
-        const chip = document.createElement('span');
-        chip.className = 'training-sample';
-        chip.textContent = sampleChar;
-        sampleList.appendChild(chip);
-      }
-      if ((sample.count || 0) > sampleCount) {
-        const more = document.createElement('span');
-        more.className = 'training-sample training-sample--more';
-        more.textContent = `+${(sample.count || 0) - sampleCount}`;
-        sampleList.appendChild(more);
+      const samples = Array.isArray(sample.samples) ? sample.samples : [];
+      if (samples.length) {
+        samples.forEach((src, index) => {
+          const chip = document.createElement('div');
+          chip.className = 'training-sample';
+          const image = document.createElement('img');
+          image.src = src;
+          image.alt = `${sampleChar}の手書きサンプル`;
+          const remove = document.createElement('button');
+          remove.type = 'button';
+          remove.className = 'training-sample__remove';
+          remove.setAttribute('aria-label', 'サンプルを削除');
+          remove.textContent = '×';
+          remove.addEventListener('click', () => {
+            removeTrainingSample(sample.char, sample.unknown, index);
+          });
+          chip.appendChild(image);
+          chip.appendChild(remove);
+          sampleList.appendChild(chip);
+        });
+      } else {
+        const placeholder = document.createElement('div');
+        placeholder.className = 'training-sample training-sample--placeholder';
+        placeholder.textContent = sampleChar;
+        sampleList.appendChild(placeholder);
       }
 
       const meta = document.createElement('p');
       meta.className = 'training-card__meta';
-      meta.textContent = `手書きサンプル: ${sample.count || 0}件`;
+      meta.textContent = `手書きサンプル: ${totalCount}件`;
+
+      const actions = document.createElement('div');
+      actions.className = 'training-card__actions';
+
+      const addButton = document.createElement('button');
+      addButton.type = 'button';
+      addButton.className = 'btn muted';
+      addButton.textContent = '追加';
+
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.accept = 'image/*';
+      fileInput.hidden = true;
+      fileInput.addEventListener('change', (event) => {
+        const file = event.target.files?.[0];
+        if (file) {
+          addTrainingSampleFromFile(sample.char, sample.unknown, file);
+        }
+        event.target.value = '';
+      });
+
+      addButton.addEventListener('click', () => {
+        fileInput.click();
+      });
+
+      const deleteButton = document.createElement('button');
+      deleteButton.type = 'button';
+      deleteButton.className = 'btn';
+      deleteButton.textContent = '削除';
+      deleteButton.addEventListener('click', () => {
+        removeTrainingEntry(sample.char, sample.unknown);
+      });
+      actions.appendChild(addButton);
+      actions.appendChild(deleteButton);
+      actions.appendChild(fileInput);
 
       if (sample.unknown) {
         const badge = document.createElement('span');
@@ -609,6 +852,7 @@
       card.appendChild(countLabel);
       card.appendChild(sampleList);
       card.appendChild(meta);
+      card.appendChild(actions);
       trainingList.appendChild(card);
     });
   };
@@ -618,6 +862,8 @@
     annotation.candidates = getSuggestionCandidates(Math.floor(Math.random() * 100));
     annotation.char = annotation.candidates[0] || '';
     annotation.needsReview = false;
+    annotation.confirmed = false;
+    annotation.registered = false;
     const element = characterLayer.querySelector(`[data-annotation-id="${annotation.id}"]`);
     if (element) {
       renderAnnotationState(annotation, element);
@@ -638,9 +884,7 @@
     if (mode === 'handwriting') {
       updateHandwritingStatus('青ペンで書き直した文字を再解析できます。');
     } else if (mode === 'eraser') {
-      updateHandwritingStatus('消しゴムで青・赤ペンを消去できます。');
-    } else if (mode === 'pen') {
-      updateHandwritingStatus('赤ペンで枠内をなぞると再解析します。');
+      updateHandwritingStatus('消しゴムで青ペンを消去できます。');
     } else {
       updateHandwritingStatus(defaultHandwritingStatus || '両枠とも手書き入力中');
     }
@@ -648,8 +892,9 @@
 
   if (modeButtons.length) {
     const savedMode = localStorage.getItem(MODE_STORAGE_KEY);
+    const availableModes = Array.from(modeButtons).map((button) => button.dataset.analysisMode);
     const initialMode =
-      savedMode ||
+      (savedMode && availableModes.includes(savedMode) ? savedMode : '') ||
       Array.from(modeButtons).find((button) => button.getAttribute('aria-pressed') === 'true')
         ?.dataset.analysisMode ||
       modeButtons[0].dataset.analysisMode ||
@@ -664,10 +909,46 @@
     });
   }
 
+  const setHandwritingTool = (tool) => {
+    currentHandwritingTool = tool;
+    handwritingToolButtons.forEach((button) => {
+      const isActive = button.dataset.handwritingTool === tool;
+      button.classList.toggle('is-active', isActive);
+      button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    });
+  };
+
+  if (handwritingToolButtons.length) {
+    const savedTool = localStorage.getItem(HANDWRITING_TOOL_KEY);
+    const availableTools = Array.from(handwritingToolButtons).map((button) => button.dataset.handwritingTool);
+    const initialTool =
+      (savedTool && availableTools.includes(savedTool) ? savedTool : '') ||
+      Array.from(handwritingToolButtons).find((button) => button.getAttribute('aria-pressed') === 'true')
+        ?.dataset.handwritingTool ||
+      handwritingToolButtons[0].dataset.handwritingTool ||
+      'pencil';
+    setHandwritingTool(initialTool);
+    handwritingToolButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        const tool = button.dataset.handwritingTool || 'pencil';
+        localStorage.setItem(HANDWRITING_TOOL_KEY, tool);
+        setHandwritingTool(tool);
+      });
+    });
+  }
+
   createPenDrawer(
     leftCanvas,
     () => true,
-    () => ({ color: '#0f172a', lineWidth: 3 }),
+    () => {
+      if (currentHandwritingTool === 'brush') {
+        return { color: '#111827', lineWidth: 6 };
+      }
+      if (currentHandwritingTool === 'ballpen') {
+        return { color: '#0f172a', lineWidth: 3 };
+      }
+      return { color: '#1f2937', lineWidth: 2 };
+    },
     () => {
       leftHasInk = true;
       updatePlaceholder();
@@ -695,6 +976,7 @@
     annotation.confirmed = false;
     annotation.unknown = false;
     annotation.needsReview = true;
+    annotation.registered = false;
     annotation.candidates = [];
     annotation.char = '';
     activeAnnotationId = annotation.id;
@@ -707,7 +989,7 @@
 
   createPenDrawer(
     rightCanvas,
-    () => ['pen', 'handwriting', 'eraser'].includes(currentMode),
+    () => ['handwriting', 'eraser'].includes(currentMode),
     (event) => {
       if (currentMode === 'handwriting') {
         const point = getCanvasPoint(event, rightCanvas);
@@ -732,27 +1014,15 @@
       if (currentMode === 'eraser') {
         return { composite: 'destination-out', lineWidth: 16 };
       }
-      if (currentMode === 'pen') {
-        const point = getCanvasPoint(event, rightCanvas);
-        const target = getAnnotationForPoint(point);
-        if (target) {
-          markAnnotationForReview(target);
-        }
-      }
-      return { color: '#ef4444', lineWidth: 3 };
+      return null;
     },
     () => {
       rightHasInk = true;
       updatePlaceholder();
     },
     () => {
-      if (!['pen', 'handwriting'].includes(currentMode)) return;
-      const target = annotations.find((annotation) => annotation.id === activeAnnotationId);
-      if (target) {
-        reanalyzeAnnotation(target);
-        if (currentMode === 'handwriting') {
-          updateHandwritingStatus('青ペンで書き直した文字を再解析しました。');
-        }
+      if (currentMode === 'handwriting') {
+        updateHandwritingStatus('青ペンで清書した文字は解読ボタンで再解析します。');
       }
     },
   );
@@ -825,6 +1095,7 @@
       clearCanvas(rightCanvas);
       rightHasInk = false;
       clearAnnotations();
+      clearCanvas(frameCanvas);
       updatePlaceholder();
     });
   }
@@ -832,35 +1103,33 @@
   if (clearFramesButton) {
     clearFramesButton.addEventListener('click', () => {
       clearAnnotations();
+      clearCanvas(frameCanvas);
     });
   }
 
   if (finalizeButton) {
     finalizeButton.addEventListener('click', () => {
-      const confirmed = annotations.filter((item) => item.confirmed);
+      const confirmed = annotations.filter((item) => item.confirmed && !item.registered);
       if (!confirmed.length) {
         if (trainingStatus) {
-          trainingStatus.textContent = '確定した文字がありません。';
+          trainingStatus.textContent = '確定した未登録の文字がありません。';
         }
         return;
       }
-      const trainingData = readTrainingData();
       confirmed.forEach((item) => {
-        const existing = trainingData.samples.find(
-          (sample) => sample.char === item.char && Boolean(sample.unknown) === Boolean(item.unknown),
-        );
-        if (existing) {
-          existing.count = (existing.count || 0) + 1;
-        } else {
-          trainingData.samples.push({ char: item.char, count: 1, unknown: item.unknown || false });
-        }
+        const sample = captureAnnotationSample(item);
+        addTrainingSample(item.char, item.unknown, sample);
+        item.registered = true;
       });
-      trainingData.updatedAt = new Date().toISOString();
-      saveTrainingData(trainingData);
       if (trainingStatus) {
         trainingStatus.textContent = `${confirmed.length}件の文字を学習データとして保存しました。`;
       }
-      renderTrainingSummary();
+      confirmed.forEach((item) => {
+        const element = characterLayer.querySelector(`[data-annotation-id="${item.id}"]`);
+        if (element) {
+          renderAnnotationState(item, element);
+        }
+      });
     });
   }
 
@@ -875,7 +1144,8 @@
     if (ctx) {
       ctx.clearRect(0, 0, mirrorCanvas.width, mirrorCanvas.height);
       if (leftHasInk) {
-        ctx.drawImage(leftCanvas, 0, 0, mirrorCanvas.width, mirrorCanvas.height);
+        const rect = mirrorCanvas.getBoundingClientRect();
+        ctx.drawImage(leftCanvas, 0, 0, rect.width, rect.height);
       }
     }
     requestAnimationFrame(renderMirrorLayer);
