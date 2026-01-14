@@ -73,6 +73,10 @@
   const heroOverlayEndLabel = document.getElementById('hero-overlay-end-label');
   const heroPositionInput = document.getElementById('hero-position');
   const heroPositionLabel = document.getElementById('hero-position-label');
+  const heroPositionXInput = document.getElementById('hero-position-x');
+  const heroPositionXLabel = document.getElementById('hero-position-x-label');
+  const heroBackgroundColorInput = document.getElementById('hero-background-color');
+  const heroBackgroundColorLabel = document.getElementById('hero-background-color-label');
   const resultMessage = document.getElementById('result-message');
   const siteTitleTargets = document.querySelectorAll('[data-site-title]');
   const footerDescriptionTargets = document.querySelectorAll('[data-footer-description]');
@@ -311,6 +315,7 @@
     const overlayStartInput = Number(heroOverlayStartInput?.value);
     const overlayEndInput = Number(heroOverlayEndInput?.value);
     const positionInput = Number(heroPositionInput?.value);
+    const positionXInput = Number(heroPositionXInput?.value);
     const overlayOpacity = Number.isFinite(overlayInput) ? Math.min(Math.max(overlayInput, 0), 100) : DEFAULT_HERO_SETTINGS.overlayOpacity;
     let overlayStart = Number.isFinite(overlayStartInput) ? Math.min(Math.max(overlayStartInput, 0), 100) : DEFAULT_HERO_SETTINGS.overlayStart;
     let overlayEnd = Number.isFinite(overlayEndInput) ? Math.min(Math.max(overlayEndInput, 0), 100) : DEFAULT_HERO_SETTINGS.overlayEnd;
@@ -322,21 +327,43 @@
       }
     }
     const imagePosition = Number.isFinite(positionInput) ? Math.min(Math.max(positionInput, 0), 100) : DEFAULT_HERO_SETTINGS.imagePosition;
+    const imagePositionX = Number.isFinite(positionXInput) ? Math.min(Math.max(positionXInput, 0), 100) : DEFAULT_HERO_SETTINGS.imagePositionX;
     const heroImageScale = normalizeScale(Number(heroImageScaleEl?.value));
-    return { overlayOpacity, overlayStart, overlayEnd, imagePosition, heroImageScale };
+    const heroBackgroundColor = resolveHeroBackgroundColor(heroBackgroundColorInput?.value);
+    return { overlayOpacity, overlayStart, overlayEnd, imagePosition, imagePositionX, heroImageScale, heroBackgroundColor };
+  }
+
+  function resolveHeroBackgroundColor(value) {
+    const trimmed = String(value || '').trim();
+    const fallback = selectedTheme?.background || '#0b0c10';
+    if (!trimmed) return fallback;
+    if (/^#[0-9a-fA-F]{3}$/.test(trimmed) || /^#[0-9a-fA-F]{6}$/.test(trimmed)) {
+      return trimmed.toLowerCase();
+    }
+    return fallback;
   }
 
   function updateHeroPreview() {
     if (!previewHero) return;
-    const { overlayOpacity, overlayStart, overlayEnd, imagePosition, heroImageScale } = resolveHeroPreviewSettings();
+    const {
+      overlayOpacity,
+      overlayStart,
+      overlayEnd,
+      imagePosition,
+      imagePositionX,
+      heroImageScale,
+      heroBackgroundColor,
+    } = resolveHeroPreviewSettings();
     const overlayStrong = overlayOpacity / 100;
     const overlayWeak = Math.min(Math.max(overlayStrong * 0.35, 0), 1);
     previewHero.style.setProperty('--hero-overlay-strong', overlayStrong.toFixed(2));
     previewHero.style.setProperty('--hero-overlay-weak', overlayWeak.toFixed(2));
     previewHero.style.setProperty('--hero-overlay-start', `${overlayStart}%`);
     previewHero.style.setProperty('--hero-overlay-end', `${overlayEnd}%`);
+    previewHero.style.setProperty('--hero-image-position-x', `${imagePositionX}%`);
     previewHero.style.setProperty('--hero-image-position', `${imagePosition}%`);
     previewHero.style.setProperty('--hero-image-scale', heroImageScale);
+    previewHero.style.setProperty('--hero-background-color', heroBackgroundColor);
     if (heroOverlayStartInput) heroOverlayStartInput.value = String(Math.round(overlayStart));
     if (heroOverlayEndInput) heroOverlayEndInput.value = String(Math.round(overlayEnd));
     if (previewHeroTitle) previewHeroTitle.textContent = previewTitle?.textContent || '無題の投稿';
@@ -348,7 +375,9 @@
     if (heroOverlayStartLabel) heroOverlayStartLabel.textContent = `${Math.round(overlayStart)}%`;
     if (heroOverlayEndLabel) heroOverlayEndLabel.textContent = `${Math.round(overlayEnd)}%`;
     if (heroPositionLabel) heroPositionLabel.textContent = `${Math.round(imagePosition)}%`;
+    if (heroPositionXLabel) heroPositionXLabel.textContent = `${Math.round(imagePositionX)}%`;
     if (heroImageScaleLabel) heroImageScaleLabel.textContent = `${heroImageScale.toFixed(2)}x`;
+    if (heroBackgroundColorLabel) heroBackgroundColorLabel.textContent = heroBackgroundColor;
     if (resizedImageData) {
       previewHero.classList.add('has-image');
       if (previewHeroImage) {
@@ -640,7 +669,9 @@
     if (heroOverlayStartInput) heroOverlayStartInput.value = String(DEFAULT_HERO_SETTINGS.overlayStart);
     if (heroOverlayEndInput) heroOverlayEndInput.value = String(DEFAULT_HERO_SETTINGS.overlayEnd);
     if (heroPositionInput) heroPositionInput.value = String(DEFAULT_HERO_SETTINGS.imagePosition);
+    if (heroPositionXInput) heroPositionXInput.value = String(DEFAULT_HERO_SETTINGS.imagePositionX);
     applyArticleTheme(siteThemeKey);
+    if (heroBackgroundColorInput) heroBackgroundColorInput.value = resolveHeroBackgroundColor(selectedTheme?.background);
     updatePreview();
     updateReadTime();
   }
@@ -687,7 +718,11 @@
     if (heroOverlayStartInput) heroOverlayStartInput.value = String(target.heroOverlayStart ?? DEFAULT_HERO_SETTINGS.overlayStart);
     if (heroOverlayEndInput) heroOverlayEndInput.value = String(target.heroOverlayEnd ?? DEFAULT_HERO_SETTINGS.overlayEnd);
     if (heroPositionInput) heroPositionInput.value = String(target.heroImagePosition ?? DEFAULT_HERO_SETTINGS.imagePosition);
+    if (heroPositionXInput) heroPositionXInput.value = String(target.heroImagePositionX ?? DEFAULT_HERO_SETTINGS.imagePositionX);
     applyArticleTheme(target.theme || selectedTheme.key);
+    if (heroBackgroundColorInput) {
+      heroBackgroundColorInput.value = resolveHeroBackgroundColor(target.heroBackgroundColor);
+    }
     if (submitButton) {
       submitButton.textContent = '変更を保存';
       submitButton.disabled = false;
@@ -747,7 +782,9 @@
     });
   }
 
-  [heroOverlayInput, heroOverlayStartInput, heroOverlayEndInput, heroPositionInput].filter(Boolean).forEach((input) => {
+  [heroOverlayInput, heroOverlayStartInput, heroOverlayEndInput, heroPositionInput, heroPositionXInput, heroBackgroundColorInput]
+    .filter(Boolean)
+    .forEach((input) => {
     input.addEventListener('input', () => {
       updatePreview();
     });
@@ -835,6 +872,8 @@
         heroOverlayStart: heroSettings.overlayStart,
         heroOverlayEnd: heroSettings.overlayEnd,
         heroImagePosition: heroSettings.imagePosition,
+        heroImagePositionX: heroSettings.imagePositionX,
+        heroBackgroundColor: heroSettings.heroBackgroundColor,
       },
       posts.length
     );
@@ -851,6 +890,9 @@
   renderSiteThemePicker();
   syncSiteThemePicker();
   applyArticleTheme(selectedTheme.key);
+  if (heroBackgroundColorInput) {
+    heroBackgroundColorInput.value = resolveHeroBackgroundColor(selectedTheme?.background);
+  }
   updateReadTime();
   updatePreview();
   syncHomeSettingsForm();
