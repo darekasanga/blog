@@ -354,6 +354,14 @@ h1 {
   padding: 0 20px;
 }
 
+.preview-hero .hero-media {
+  background: rgba(11, 12, 16, 0.6);
+}
+
+.preview-hero .hero-media img {
+  object-fit: contain;
+}
+
 .preview-hero .hero-actions .btn {
   pointer-events: none;
 }
