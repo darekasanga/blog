@@ -132,6 +132,7 @@
     overlayEnd: 68,
     imagePosition: 50,
     imagePositionX: 50,
+    imageFit: 'cover',
   };
   const storage = (() => {
     const memory = new Map();
@@ -446,6 +447,7 @@
     const overlayStop = Number(post.heroOverlayStop);
     const heroImagePosition = Number(post.heroImagePosition);
     const heroImagePositionX = Number(post.heroImagePositionX);
+    const heroImageFit = post.heroImageFit === 'contain' ? 'contain' : DEFAULT_HERO_SETTINGS.imageFit;
     let heroOverlayEnd = Number.isFinite(overlayEndRaw)
       ? Math.min(Math.max(overlayEndRaw, 0), 100)
       : Number.isFinite(overlayStop)
@@ -491,6 +493,7 @@
       heroImagePositionX: Number.isFinite(heroImagePositionX)
         ? Math.min(Math.max(heroImagePositionX, 0), 100)
         : DEFAULT_HERO_SETTINGS.imagePositionX,
+      heroImageFit,
       heroBackgroundColor: normalizeHexColor(
         post.heroBackgroundColor,
         themeObject.background || '#0b0c10'
