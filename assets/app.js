@@ -114,6 +114,7 @@ function renderCards() {
 function updateHeroContent() {
   const latest = latestVisiblePost();
   if (heroSection) {
+    const theme = resolveTheme(latest?.theme || siteThemeKey);
     const overlayValue = Number.isFinite(latest?.heroOverlayOpacity)
       ? latest.heroOverlayOpacity
       : DEFAULT_HERO_SETTINGS.overlayOpacity;
@@ -130,17 +131,23 @@ function updateHeroContent() {
       : Number.isFinite(latest?.imagePosition)
         ? latest.imagePosition
         : DEFAULT_HERO_SETTINGS.imagePosition;
+    const imagePositionX = Number.isFinite(latest?.heroImagePositionX)
+      ? latest.heroImagePositionX
+      : DEFAULT_HERO_SETTINGS.imagePositionX;
     const imageScale = Number.isFinite(latest?.heroImageScale)
       ? latest.heroImageScale
       : Number.isFinite(latest?.imageScale)
         ? latest.imageScale
         : 1;
+    const heroBackgroundColor = latest?.heroBackgroundColor || theme.background || '#0b0c10';
     heroSection.style.setProperty('--hero-overlay-strong', overlayStrong.toFixed(2));
     heroSection.style.setProperty('--hero-overlay-weak', overlayWeak.toFixed(2));
     heroSection.style.setProperty('--hero-overlay-start', `${overlayStart}%`);
     heroSection.style.setProperty('--hero-overlay-end', `${overlayEnd}%`);
+    heroSection.style.setProperty('--hero-image-position-x', `${imagePositionX}%`);
     heroSection.style.setProperty('--hero-image-position', `${imagePosition}%`);
     heroSection.style.setProperty('--hero-image-scale', imageScale);
+    heroSection.style.setProperty('--hero-background-color', heroBackgroundColor);
   }
   if (!latest) {
     if (heroKicker) heroKicker.textContent = '最新記事';

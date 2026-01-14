@@ -131,6 +131,7 @@
     overlayStart: 35,
     overlayEnd: 68,
     imagePosition: 50,
+    imagePositionX: 50,
   };
   const storage = (() => {
     const memory = new Map();
@@ -376,6 +377,20 @@
     return Math.min(Math.max(value, 0.5), 2);
   }
 
+  function normalizeHexColor(input = '', fallback = '') {
+    if (typeof input !== 'string') return fallback;
+    const trimmed = input.trim();
+    if (!trimmed) return fallback;
+    const normalized = trimmed.startsWith('#') ? trimmed : `#${trimmed}`;
+    if (/^#[0-9a-fA-F]{3}$/.test(normalized)) {
+      return normalized.toLowerCase();
+    }
+    if (/^#[0-9a-fA-F]{6}$/.test(normalized)) {
+      return normalized.toLowerCase();
+    }
+    return fallback;
+  }
+
   function summarizeContent(content = '', limit = 120) {
     const normalized = String(content || '').replace(/\s+/g, ' ').trim();
     if (!normalized.length) return '';
@@ -420,7 +435,8 @@
     const imageScale = normalizeScale(post.imageScale);
     const cardImageScale = normalizeScale(post.cardImageScale ?? post.imageScale);
     const heroImageScale = normalizeScale(post.heroImageScale ?? post.imageScale);
-    const theme = resolveTheme(post.theme || readSiteTheme() || DEFAULT_THEME).key;
+    const themeObject = resolveTheme(post.theme || readSiteTheme() || DEFAULT_THEME);
+    const theme = themeObject.key;
     const isFeatured = post.isFeatured === true;
     const hidden = post.hidden === true;
     const order = Number.isFinite(Number(post.order)) ? Number(post.order) : index;
@@ -429,6 +445,7 @@
     const overlayEndRaw = Number(post.heroOverlayEnd);
     const overlayStop = Number(post.heroOverlayStop);
     const heroImagePosition = Number(post.heroImagePosition);
+    const heroImagePositionX = Number(post.heroImagePositionX);
     let heroOverlayEnd = Number.isFinite(overlayEndRaw)
       ? Math.min(Math.max(overlayEndRaw, 0), 100)
       : Number.isFinite(overlayStop)
@@ -471,6 +488,13 @@
       heroImagePosition: Number.isFinite(heroImagePosition)
         ? Math.min(Math.max(heroImagePosition, 0), 100)
         : DEFAULT_HERO_SETTINGS.imagePosition,
+      heroImagePositionX: Number.isFinite(heroImagePositionX)
+        ? Math.min(Math.max(heroImagePositionX, 0), 100)
+        : DEFAULT_HERO_SETTINGS.imagePositionX,
+      heroBackgroundColor: normalizeHexColor(
+        post.heroBackgroundColor,
+        themeObject.background || '#0b0c10'
+      ),
     };
   }
 
