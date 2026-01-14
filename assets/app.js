@@ -139,6 +139,7 @@ function updateHeroContent() {
       : Number.isFinite(latest?.imageScale)
         ? latest.imageScale
         : 1;
+    const heroImageFit = latest?.heroImageFit === 'contain' ? 'contain' : DEFAULT_HERO_SETTINGS.imageFit;
     const heroBackgroundColor = latest?.heroBackgroundColor || theme.background || '#0b0c10';
     heroSection.style.setProperty('--hero-overlay-strong', overlayStrong.toFixed(2));
     heroSection.style.setProperty('--hero-overlay-weak', overlayWeak.toFixed(2));
@@ -147,6 +148,7 @@ function updateHeroContent() {
     heroSection.style.setProperty('--hero-image-position-x', `${imagePositionX}%`);
     heroSection.style.setProperty('--hero-image-position', `${imagePosition}%`);
     heroSection.style.setProperty('--hero-image-scale', imageScale);
+    heroSection.style.setProperty('--hero-image-fit', heroImageFit);
     heroSection.style.setProperty('--hero-background-color', heroBackgroundColor);
   }
   if (!latest) {

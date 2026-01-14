@@ -77,6 +77,7 @@
   const heroPositionXLabel = document.getElementById('hero-position-x-label');
   const heroBackgroundColorInput = document.getElementById('hero-background-color');
   const heroBackgroundColorLabel = document.getElementById('hero-background-color-label');
+  const heroImageFitEl = document.getElementById('hero-image-fit');
   const resultMessage = document.getElementById('result-message');
   const siteTitleTargets = document.querySelectorAll('[data-site-title]');
   const footerDescriptionTargets = document.querySelectorAll('[data-footer-description]');
@@ -138,6 +139,10 @@
   let resizedImageData = '';
   let posts = readPosts().sort((a, b) => (a.order || 0) - (b.order || 0));
   let editingId = null;
+
+  function normalizeHeroImageFit(value) {
+    return value === 'contain' ? 'contain' : DEFAULT_HERO_SETTINGS.imageFit;
+  }
   let siteThemeKey = readSiteTheme();
   let siteTheme = applyThemeToDocument(siteThemeKey);
   let selectedTheme = resolveTheme(siteThemeKey);
@@ -329,8 +334,18 @@
     const imagePosition = Number.isFinite(positionInput) ? Math.min(Math.max(positionInput, 0), 100) : DEFAULT_HERO_SETTINGS.imagePosition;
     const imagePositionX = Number.isFinite(positionXInput) ? Math.min(Math.max(positionXInput, 0), 100) : DEFAULT_HERO_SETTINGS.imagePositionX;
     const heroImageScale = normalizeScale(Number(heroImageScaleEl?.value));
+    const heroImageFit = normalizeHeroImageFit(heroImageFitEl?.value);
     const heroBackgroundColor = resolveHeroBackgroundColor(heroBackgroundColorInput?.value);
-    return { overlayOpacity, overlayStart, overlayEnd, imagePosition, imagePositionX, heroImageScale, heroBackgroundColor };
+    return {
+      overlayOpacity,
+      overlayStart,
+      overlayEnd,
+      imagePosition,
+      imagePositionX,
+      heroImageScale,
+      heroImageFit,
+      heroBackgroundColor,
+    };
   }
 
   function resolveHeroBackgroundColor(value) {
@@ -352,6 +367,7 @@
       imagePosition,
       imagePositionX,
       heroImageScale,
+      heroImageFit,
       heroBackgroundColor,
     } = resolveHeroPreviewSettings();
     const overlayStrong = overlayOpacity / 100;
@@ -363,6 +379,7 @@
     previewHero.style.setProperty('--hero-image-position-x', `${imagePositionX}%`);
     previewHero.style.setProperty('--hero-image-position', `${imagePosition}%`);
     previewHero.style.setProperty('--hero-image-scale', heroImageScale);
+    previewHero.style.setProperty('--hero-image-fit', heroImageFit);
     previewHero.style.setProperty('--hero-background-color', heroBackgroundColor);
     if (heroOverlayStartInput) heroOverlayStartInput.value = String(Math.round(overlayStart));
     if (heroOverlayEndInput) heroOverlayEndInput.value = String(Math.round(overlayEnd));
@@ -670,6 +687,7 @@
     if (heroOverlayEndInput) heroOverlayEndInput.value = String(DEFAULT_HERO_SETTINGS.overlayEnd);
     if (heroPositionInput) heroPositionInput.value = String(DEFAULT_HERO_SETTINGS.imagePosition);
     if (heroPositionXInput) heroPositionXInput.value = String(DEFAULT_HERO_SETTINGS.imagePositionX);
+    if (heroImageFitEl) heroImageFitEl.value = DEFAULT_HERO_SETTINGS.imageFit;
     applyArticleTheme(siteThemeKey);
     if (heroBackgroundColorInput) heroBackgroundColorInput.value = resolveHeroBackgroundColor(selectedTheme?.background);
     updatePreview();
@@ -719,6 +737,7 @@
     if (heroOverlayEndInput) heroOverlayEndInput.value = String(target.heroOverlayEnd ?? DEFAULT_HERO_SETTINGS.overlayEnd);
     if (heroPositionInput) heroPositionInput.value = String(target.heroImagePosition ?? DEFAULT_HERO_SETTINGS.imagePosition);
     if (heroPositionXInput) heroPositionXInput.value = String(target.heroImagePositionX ?? DEFAULT_HERO_SETTINGS.imagePositionX);
+    if (heroImageFitEl) heroImageFitEl.value = normalizeHeroImageFit(target.heroImageFit);
     applyArticleTheme(target.theme || selectedTheme.key);
     if (heroBackgroundColorInput) {
       heroBackgroundColorInput.value = resolveHeroBackgroundColor(target.heroBackgroundColor);
@@ -778,6 +797,11 @@
   }
   if (heroImageScaleEl) {
     heroImageScaleEl.addEventListener('input', () => {
+      updateHeroPreview();
+    });
+  }
+  if (heroImageFitEl) {
+    heroImageFitEl.addEventListener('change', () => {
       updateHeroPreview();
     });
   }
@@ -867,6 +891,7 @@
         imageFocus: focus,
         cardImageScale,
         heroImageScale,
+        heroImageFit: heroSettings.heroImageFit,
         theme,
         heroOverlayOpacity: heroSettings.overlayOpacity,
         heroOverlayStart: heroSettings.overlayStart,
