@@ -32,18 +32,14 @@
       <div class="inner admin-login-grid">
         <div class="info-card login-card" id="manager-auth-card">
           <p class="kicker">Admin管理</p>
-          <h1>管理者パスワード</h1>
-          <p class="lead">ユーザー管理とログインコード発行は管理者パスワードが必要です。</p>
-          <div class="field">
-            <label for="admin-password">パスワード</label>
-            <input id="admin-password" type="password" placeholder="管理者パスワードを入力" autocomplete="current-password" />
-            <p class="muted-text" style="margin-top: 6px;">初期パスワード: administrater</p>
-          </div>
+          <h1>管理者向け生体認証</h1>
+          <p class="lead">ユーザー管理とログインコード発行は生体認証が必要です。</p>
           <p class="form-message" id="manager-message" role="status" aria-live="polite" hidden></p>
           <div class="form-actions">
-            <button class="btn primary" type="button" id="admin-password-submit">管理ページを開く</button>
+            <button class="btn primary" type="button" id="manager-biometric-auth">生体認証を開始</button>
             <a class="btn ghost" href="login.html">ログインに戻る</a>
           </div>
+          <p class="muted-text" id="manager-auth-hint">登録済みの管理者ユーザーで認証してください。</p>
         </div>
 
         <div class="info-card login-card" id="manager-panel" hidden>
