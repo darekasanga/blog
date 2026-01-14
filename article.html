@@ -253,7 +253,10 @@
       metaEl.textContent = `${post.date} • ${post.read}`;
       renderSummary(post);
       renderContent(post.content || post.excerpt);
-      setThumb(post.image, post.title, post.imagePosition, post.imageFocus, post.imageScale);
+      const cardScale = Number.isFinite(post.cardImageScale)
+        ? post.cardImageScale
+        : post.imageScale;
+      setThumb(post.image, post.title, post.imagePosition, post.imageFocus, cardScale);
       renderTags(post.tags || []);
     }
 

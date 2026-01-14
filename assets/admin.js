@@ -91,8 +91,10 @@
   const previewTags = document.createElement('div');
   const imageEl = document.getElementById('image');
   const siteThemePicker = document.getElementById('site-theme-picker');
-  const imageScaleEl = document.getElementById('image-scale');
-  const imageScaleLabel = document.getElementById('image-scale-label');
+  const cardImageScaleEl = document.getElementById('card-image-scale');
+  const cardImageScaleLabel = document.getElementById('card-image-scale-label');
+  const heroImageScaleEl = document.getElementById('hero-image-scale');
+  const heroImageScaleLabel = document.getElementById('hero-image-scale-label');
   const previewModeButtons = document.querySelectorAll('.preview-mode-picker [data-preview-mode]');
 
   if (!form) return;
@@ -320,13 +322,13 @@
       }
     }
     const imagePosition = Number.isFinite(positionInput) ? Math.min(Math.max(positionInput, 0), 100) : DEFAULT_HERO_SETTINGS.imagePosition;
-    const imageScale = normalizeScale(Number(imageScaleEl?.value));
-    return { overlayOpacity, overlayStart, overlayEnd, imagePosition, imageScale };
+    const heroImageScale = normalizeScale(Number(heroImageScaleEl?.value));
+    return { overlayOpacity, overlayStart, overlayEnd, imagePosition, heroImageScale };
   }
 
   function updateHeroPreview() {
     if (!previewHero) return;
-    const { overlayOpacity, overlayStart, overlayEnd, imagePosition, imageScale } = resolveHeroPreviewSettings();
+    const { overlayOpacity, overlayStart, overlayEnd, imagePosition, heroImageScale } = resolveHeroPreviewSettings();
     const overlayStrong = overlayOpacity / 100;
     const overlayWeak = Math.min(Math.max(overlayStrong * 0.35, 0), 1);
     previewHero.style.setProperty('--hero-overlay-strong', overlayStrong.toFixed(2));
@@ -334,7 +336,7 @@
     previewHero.style.setProperty('--hero-overlay-start', `${overlayStart}%`);
     previewHero.style.setProperty('--hero-overlay-end', `${overlayEnd}%`);
     previewHero.style.setProperty('--hero-image-position', `${imagePosition}%`);
-    previewHero.style.setProperty('--hero-image-scale', imageScale);
+    previewHero.style.setProperty('--hero-image-scale', heroImageScale);
     if (heroOverlayStartInput) heroOverlayStartInput.value = String(Math.round(overlayStart));
     if (heroOverlayEndInput) heroOverlayEndInput.value = String(Math.round(overlayEnd));
     if (previewHeroTitle) previewHeroTitle.textContent = previewTitle?.textContent || '無題の投稿';
@@ -346,6 +348,7 @@
     if (heroOverlayStartLabel) heroOverlayStartLabel.textContent = `${Math.round(overlayStart)}%`;
     if (heroOverlayEndLabel) heroOverlayEndLabel.textContent = `${Math.round(overlayEnd)}%`;
     if (heroPositionLabel) heroPositionLabel.textContent = `${Math.round(imagePosition)}%`;
+    if (heroImageScaleLabel) heroImageScaleLabel.textContent = `${heroImageScale.toFixed(2)}x`;
     if (resizedImageData) {
       previewHero.classList.add('has-image');
       if (previewHeroImage) {
@@ -374,10 +377,10 @@
     const focusCenter = Math.round((focus.start + focus.end) / 2);
     previewThumb.style.setProperty('--focus-start', `${focus.start}%`);
     previewThumb.style.setProperty('--focus-end', `${focus.end}%`);
-    const scale = normalizeScale(Number(imageScaleEl?.value));
-    previewThumb.style.setProperty('--image-scale', scale);
-    if (imageScaleLabel) {
-      imageScaleLabel.textContent = `${scale.toFixed(2)}x`;
+    const cardScale = normalizeScale(Number(cardImageScaleEl?.value));
+    previewThumb.style.setProperty('--image-scale', cardScale);
+    if (cardImageScaleLabel) {
+      cardImageScaleLabel.textContent = `${cardScale.toFixed(2)}x`;
     }
 
     if (resizedImageData) {
@@ -631,7 +634,8 @@
     if (tagsEl) tagsEl.value = '';
     if (focusStartEl) focusStartEl.value = '20';
     if (focusEndEl) focusEndEl.value = '80';
-    if (imageScaleEl) imageScaleEl.value = '1';
+    if (cardImageScaleEl) cardImageScaleEl.value = '1';
+    if (heroImageScaleEl) heroImageScaleEl.value = '1';
     if (heroOverlayInput) heroOverlayInput.value = String(DEFAULT_HERO_SETTINGS.overlayOpacity);
     if (heroOverlayStartInput) heroOverlayStartInput.value = String(DEFAULT_HERO_SETTINGS.overlayStart);
     if (heroOverlayEndInput) heroOverlayEndInput.value = String(DEFAULT_HERO_SETTINGS.overlayEnd);
@@ -673,7 +677,12 @@
     const focus = normalizeFocus(target.imageFocus, target.imagePosition);
     if (focusStartEl) focusStartEl.value = focus.start;
     if (focusEndEl) focusEndEl.value = focus.end;
-    if (imageScaleEl) imageScaleEl.value = normalizeScale(target.imageScale);
+    if (cardImageScaleEl) {
+      cardImageScaleEl.value = normalizeScale(target.cardImageScale ?? target.imageScale);
+    }
+    if (heroImageScaleEl) {
+      heroImageScaleEl.value = normalizeScale(target.heroImageScale ?? target.imageScale);
+    }
     if (heroOverlayInput) heroOverlayInput.value = String(target.heroOverlayOpacity ?? DEFAULT_HERO_SETTINGS.overlayOpacity);
     if (heroOverlayStartInput) heroOverlayStartInput.value = String(target.heroOverlayStart ?? DEFAULT_HERO_SETTINGS.overlayStart);
     if (heroOverlayEndInput) heroOverlayEndInput.value = String(target.heroOverlayEnd ?? DEFAULT_HERO_SETTINGS.overlayEnd);
@@ -727,9 +736,14 @@
 
   setupFocusRangeEditor();
 
-  if (imageScaleEl) {
-    imageScaleEl.addEventListener('input', () => {
+  if (cardImageScaleEl) {
+    cardImageScaleEl.addEventListener('input', () => {
       updatePreview();
+    });
+  }
+  if (heroImageScaleEl) {
+    heroImageScaleEl.addEventListener('input', () => {
+      updateHeroPreview();
     });
   }
 
@@ -797,7 +811,8 @@
     const focus = normalizeFocus({ start: Number(focusStartEl?.value), end: Number(focusEndEl?.value) });
     const imagePosition = Math.round((focus.start + focus.end) / 2);
     const theme = selectedTheme.key;
-    const imageScale = normalizeScale(Number(imageScaleEl?.value));
+    const cardImageScale = normalizeScale(Number(cardImageScaleEl?.value));
+    const heroImageScale = normalizeScale(Number(heroImageScaleEl?.value));
     const heroSettings = resolveHeroPreviewSettings();
 
     const preparedPost = normalizePost(
@@ -813,7 +828,8 @@
         tags,
         imagePosition,
         imageFocus: focus,
-        imageScale,
+        cardImageScale,
+        heroImageScale,
         theme,
         heroOverlayOpacity: heroSettings.overlayOpacity,
         heroOverlayStart: heroSettings.overlayStart,
