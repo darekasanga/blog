@@ -35,6 +35,12 @@
           <h1>管理者向け生体認証</h1>
           <p class="lead">ユーザー管理とログインコード発行は生体認証が必要です。</p>
           <p class="form-message" id="manager-message" role="status" aria-live="polite" hidden></p>
+          <label for="manager-password">パスワード</label>
+          <input id="manager-password" type="password" placeholder="管理者パスワードを入力" autocomplete="current-password" />
+          <div class="form-actions">
+            <button class="btn primary" type="button" id="manager-password-login">パスワードでログイン</button>
+          </div>
+          <p class="muted-text">初期パスワード: administrater</p>
           <div class="form-actions">
             <button class="btn primary" type="button" id="manager-biometric-auth">生体認証を開始</button>
             <a class="btn ghost" href="login.html">ログインに戻る</a>
@@ -60,6 +66,15 @@
               <button class="btn ghost" type="button" id="issue-login-code">ログインコードを発行</button>
             </div>
             <div class="login-code-list" id="login-code-list" aria-live="polite"></div>
+          </div>
+
+          <div class="login-code-panel">
+            <label for="manager-password-update">管理者パスワードの更新</label>
+            <input id="manager-password-update" type="password" placeholder="新しいパスワードを入力" autocomplete="new-password" />
+            <p class="muted-text">管理者メニューログインで使用するパスワードを更新できます。</p>
+            <div class="form-actions">
+              <button class="btn ghost" type="button" id="manager-password-save">パスワードを更新</button>
+            </div>
           </div>
 
           <label for="biometric-label">登録ユーザー名</label>

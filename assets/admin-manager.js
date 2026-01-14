@@ -10,6 +10,8 @@
   const MANAGER_AUTH_EXPIRY_KEY = 'admin-manager-authenticated-expires';
   const MANAGER_TTL_MS = 30 * 60 * 1000;
   const MANAGER_AUTH_ID_KEY = 'admin-manager-authenticated-id';
+  const MANAGER_PASSWORD_KEY = 'admin-manager-password';
+  const DEFAULT_MANAGER_PASSWORD = 'administrater';
 
   const CREDENTIAL_ID_KEY = 'admin-biometric-credential-id';
   const CREDENTIALS_KEY = 'admin-biometric-credentials';
@@ -17,6 +19,8 @@
   const LOGIN_CODE_TTL_MS = 30 * 60 * 1000;
 
   const managerAuthButton = document.getElementById('manager-biometric-auth');
+  const managerPasswordInput = document.getElementById('manager-password');
+  const managerPasswordLoginButton = document.getElementById('manager-password-login');
   const authHint = document.getElementById('manager-auth-hint');
   const authCard = document.getElementById('manager-auth-card');
   const panel = document.getElementById('manager-panel');
@@ -29,6 +33,8 @@
   const loginCodeInput = document.getElementById('login-code');
   const issueLoginCodeButton = document.getElementById('issue-login-code');
   const loginCodeList = document.getElementById('login-code-list');
+  const managerPasswordUpdateInput = document.getElementById('manager-password-update');
+  const managerPasswordSaveButton = document.getElementById('manager-password-save');
   const siteThemePicker = document.getElementById('site-theme-picker');
 
   if (!authCard || !panel) return;
@@ -49,6 +55,14 @@
     target.textContent = '';
     target.classList.remove('success', 'error');
     target.hidden = true;
+  }
+
+  function readManagerPassword() {
+    return localStorage.getItem(MANAGER_PASSWORD_KEY) || DEFAULT_MANAGER_PASSWORD;
+  }
+
+  function saveManagerPassword(value) {
+    localStorage.setItem(MANAGER_PASSWORD_KEY, value);
   }
 
   function renderSiteThemePicker() {
@@ -377,6 +391,35 @@
     }
   }
 
+  function handlePasswordLogin() {
+    clearMessage(message);
+    const inputValue = managerPasswordInput?.value || '';
+    if (!inputValue) {
+      showMessage(message, 'パスワードを入力してください。', 'error');
+      return;
+    }
+    if (inputValue !== readManagerPassword()) {
+      showMessage(message, 'パスワードが正しくありません。', 'error');
+      return;
+    }
+    setManagerSession('password');
+    openPanel();
+    if (managerPasswordInput) managerPasswordInput.value = '';
+    showMessage(actionMessage, 'パスワードでログインしました。', 'success');
+  }
+
+  function handlePasswordUpdate() {
+    clearMessage(actionMessage);
+    const inputValue = managerPasswordUpdateInput?.value || '';
+    if (!inputValue) {
+      showMessage(actionMessage, '新しいパスワードを入力してください。', 'error');
+      return;
+    }
+    saveManagerPassword(inputValue);
+    if (managerPasswordUpdateInput) managerPasswordUpdateInput.value = '';
+    showMessage(actionMessage, '管理者パスワードを更新しました。', 'success');
+  }
+
   async function registerCredential(label) {
     const challenge = new Uint8Array(32);
     window.crypto.getRandomValues(challenge);
@@ -434,6 +477,12 @@
     });
   }
 
+  if (managerPasswordLoginButton) {
+    managerPasswordLoginButton.addEventListener('click', () => {
+      handlePasswordLogin();
+    });
+  }
+
   if (resetButton) {
     resetButton.addEventListener('click', () => {
       localStorage.removeItem(CREDENTIAL_ID_KEY);
@@ -481,6 +530,12 @@
         loginCodeInput.value = code;
       }
       showMessage(actionMessage, 'ログインコードを発行しました。', 'success');
+    });
+  }
+
+  if (managerPasswordSaveButton) {
+    managerPasswordSaveButton.addEventListener('click', () => {
+      handlePasswordUpdate();
     });
   }
 
