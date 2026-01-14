@@ -1232,6 +1232,7 @@ h2 {
 .training-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  align-items: start;
   gap: 12px;
   margin-top: 12px;
 }
