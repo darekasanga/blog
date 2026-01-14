@@ -8,16 +8,16 @@
 
   const MANAGER_AUTH_KEY = 'admin-manager-authenticated';
   const MANAGER_AUTH_EXPIRY_KEY = 'admin-manager-authenticated-expires';
-  const MANAGER_PASSWORD = 'administrater';
   const MANAGER_TTL_MS = 30 * 60 * 1000;
+  const MANAGER_AUTH_ID_KEY = 'admin-manager-authenticated-id';
 
   const CREDENTIAL_ID_KEY = 'admin-biometric-credential-id';
   const CREDENTIALS_KEY = 'admin-biometric-credentials';
   const LOGIN_CODE_KEY = 'admin-login-codes';
   const LOGIN_CODE_TTL_MS = 30 * 60 * 1000;
 
-  const passwordInput = document.getElementById('admin-password');
-  const passwordSubmit = document.getElementById('admin-password-submit');
+  const managerAuthButton = document.getElementById('manager-biometric-auth');
+  const authHint = document.getElementById('manager-auth-hint');
   const authCard = document.getElementById('manager-auth-card');
   const panel = document.getElementById('manager-panel');
   const message = document.getElementById('manager-message');
@@ -68,9 +68,18 @@
     });
   }
 
-  function setManagerSession() {
+  function setManagerSession(credentialId) {
     sessionStorage.setItem(MANAGER_AUTH_KEY, 'true');
     sessionStorage.setItem(MANAGER_AUTH_EXPIRY_KEY, String(Date.now() + MANAGER_TTL_MS));
+    if (credentialId) {
+      sessionStorage.setItem(MANAGER_AUTH_ID_KEY, credentialId);
+    }
+  }
+
+  function clearManagerSession() {
+    sessionStorage.removeItem(MANAGER_AUTH_KEY);
+    sessionStorage.removeItem(MANAGER_AUTH_EXPIRY_KEY);
+    sessionStorage.removeItem(MANAGER_AUTH_ID_KEY);
   }
 
   function isManagerSessionValid() {
@@ -295,10 +304,77 @@
     return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   }
 
+  function base64UrlToBuffer(base64Url) {
+    const padding = '='.repeat((4 - (base64Url.length % 4)) % 4);
+    const base64 = (base64Url + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i += 1) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    return bytes.buffer;
+  }
+
   async function isBiometricAvailable() {
     if (!window.PublicKeyCredential || !navigator.credentials) return false;
     if (!PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable) return true;
     return PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+  }
+
+  async function authenticateCredential(credentialIds) {
+    const challenge = new Uint8Array(32);
+    window.crypto.getRandomValues(challenge);
+
+    const allowCredentials = credentialIds.map((id) => ({
+      id: base64UrlToBuffer(id),
+      type: 'public-key',
+      transports: ['internal'],
+    }));
+
+    const assertion = await navigator.credentials.get({
+      publicKey: {
+        challenge,
+        allowCredentials,
+        userVerification: 'required',
+        timeout: 60000,
+      },
+    });
+
+    if (!assertion) {
+      throw new Error('assertion-missing');
+    }
+
+    return assertion;
+  }
+
+  async function handleManagerAuth() {
+    clearMessage(message);
+
+    const available = await isBiometricAvailable();
+    if (!available) {
+      showMessage(message, 'この端末では生体認証が利用できません。', 'error');
+      return;
+    }
+
+    try {
+      const stored = readCredentialList().filter((credential) => credential.canManageUsers);
+      if (!stored.length) {
+        showMessage(message, '管理者ユーザーが登録されていません。', 'error');
+        return;
+      }
+      const assertion = await authenticateCredential(stored.map((item) => item.id));
+      const credentialId = bufferToBase64Url(assertion.rawId);
+      if (!stored.some((item) => item.id === credentialId)) {
+        showMessage(message, '管理権限のないユーザーです。', 'error');
+        clearManagerSession();
+        return;
+      }
+      setManagerSession(credentialId);
+      openPanel();
+      showMessage(actionMessage, '管理パネルを開きました。', 'success');
+    } catch (error) {
+      showMessage(message, '認証に失敗しました。端末の生体認証を再度お試しください。', 'error');
+    }
   }
 
   async function registerCredential(label) {
@@ -352,18 +428,9 @@
     renderCredentialList();
   }
 
-  if (passwordSubmit) {
-    passwordSubmit.addEventListener('click', () => {
-      clearMessage(message);
-      const value = passwordInput?.value || '';
-      if (value !== MANAGER_PASSWORD) {
-        showMessage(message, 'パスワードが正しくありません。', 'error');
-        return;
-      }
-      setManagerSession();
-      if (passwordInput) passwordInput.value = '';
-      openPanel();
-      showMessage(actionMessage, '管理パネルを開きました。', 'success');
+  if (managerAuthButton) {
+    managerAuthButton.addEventListener('click', () => {
+      handleManagerAuth();
     });
   }
 
@@ -371,6 +438,7 @@
     resetButton.addEventListener('click', () => {
       localStorage.removeItem(CREDENTIAL_ID_KEY);
       localStorage.removeItem(CREDENTIALS_KEY);
+      clearManagerSession();
       renderCredentialList();
       showMessage(actionMessage, '登録情報をリセットしました。', 'success');
     });
@@ -421,4 +489,13 @@
   }
 
   renderSiteThemePicker();
+
+  isBiometricAvailable().then((available) => {
+    if (!available && managerAuthButton) {
+      managerAuthButton.disabled = true;
+      if (authHint) {
+        authHint.textContent = 'この端末では生体認証が利用できません。別の端末でお試しください。';
+      }
+    }
+  });
 })();
