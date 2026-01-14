@@ -149,15 +149,18 @@
   };
 
   const resizeAll = () => {
-    const leftRect = leftCanvas.getBoundingClientRect();
-    if (leftRect.width && leftRect.height) {
-      resizeCanvas(leftCanvas, leftRect.width, leftRect.height);
-    }
     const stackRect = stack.getBoundingClientRect();
     if (stackRect.width && stackRect.height) {
+      leftCanvas.style.height = `${stackRect.height}px`;
+      leftCanvas.style.width = `${stackRect.width}px`;
+      leftCanvas.style.maxWidth = '100%';
       resizeCanvas(mirrorCanvas, stackRect.width, stackRect.height);
       resizeCanvas(rightCanvas, stackRect.width, stackRect.height);
       resizeCanvas(frameCanvas, stackRect.width, stackRect.height);
+    }
+    const leftRect = leftCanvas.getBoundingClientRect();
+    if (leftRect.width && leftRect.height) {
+      resizeCanvas(leftCanvas, leftRect.width, leftRect.height);
     }
     positionAnnotations();
   };
