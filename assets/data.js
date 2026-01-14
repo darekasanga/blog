@@ -418,6 +418,8 @@
     const focusCenter = Math.round((imageFocus.start + imageFocus.end) / 2);
     const imagePosition = Number.isFinite(Number(post.imagePosition)) ? Math.min(Math.max(Number(post.imagePosition), 0), 100) : focusCenter;
     const imageScale = normalizeScale(post.imageScale);
+    const cardImageScale = normalizeScale(post.cardImageScale ?? post.imageScale);
+    const heroImageScale = normalizeScale(post.heroImageScale ?? post.imageScale);
     const theme = resolveTheme(post.theme || readSiteTheme() || DEFAULT_THEME).key;
     const isFeatured = post.isFeatured === true;
     const hidden = post.hidden === true;
@@ -455,6 +457,8 @@
       imagePosition,
       imageFocus,
       imageScale,
+      cardImageScale,
+      heroImageScale,
       theme,
       isFeatured,
       hidden,

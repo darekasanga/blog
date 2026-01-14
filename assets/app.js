@@ -73,7 +73,7 @@ document.body.appendChild(lightbox);
 
 function themeStyle(post) {
   const theme = resolveTheme(post.theme || siteThemeKey);
-  const scale = post.imageScale ?? 1;
+  const scale = post.cardImageScale ?? post.imageScale ?? 1;
   return `--accent:${theme.accent};--accent-2:${theme.accent2};--focus-start:${post.imageFocus?.start ?? 0}%;--focus-end:${post.imageFocus?.end ?? 100}%;--image-scale:${scale};`;
 }
 
@@ -130,7 +130,11 @@ function updateHeroContent() {
       : Number.isFinite(latest?.imagePosition)
         ? latest.imagePosition
         : DEFAULT_HERO_SETTINGS.imagePosition;
-    const imageScale = Number.isFinite(latest?.imageScale) ? latest.imageScale : 1;
+    const imageScale = Number.isFinite(latest?.heroImageScale)
+      ? latest.heroImageScale
+      : Number.isFinite(latest?.imageScale)
+        ? latest.imageScale
+        : 1;
     heroSection.style.setProperty('--hero-overlay-strong', overlayStrong.toFixed(2));
     heroSection.style.setProperty('--hero-overlay-weak', overlayWeak.toFixed(2));
     heroSection.style.setProperty('--hero-overlay-start', `${overlayStart}%`);
@@ -193,7 +197,7 @@ function renderListGrid() {
     .map((post) => {
       const theme = resolveTheme(post.theme || siteThemeKey);
       const imagePos = post.imagePosition ?? 50;
-      const imageScale = post.imageScale ?? 1;
+      const imageScale = post.cardImageScale ?? post.imageScale ?? 1;
       const articleLink = `article.html?id=${encodeURIComponent(post.id)}`;
       return `
         <article class="gallery-card" style="--accent:${theme.accent};--accent-2:${theme.accent2};">
