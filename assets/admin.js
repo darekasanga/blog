@@ -358,6 +358,19 @@
     return fallback;
   }
 
+  function updateHeroPreviewAspect() {
+    if (!previewHero) return;
+    const rootStyles = getComputedStyle(document.documentElement);
+    const heroHeightValue = parseFloat(rootStyles.getPropertyValue('--hero-height'));
+    const heroHeight = Number.isFinite(heroHeightValue) && heroHeightValue > 0 ? heroHeightValue : 320;
+    const heroWidth = Math.max(320, window.innerWidth - 32);
+    const previewWidth = previewHero.clientWidth;
+    if (!previewWidth) return;
+    const previewHeight = (previewWidth * heroHeight) / heroWidth;
+    previewHero.style.setProperty('--hero-preview-height', `${previewHeight}px`);
+    previewHero.classList.toggle('is-compact', previewHeight < 160);
+  }
+
   function updateHeroPreview() {
     if (!previewHero) return;
     const {
@@ -438,6 +451,7 @@
       previewThumb.classList.add('placeholder');
       previewThumb.setAttribute('aria-hidden', 'true');
     }
+    updateHeroPreviewAspect();
     updateHeroPreview();
   }
 
@@ -921,6 +935,10 @@
   updateReadTime();
   updatePreview();
   syncHomeSettingsForm();
+
+  window.addEventListener('resize', () => {
+    window.requestAnimationFrame(updateHeroPreviewAspect);
+  });
 
   if (isEditMode && submitButton) {
     submitButton.disabled = true;

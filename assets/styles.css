@@ -347,10 +347,19 @@ h1 {
 
 .preview-hero {
   border-radius: 0;
-  padding: 48px 0 40px;
-  min-height: var(--hero-height);
-  height: var(--hero-height);
+  padding: 32px 0 28px;
+  min-height: 0;
+  height: var(--hero-preview-height, var(--hero-height));
   margin-bottom: 16px;
+}
+
+.preview-hero.is-compact {
+  padding: 16px 0 14px;
+}
+
+.preview-hero.is-compact .lead,
+.preview-hero.is-compact .hero-actions {
+  display: none;
 }
 
 .preview-hero .inner {
