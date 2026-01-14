@@ -1799,6 +1799,14 @@ body[data-admin-mode='edit'] #preview-thumb.is-selecting .focus-range {
   box-shadow: var(--shadow);
 }
 
+.analysis-panel.handwriting-panel {
+  row-gap: 6px;
+}
+
+.analysis-panel.handwriting-panel .muted-text {
+  margin-top: 4px;
+}
+
 .analysis-panel textarea {
   width: 100%;
   min-height: 240px;
