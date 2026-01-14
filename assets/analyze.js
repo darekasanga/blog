@@ -451,10 +451,12 @@
     let clippingActive = false;
 
     const start = (event) => {
-      if (event.pointerType !== 'pen') return;
       if (!isEnabled(event)) return;
       const options = getOptions ? getOptions(event) : {};
       if (!options) return;
+      const allowedPointerTypes = options.allowedPointerTypes || ['pen'];
+      const pointerType = event.pointerType || 'mouse';
+      if (!allowedPointerTypes.includes(pointerType)) return;
       drawing = true;
       lastPoint = getCanvasPoint(event, canvas);
       previousComposite = ctx.globalCompositeOperation;
@@ -1015,7 +1017,11 @@
         };
       }
       if (currentMode === 'eraser') {
-        return { composite: 'destination-out', lineWidth: 16 };
+        return {
+          composite: 'destination-out',
+          lineWidth: 16,
+          allowedPointerTypes: ['pen', 'mouse', 'touch'],
+        };
       }
       return null;
     },
