@@ -194,6 +194,22 @@
 
   const defaultPosts = [
     {
+      id: 'post-shrine-name-list',
+      title: '「◯◯京」「〇〇朝廷」「〇〇宮」「〇〇神宮」「〇〇大社」リスト',
+      date: '2024-06-12',
+      read: '4 min',
+      excerpt: 'ご要望の語尾パターン別に、代表的な名称例をカテゴリごとにまとめました。',
+      content: 'リクエストの語尾パターンごとに、代表的な名称例を整理しました。\n\n【◯◯京】\n・平安京\n・平城京\n・長岡京\n・藤原京\n・難波京\n\n【〇〇朝廷】\n・大和朝廷\n・南朝廷\n・北朝廷\n・建武朝廷\n・明治朝廷\n\n【〇〇宮】\n・日光東照宮\n・鶴岡八幡宮\n・富岡八幡宮\n・北野天満宮\n・太宰府天満宮\n\n【〇〇神宮】\n・伊勢神宮\n・明治神宮\n・熱田神宮\n・鹿島神宮\n・香取神宮\n\n【〇〇大社】\n・出雲大社\n・伏見稲荷大社\n・春日大社\n・多賀大社\n・諏訪大社',
+      image: '',
+      tags: ['用語', 'リスト'],
+      imagePosition: 50,
+      imageFocus: DEFAULT_FOCUS,
+      theme: 'sunset',
+      isFeatured: true,
+      hidden: false,
+      order: 0,
+    },
+    {
       id: 'post-design-system',
       title: 'デザインシステムで統一感を作る',
       date: '2024-05-28',
@@ -207,7 +223,7 @@
       theme: 'violet-ice',
       isFeatured: true,
       hidden: false,
-      order: 0,
+      order: 1,
     },
     {
       id: 'post-jamstack',
@@ -223,7 +239,7 @@
       theme: 'sunset',
       isFeatured: false,
       hidden: false,
-      order: 1,
+      order: 2,
     },
     {
       id: 'post-microcopy',
@@ -239,7 +255,7 @@
       theme: 'forest',
       isFeatured: false,
       hidden: false,
-      order: 2,
+      order: 3,
     },
     {
       id: 'post-ui-motion',
@@ -255,7 +271,7 @@
       theme: 'amber-night',
       isFeatured: false,
       hidden: false,
-      order: 3,
+      order: 4,
     },
     {
       id: 'post-accessibility',
@@ -271,7 +287,7 @@
       theme: 'aqua',
       isFeatured: false,
       hidden: false,
-      order: 4,
+      order: 5,
     },
   ];
 
