@@ -84,6 +84,7 @@
   let currentHandwritingTool = 'pencil';
   let leftHasInk = false;
   let rightHasInk = false;
+  let leftLocked = false;
   let annotations = [];
   let activeAnnotationId = null;
   let activeReviewAnnotation = null;
@@ -553,6 +554,13 @@
     handwritingStatus.textContent = message;
   };
 
+  const setLeftCanvasLock = (locked) => {
+    leftLocked = locked;
+    leftCanvas.classList.toggle('handwriting-canvas--locked', locked);
+    leftCanvas.setAttribute('aria-disabled', locked ? 'true' : 'false');
+    leftCanvas.style.pointerEvents = locked ? 'none' : '';
+  };
+
   const detectInkRegions = () => {
     const ctx = mirrorCanvas.getContext('2d');
     if (!ctx) return [];
@@ -683,15 +691,19 @@
       reanalyzeAnnotation(item);
     });
 
+    let statusMessage = '';
     if (regions.length) {
-      updateHandwritingStatus(
-        `文字判定で${addedCount}件を追加し、${reviewTargets.length}件を再解析しました。`,
-      );
+      statusMessage = `文字判定で${addedCount}件を追加し、${reviewTargets.length}件を再解析しました。`;
     } else if (reviewTargets.length) {
-      updateHandwritingStatus(`枠の再解析を${reviewTargets.length}件行いました。`);
+      statusMessage = `枠の再解析を${reviewTargets.length}件行いました。`;
     } else {
-      updateHandwritingStatus('左側の手書きを解析枠に転送しました。');
+      statusMessage = '左側の手書きを解析枠に転送しました。';
     }
+    setLeftCanvasLock(true);
+    if (currentMode !== 'handwriting') {
+      setMode('handwriting');
+    }
+    updateHandwritingStatus(`${statusMessage} 右パレットの赤枠内で書き直してください。`);
   };
 
   const clearAnnotations = () => {
@@ -918,7 +930,7 @@
     updateRecognizedText();
   };
 
-  const setMode = (mode) => {
+  function setMode(mode) {
     currentMode = mode;
     if (editor) {
       editor.dataset.analysisMode = mode;
@@ -939,7 +951,7 @@
     } else {
       updateHandwritingStatus(defaultHandwritingStatus || '両枠とも手書き入力中');
     }
-  };
+  }
 
   if (modeButtons.length) {
     const savedMode = localStorage.getItem(MODE_STORAGE_KEY);
@@ -990,7 +1002,7 @@
 
   createPenDrawer(
     leftCanvas,
-    () => true,
+    () => !leftLocked,
     () => {
       if (currentMode === 'eraser') {
         return {
@@ -1206,6 +1218,7 @@
     clearLeftButton.addEventListener('click', () => {
       clearCanvas(leftCanvas);
       leftHasInk = false;
+      setLeftCanvasLock(false);
       updateHandwritingStatus(defaultHandwritingStatus || '両枠とも手書き入力中');
       updatePlaceholder();
     });

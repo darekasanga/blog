@@ -1259,6 +1259,12 @@ h2 {
   inset: 0;
   width: 100%;
   height: 100%;
+  touch-action: none;
+}
+
+.handwriting-canvas--locked {
+  opacity: 0.65;
+  cursor: not-allowed;
 }
 
 .layered-output__characters {
