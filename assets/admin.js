@@ -17,6 +17,7 @@
     normalizeScale,
     summarizeContent,
     DEFAULT_HERO_SETTINGS,
+    hexToRgb,
   } = window.BlogData;
 
   const adminMode = document.body.dataset.adminMode || 'post';
@@ -65,12 +66,15 @@
   const featuredCount = document.getElementById('featured-count');
   const siteTitleInput = document.getElementById('site-title');
   const footerDescriptionInput = document.getElementById('footer-description');
-  const heroOverlayInput = document.getElementById('hero-overlay');
-  const heroOverlayLabel = document.getElementById('hero-overlay-label');
-  const heroOverlayStartInput = document.getElementById('hero-overlay-start');
-  const heroOverlayStartLabel = document.getElementById('hero-overlay-start-label');
-  const heroOverlayEndInput = document.getElementById('hero-overlay-end');
-  const heroOverlayEndLabel = document.getElementById('hero-overlay-end-label');
+  const heroMaskWidthInput = document.getElementById('hero-mask-width');
+  const heroMaskWidthLabel = document.getElementById('hero-mask-width-label');
+  const heroMaskOpacityInput = document.getElementById('hero-mask-opacity');
+  const heroMaskOpacityLabel = document.getElementById('hero-mask-opacity-label');
+  const heroMaskColorInput = document.getElementById('hero-mask-color');
+  const heroMaskColorLabel = document.getElementById('hero-mask-color-label');
+  const heroMaskGradientInput = document.getElementById('hero-mask-gradient');
+  const heroMaskGradientLabel = document.getElementById('hero-mask-gradient-label');
+  const heroMaskMotionInput = document.getElementById('hero-mask-motion');
   const heroPositionInput = document.getElementById('hero-position');
   const heroPositionLabel = document.getElementById('hero-position-label');
   const heroPositionXInput = document.getElementById('hero-position-x');
@@ -316,30 +320,35 @@
   }
 
   function resolveHeroPreviewSettings() {
-    const overlayInput = Number(heroOverlayInput?.value);
-    const overlayStartInput = Number(heroOverlayStartInput?.value);
-    const overlayEndInput = Number(heroOverlayEndInput?.value);
+    const maskWidthInput = Number(heroMaskWidthInput?.value);
+    const maskOpacityInput = Number(heroMaskOpacityInput?.value);
+    const maskGradientInput = Number(heroMaskGradientInput?.value);
     const positionInput = Number(heroPositionInput?.value);
     const positionXInput = Number(heroPositionXInput?.value);
-    const overlayOpacity = Number.isFinite(overlayInput) ? Math.min(Math.max(overlayInput, 0), 100) : DEFAULT_HERO_SETTINGS.overlayOpacity;
-    let overlayStart = Number.isFinite(overlayStartInput) ? Math.min(Math.max(overlayStartInput, 0), 100) : DEFAULT_HERO_SETTINGS.overlayStart;
-    let overlayEnd = Number.isFinite(overlayEndInput) ? Math.min(Math.max(overlayEndInput, 0), 100) : DEFAULT_HERO_SETTINGS.overlayEnd;
-    if (overlayEnd - overlayStart < 5) {
-      if (overlayEnd >= 100) {
-        overlayStart = Math.max(overlayEnd - 5, 0);
-      } else {
-        overlayEnd = Math.min(overlayStart + 5, 100);
-      }
-    }
+    const maskWidth = Number.isFinite(maskWidthInput)
+      ? Math.min(Math.max(maskWidthInput, 0), 100)
+      : DEFAULT_HERO_SETTINGS.maskWidth;
+    const maskOpacity = Number.isFinite(maskOpacityInput)
+      ? Math.min(Math.max(maskOpacityInput, 0), 100)
+      : DEFAULT_HERO_SETTINGS.maskOpacity;
+    const maskGradient = Number.isFinite(maskGradientInput)
+      ? Math.min(Math.max(maskGradientInput, 0), 100)
+      : DEFAULT_HERO_SETTINGS.maskGradient;
+    const cappedMaskGradient = Math.min(maskGradient, Math.max(0, 100 - maskWidth));
     const imagePosition = Number.isFinite(positionInput) ? Math.min(Math.max(positionInput, 0), 100) : DEFAULT_HERO_SETTINGS.imagePosition;
     const imagePositionX = Number.isFinite(positionXInput) ? Math.min(Math.max(positionXInput, 0), 100) : DEFAULT_HERO_SETTINGS.imagePositionX;
     const heroImageScale = normalizeScale(Number(heroImageScaleEl?.value));
     const heroImageFit = normalizeHeroImageFit(heroImageFitEl?.value);
     const heroBackgroundColor = resolveHeroBackgroundColor(heroBackgroundColorInput?.value);
+    const heroMaskColor = resolveHeroMaskColor(heroMaskColorInput?.value);
+    const heroMaskMotion = Boolean(heroMaskMotionInput?.checked);
     return {
-      overlayOpacity,
-      overlayStart,
-      overlayEnd,
+      maskOpacity,
+      maskWidth,
+      maskGradient: cappedMaskGradient,
+      maskFadeEnd: Math.min(100, maskWidth + cappedMaskGradient),
+      maskColor: heroMaskColor,
+      maskMotion: heroMaskMotion,
       imagePosition,
       imagePositionX,
       heroImageScale,
@@ -351,6 +360,16 @@
   function resolveHeroBackgroundColor(value) {
     const trimmed = String(value || '').trim();
     const fallback = selectedTheme?.background || '#0b0c10';
+    if (!trimmed) return fallback;
+    if (/^#[0-9a-fA-F]{3}$/.test(trimmed) || /^#[0-9a-fA-F]{6}$/.test(trimmed)) {
+      return trimmed.toLowerCase();
+    }
+    return fallback;
+  }
+
+  function resolveHeroMaskColor(value) {
+    const trimmed = String(value || '').trim();
+    const fallback = selectedTheme?.background || DEFAULT_HERO_SETTINGS.maskColor;
     if (!trimmed) return fallback;
     if (/^#[0-9a-fA-F]{3}$/.test(trimmed) || /^#[0-9a-fA-F]{6}$/.test(trimmed)) {
       return trimmed.toLowerCase();
@@ -374,36 +393,38 @@
   function updateHeroPreview() {
     if (!previewHero) return;
     const {
-      overlayOpacity,
-      overlayStart,
-      overlayEnd,
+      maskOpacity,
+      maskWidth,
+      maskGradient,
+      maskFadeEnd,
+      maskColor,
+      maskMotion,
       imagePosition,
       imagePositionX,
       heroImageScale,
       heroImageFit,
       heroBackgroundColor,
     } = resolveHeroPreviewSettings();
-    const overlayStrong = overlayOpacity / 100;
-    const overlayWeak = Math.min(Math.max(overlayStrong * 0.35, 0), 1);
-    previewHero.style.setProperty('--hero-overlay-strong', overlayStrong.toFixed(2));
-    previewHero.style.setProperty('--hero-overlay-weak', overlayWeak.toFixed(2));
-    previewHero.style.setProperty('--hero-overlay-start', `${overlayStart}%`);
-    previewHero.style.setProperty('--hero-overlay-end', `${overlayEnd}%`);
+    const maskRgb = hexToRgb(maskColor);
+    previewHero.style.setProperty('--hero-mask-opacity', (maskOpacity / 100).toFixed(2));
+    previewHero.style.setProperty('--hero-mask-width', `${maskWidth}%`);
+    previewHero.style.setProperty('--hero-mask-fade-end', `${maskFadeEnd}%`);
+    previewHero.style.setProperty('--hero-mask-color', `${maskRgb.r}, ${maskRgb.g}, ${maskRgb.b}`);
+    previewHero.style.setProperty('--hero-mask-motion', maskMotion ? 'running' : 'paused');
     previewHero.style.setProperty('--hero-image-position-x', `${imagePositionX}%`);
     previewHero.style.setProperty('--hero-image-position', `${imagePosition}%`);
     previewHero.style.setProperty('--hero-image-scale', heroImageScale);
     previewHero.style.setProperty('--hero-image-fit', heroImageFit);
     previewHero.style.setProperty('--hero-background-color', heroBackgroundColor);
-    if (heroOverlayStartInput) heroOverlayStartInput.value = String(Math.round(overlayStart));
-    if (heroOverlayEndInput) heroOverlayEndInput.value = String(Math.round(overlayEnd));
     if (previewHeroTitle) previewHeroTitle.textContent = previewTitle?.textContent || '無題の投稿';
     if (previewHeroLead) previewHeroLead.textContent = previewExcerpt?.textContent || '本文からAIが要約します。';
     if (previewHeroKicker) {
       previewHeroKicker.textContent = `最新記事プレビュー ${previewDate?.textContent || today}`;
     }
-    if (heroOverlayLabel) heroOverlayLabel.textContent = `${Math.round(overlayOpacity)}%`;
-    if (heroOverlayStartLabel) heroOverlayStartLabel.textContent = `${Math.round(overlayStart)}%`;
-    if (heroOverlayEndLabel) heroOverlayEndLabel.textContent = `${Math.round(overlayEnd)}%`;
+    if (heroMaskWidthLabel) heroMaskWidthLabel.textContent = `${Math.round(maskWidth)}%`;
+    if (heroMaskOpacityLabel) heroMaskOpacityLabel.textContent = `${Math.round(maskOpacity)}%`;
+    if (heroMaskColorLabel) heroMaskColorLabel.textContent = maskColor;
+    if (heroMaskGradientLabel) heroMaskGradientLabel.textContent = `${Math.round(maskGradient)}%`;
     if (heroPositionLabel) heroPositionLabel.textContent = `${Math.round(imagePosition)}%`;
     if (heroPositionXLabel) heroPositionXLabel.textContent = `${Math.round(imagePositionX)}%`;
     if (heroImageScaleLabel) heroImageScaleLabel.textContent = `${heroImageScale.toFixed(2)}x`;
@@ -696,9 +717,11 @@
     if (focusEndEl) focusEndEl.value = '80';
     if (cardImageScaleEl) cardImageScaleEl.value = '1';
     if (heroImageScaleEl) heroImageScaleEl.value = '1';
-    if (heroOverlayInput) heroOverlayInput.value = String(DEFAULT_HERO_SETTINGS.overlayOpacity);
-    if (heroOverlayStartInput) heroOverlayStartInput.value = String(DEFAULT_HERO_SETTINGS.overlayStart);
-    if (heroOverlayEndInput) heroOverlayEndInput.value = String(DEFAULT_HERO_SETTINGS.overlayEnd);
+    if (heroMaskWidthInput) heroMaskWidthInput.value = String(DEFAULT_HERO_SETTINGS.maskWidth);
+    if (heroMaskOpacityInput) heroMaskOpacityInput.value = String(DEFAULT_HERO_SETTINGS.maskOpacity);
+    if (heroMaskColorInput) heroMaskColorInput.value = resolveHeroMaskColor(selectedTheme?.background);
+    if (heroMaskGradientInput) heroMaskGradientInput.value = String(DEFAULT_HERO_SETTINGS.maskGradient);
+    if (heroMaskMotionInput) heroMaskMotionInput.checked = DEFAULT_HERO_SETTINGS.maskMotion;
     if (heroPositionInput) heroPositionInput.value = String(DEFAULT_HERO_SETTINGS.imagePosition);
     if (heroPositionXInput) heroPositionXInput.value = String(DEFAULT_HERO_SETTINGS.imagePositionX);
     if (heroImageFitEl) heroImageFitEl.value = DEFAULT_HERO_SETTINGS.imageFit;
@@ -746,9 +769,11 @@
     if (heroImageScaleEl) {
       heroImageScaleEl.value = normalizeScale(target.heroImageScale ?? target.imageScale);
     }
-    if (heroOverlayInput) heroOverlayInput.value = String(target.heroOverlayOpacity ?? DEFAULT_HERO_SETTINGS.overlayOpacity);
-    if (heroOverlayStartInput) heroOverlayStartInput.value = String(target.heroOverlayStart ?? DEFAULT_HERO_SETTINGS.overlayStart);
-    if (heroOverlayEndInput) heroOverlayEndInput.value = String(target.heroOverlayEnd ?? DEFAULT_HERO_SETTINGS.overlayEnd);
+    if (heroMaskWidthInput) heroMaskWidthInput.value = String(target.heroMaskWidth ?? DEFAULT_HERO_SETTINGS.maskWidth);
+    if (heroMaskOpacityInput) heroMaskOpacityInput.value = String(target.heroMaskOpacity ?? DEFAULT_HERO_SETTINGS.maskOpacity);
+    if (heroMaskColorInput) heroMaskColorInput.value = resolveHeroMaskColor(target.heroMaskColor);
+    if (heroMaskGradientInput) heroMaskGradientInput.value = String(target.heroMaskGradient ?? DEFAULT_HERO_SETTINGS.maskGradient);
+    if (heroMaskMotionInput) heroMaskMotionInput.checked = Boolean(target.heroMaskMotion);
     if (heroPositionInput) heroPositionInput.value = String(target.heroImagePosition ?? DEFAULT_HERO_SETTINGS.imagePosition);
     if (heroPositionXInput) heroPositionXInput.value = String(target.heroImagePositionX ?? DEFAULT_HERO_SETTINGS.imagePositionX);
     if (heroImageFitEl) heroImageFitEl.value = normalizeHeroImageFit(target.heroImageFit);
@@ -820,10 +845,11 @@
     });
   }
 
-  [heroOverlayInput, heroOverlayStartInput, heroOverlayEndInput, heroPositionInput, heroPositionXInput, heroBackgroundColorInput]
+  [heroMaskWidthInput, heroMaskOpacityInput, heroMaskColorInput, heroMaskGradientInput, heroMaskMotionInput, heroPositionInput, heroPositionXInput, heroBackgroundColorInput]
     .filter(Boolean)
     .forEach((input) => {
-    input.addEventListener('input', () => {
+    const eventType = input === heroMaskMotionInput ? 'change' : 'input';
+    input.addEventListener(eventType, () => {
       updatePreview();
     });
   });
@@ -907,9 +933,11 @@
         heroImageScale,
         heroImageFit: heroSettings.heroImageFit,
         theme,
-        heroOverlayOpacity: heroSettings.overlayOpacity,
-        heroOverlayStart: heroSettings.overlayStart,
-        heroOverlayEnd: heroSettings.overlayEnd,
+        heroMaskOpacity: heroSettings.maskOpacity,
+        heroMaskWidth: heroSettings.maskWidth,
+        heroMaskGradient: heroSettings.maskGradient,
+        heroMaskColor: heroSettings.maskColor,
+        heroMaskMotion: heroSettings.maskMotion,
         heroImagePosition: heroSettings.imagePosition,
         heroImagePositionX: heroSettings.imagePositionX,
         heroBackgroundColor: heroSettings.heroBackgroundColor,
@@ -931,6 +959,9 @@
   applyArticleTheme(selectedTheme.key);
   if (heroBackgroundColorInput) {
     heroBackgroundColorInput.value = resolveHeroBackgroundColor(selectedTheme?.background);
+  }
+  if (heroMaskColorInput) {
+    heroMaskColorInput.value = resolveHeroMaskColor(selectedTheme?.background);
   }
   updateReadTime();
   updatePreview();

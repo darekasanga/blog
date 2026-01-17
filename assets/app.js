@@ -9,6 +9,7 @@ const {
   themes,
   SITE_SETTINGS_KEY,
   DEFAULT_HERO_SETTINGS,
+  hexToRgb,
 } = window.BlogData;
 let posts = readPosts();
 const track = document.getElementById('card-track');
@@ -115,17 +116,22 @@ function updateHeroContent() {
   const latest = latestVisiblePost();
   if (heroSection) {
     const theme = resolveTheme(latest?.theme || siteThemeKey);
-    const overlayValue = Number.isFinite(latest?.heroOverlayOpacity)
-      ? latest.heroOverlayOpacity
-      : DEFAULT_HERO_SETTINGS.overlayOpacity;
-    const overlayStrong = Math.min(Math.max(overlayValue, 0), 100) / 100;
-    const overlayWeak = Math.min(Math.max(overlayStrong * 0.35, 0), 1);
-    const overlayStart = Number.isFinite(latest?.heroOverlayStart)
-      ? latest.heroOverlayStart
-      : DEFAULT_HERO_SETTINGS.overlayStart;
-    const overlayEnd = Number.isFinite(latest?.heroOverlayEnd)
-      ? latest.heroOverlayEnd
-      : DEFAULT_HERO_SETTINGS.overlayEnd;
+    const maskOpacityValue = Number.isFinite(latest?.heroMaskOpacity)
+      ? latest.heroMaskOpacity
+      : DEFAULT_HERO_SETTINGS.maskOpacity;
+    const maskWidthValue = Number.isFinite(latest?.heroMaskWidth)
+      ? latest.heroMaskWidth
+      : DEFAULT_HERO_SETTINGS.maskWidth;
+    const maskGradientValue = Number.isFinite(latest?.heroMaskGradient)
+      ? latest.heroMaskGradient
+      : DEFAULT_HERO_SETTINGS.maskGradient;
+    const maskOpacity = Math.min(Math.max(maskOpacityValue, 0), 100) / 100;
+    const maskWidth = Math.min(Math.max(maskWidthValue, 0), 100);
+    const maskGradient = Math.min(Math.max(maskGradientValue, 0), Math.max(0, 100 - maskWidth));
+    const maskFadeEnd = Math.min(100, maskWidth + maskGradient);
+    const maskColor = latest?.heroMaskColor || theme.background || DEFAULT_HERO_SETTINGS.maskColor;
+    const maskRgb = hexToRgb(maskColor);
+    const maskMotion = latest?.heroMaskMotion ? 'running' : 'paused';
     const imagePosition = Number.isFinite(latest?.heroImagePosition)
       ? latest.heroImagePosition
       : Number.isFinite(latest?.imagePosition)
@@ -141,10 +147,11 @@ function updateHeroContent() {
         : 1;
     const heroImageFit = latest?.heroImageFit === 'contain' ? 'contain' : DEFAULT_HERO_SETTINGS.imageFit;
     const heroBackgroundColor = latest?.heroBackgroundColor || theme.background || '#0b0c10';
-    heroSection.style.setProperty('--hero-overlay-strong', overlayStrong.toFixed(2));
-    heroSection.style.setProperty('--hero-overlay-weak', overlayWeak.toFixed(2));
-    heroSection.style.setProperty('--hero-overlay-start', `${overlayStart}%`);
-    heroSection.style.setProperty('--hero-overlay-end', `${overlayEnd}%`);
+    heroSection.style.setProperty('--hero-mask-opacity', maskOpacity.toFixed(2));
+    heroSection.style.setProperty('--hero-mask-width', `${maskWidth}%`);
+    heroSection.style.setProperty('--hero-mask-fade-end', `${maskFadeEnd}%`);
+    heroSection.style.setProperty('--hero-mask-color', `${maskRgb.r}, ${maskRgb.g}, ${maskRgb.b}`);
+    heroSection.style.setProperty('--hero-mask-motion', maskMotion);
     heroSection.style.setProperty('--hero-image-position-x', `${imagePositionX}%`);
     heroSection.style.setProperty('--hero-image-position', `${imagePosition}%`);
     heroSection.style.setProperty('--hero-image-scale', imageScale);
