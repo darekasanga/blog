@@ -1384,6 +1384,34 @@ h2 {
   border-color: rgba(56, 189, 248, 0.9);
 }
 
+.character-annotation__edit.is-editing {
+  color: #f8fafc;
+  border-color: rgba(248, 250, 252, 0.95);
+  background: rgba(2, 132, 199, 0.95);
+}
+
+.character-annotation__edit.is-editing::after {
+  content: '✔';
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: #f8fafc;
+  color: #0f172a;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.3);
+}
+
+.analysis-editor--locked .character-annotation {
+  cursor: default;
+}
+
 .character-annotation__confirm {
   bottom: 0;
   right: 0;

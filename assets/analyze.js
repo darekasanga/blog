@@ -87,6 +87,9 @@
   let annotations = [];
   let activeAnnotationId = null;
   let activeReviewAnnotation = null;
+  let editingAnnotationId = null;
+  let pendingReanalysisId = null;
+  let modeBeforeEdit = null;
   const defaultHandwritingStatus = handwritingStatus?.textContent || '';
 
   const createId = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -284,6 +287,7 @@
     editButton.type = 'button';
     editButton.className = 'character-annotation__edit';
     editButton.setAttribute('aria-label', '青ペンで清書する');
+    editButton.setAttribute('aria-pressed', 'false');
     editButton.textContent = '✎';
 
     const confirmButton = document.createElement('button');
@@ -317,6 +321,7 @@
 
     wrapper.addEventListener('pointerdown', (event) => {
       if (currentMode !== 'frame') return;
+      if (editingAnnotationId) return;
       if (event.target.closest('button')) return;
       dragState.active = true;
       dragState.moved = false;
@@ -366,6 +371,12 @@
       if (activeAnnotationId === item.id) {
         activeAnnotationId = null;
       }
+      if (editingAnnotationId === item.id) {
+        editingAnnotationId = null;
+        pendingReanalysisId = null;
+        modeBeforeEdit = null;
+        updateEditButtons();
+      }
       wrapper.remove();
       updateRecognizedText();
       updatePlaceholder();
@@ -391,9 +402,29 @@
     editButton.addEventListener('click', () => {
       const target = annotations.find((annotation) => annotation.id === item.id);
       if (!target) return;
+      if (editingAnnotationId === item.id) {
+        editingAnnotationId = null;
+        updateEditButtons();
+        if (pendingReanalysisId === item.id) {
+          reanalyzeAnnotation(target);
+          pendingReanalysisId = null;
+        }
+        if (modeBeforeEdit) {
+          setMode(modeBeforeEdit);
+        } else {
+          setMode('frame');
+        }
+        modeBeforeEdit = null;
+        updateHandwritingStatus('赤枠内の文字を再解析しました。');
+        return;
+      }
+      modeBeforeEdit = currentMode;
+      pendingReanalysisId = null;
+      editingAnnotationId = item.id;
+      updateEditButtons();
       markAnnotationForReview(target);
       setMode('handwriting');
-      updateHandwritingStatus('青ペンで枠内を清書し、解読ボタンで再解析してください。');
+      updateHandwritingStatus('鉛筆マークに✔︎が付いている間、赤枠内に文字を書けます。');
     });
 
     confirmButton.addEventListener('click', () => {
@@ -417,6 +448,7 @@
     wrapper.appendChild(confirmButton);
     characterLayer.appendChild(wrapper);
     renderAnnotationState(item, wrapper);
+    updateEditButtons();
   };
 
   const addAnnotation = (x, y, width, height) => {
@@ -666,6 +698,10 @@
     annotations = [];
     characterLayer.innerHTML = '';
     activeAnnotationId = null;
+    editingAnnotationId = null;
+    pendingReanalysisId = null;
+    modeBeforeEdit = null;
+    updateEditButtons();
     updateRecognizedText();
     updatePlaceholder();
   };
@@ -1005,6 +1041,21 @@
     updateRecognizedText();
   };
 
+  const updateEditButtons = () => {
+    if (!characterLayer) return;
+    const buttons = characterLayer.querySelectorAll('.character-annotation__edit');
+    buttons.forEach((button) => {
+      const wrapper = button.closest('.character-annotation');
+      const annotationId = wrapper?.dataset.annotationId;
+      const isActive = annotationId && annotationId === editingAnnotationId;
+      button.classList.toggle('is-editing', Boolean(isActive));
+      button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    });
+    if (editor) {
+      editor.classList.toggle('analysis-editor--locked', Boolean(editingAnnotationId));
+    }
+  };
+
   createPenDrawer(
     rightCanvas,
     () => ['handwriting', 'eraser', 'frame'].includes(currentMode),
@@ -1012,6 +1063,13 @@
       if (['handwriting', 'frame'].includes(currentMode)) {
         const point = getCanvasPoint(event, rightCanvas);
         const target = getAnnotationForPoint(point);
+        if (editingAnnotationId && (!target || target.id !== editingAnnotationId)) {
+          updateHandwritingStatus('鉛筆マークを付けた赤枠の中に文字を書いてください。');
+          return {
+            preventDefaultOnly: true,
+            allowedPointerTypes: ['pen', 'mouse', 'touch'],
+          };
+        }
         if (!target) {
           updateHandwritingStatus('赤枠の中に文字を書いてください。');
           return {
@@ -1049,9 +1107,14 @@
     },
     () => {
       if (['handwriting', 'frame'].includes(currentMode) && activeReviewAnnotation) {
-        reanalyzeAnnotation(activeReviewAnnotation);
+        if (editingAnnotationId === activeReviewAnnotation.id) {
+          pendingReanalysisId = activeReviewAnnotation.id;
+          updateHandwritingStatus('鉛筆マークをもう一度タップして再解析します。');
+        } else {
+          reanalyzeAnnotation(activeReviewAnnotation);
+          updateHandwritingStatus('赤枠内の文字を再解析しました。');
+        }
         activeReviewAnnotation = null;
-        updateHandwritingStatus('赤枠内の文字を再解析しました。');
       }
     },
   );
