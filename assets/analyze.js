@@ -459,6 +459,10 @@
       const allowedPointerTypes = options.allowedPointerTypes || ['pen'];
       const pointerType = event.pointerType || 'mouse';
       if (!allowedPointerTypes.includes(pointerType)) return;
+      if (options.preventDefaultOnly) {
+        event.preventDefault();
+        return;
+      }
       drawing = true;
       lastPoint = getCanvasPoint(event, canvas);
       previousComposite = ctx.globalCompositeOperation;
@@ -948,13 +952,20 @@
     leftCanvas,
     () => true,
     () => {
+      if (currentMode === 'eraser') {
+        return {
+          composite: 'destination-out',
+          lineWidth: 16,
+          allowedPointerTypes: ['pen', 'mouse', 'touch'],
+        };
+      }
       if (currentHandwritingTool === 'brush') {
-        return { color: '#111827', lineWidth: 6 };
+        return { color: '#111827', lineWidth: 6, allowedPointerTypes: ['pen', 'mouse', 'touch'] };
       }
       if (currentHandwritingTool === 'ballpen') {
-        return { color: '#0f172a', lineWidth: 3 };
+        return { color: '#0f172a', lineWidth: 3, allowedPointerTypes: ['pen', 'mouse', 'touch'] };
       }
-      return { color: '#1f2937', lineWidth: 2 };
+      return { color: '#1f2937', lineWidth: 2, allowedPointerTypes: ['pen', 'mouse', 'touch'] };
     },
     () => {
       leftHasInk = true;
@@ -1003,7 +1014,10 @@
         const target = getAnnotationForPoint(point);
         if (!target) {
           updateHandwritingStatus('赤枠の中に文字を書いてください。');
-          return null;
+          return {
+            preventDefaultOnly: true,
+            allowedPointerTypes: ['pen', 'mouse', 'touch'],
+          };
         }
         markAnnotationForReview(target);
         activeReviewAnnotation = target;
