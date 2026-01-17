@@ -247,14 +247,15 @@ textarea {
   overflow: hidden;
   border-radius: 0;
   min-height: var(--hero-height);
-  --hero-overlay-strong: 0.7;
-  --hero-overlay-weak: 0.25;
+  --hero-mask-opacity: 0.7;
+  --hero-mask-width: 60%;
+  --hero-mask-fade-end: 80%;
+  --hero-mask-color: 11, 12, 16;
+  --hero-mask-motion: paused;
   --hero-image-position-x: 50%;
   --hero-image-position: 50%;
   --hero-image-scale: 1;
   --hero-image-fit: cover;
-  --hero-overlay-start: 35%;
-  --hero-overlay-end: 68%;
   background-color: var(--hero-background-color, var(--bg));
   background-image: linear-gradient(140deg, rgba(108, 99, 255, 0.2), rgba(15, 17, 25, 0.85));
 }
@@ -264,15 +265,29 @@ textarea {
   position: absolute;
   inset: 0;
   background: linear-gradient(
-    95deg,
-    rgba(11, 12, 16, var(--hero-overlay-strong)) 0%,
-    rgba(11, 12, 16, var(--hero-overlay-strong)) var(--hero-overlay-start),
-    rgba(11, 12, 16, var(--hero-overlay-weak)) var(--hero-overlay-end),
-    rgba(11, 12, 16, 0) 100%
+    90deg,
+    rgba(var(--hero-mask-color), var(--hero-mask-opacity)) 0%,
+    rgba(var(--hero-mask-color), var(--hero-mask-opacity)) var(--hero-mask-width),
+    rgba(var(--hero-mask-color), 0) var(--hero-mask-fade-end),
+    rgba(var(--hero-mask-color), 0) 100%
   );
+  background-size: 120% 100%;
+  background-position: 0% 0%;
+  animation: hero-mask-drift 8s ease-in-out infinite;
+  animation-play-state: var(--hero-mask-motion, paused);
   pointer-events: none;
   opacity: 1;
   z-index: 1;
+}
+
+@keyframes hero-mask-drift {
+  0%,
+  100% {
+    background-position: 0% 0%;
+  }
+  50% {
+    background-position: 6% 0%;
+  }
 }
 
 .hero.has-image {

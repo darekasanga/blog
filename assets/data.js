@@ -127,9 +127,11 @@
     footerDescription: 'シンプルで統一感のあるブログ体験を届けます。',
   };
   const DEFAULT_HERO_SETTINGS = {
-    overlayOpacity: 70,
-    overlayStart: 35,
-    overlayEnd: 68,
+    maskWidth: 60,
+    maskOpacity: 70,
+    maskGradient: 20,
+    maskColor: '#0b0c10',
+    maskMotion: false,
     imagePosition: 50,
     imagePositionX: 50,
     imageFit: 'cover',
@@ -445,24 +447,45 @@
     const overlayStartRaw = Number(post.heroOverlayStart);
     const overlayEndRaw = Number(post.heroOverlayEnd);
     const overlayStop = Number(post.heroOverlayStop);
+    const maskOpacityRaw = Number(post.heroMaskOpacity);
+    const maskWidthRaw = Number(post.heroMaskWidth);
+    const maskGradientRaw = Number(post.heroMaskGradient);
     const heroImagePosition = Number(post.heroImagePosition);
     const heroImagePositionX = Number(post.heroImagePositionX);
     const heroImageFit = post.heroImageFit === 'contain' ? 'contain' : DEFAULT_HERO_SETTINGS.imageFit;
-    let heroOverlayEnd = Number.isFinite(overlayEndRaw)
+    let legacyOverlayEnd = Number.isFinite(overlayEndRaw)
       ? Math.min(Math.max(overlayEndRaw, 0), 100)
       : Number.isFinite(overlayStop)
       ? Math.min(Math.max(overlayStop, 0), 100)
-      : DEFAULT_HERO_SETTINGS.overlayEnd;
-    let heroOverlayStart = Number.isFinite(overlayStartRaw)
+      : null;
+    let legacyOverlayStart = Number.isFinite(overlayStartRaw)
       ? Math.min(Math.max(overlayStartRaw, 0), 100)
-      : DEFAULT_HERO_SETTINGS.overlayStart;
-    if (heroOverlayEnd - heroOverlayStart < 5) {
-      if (heroOverlayEnd >= 100) {
-        heroOverlayStart = Math.max(heroOverlayEnd - 5, 0);
+      : null;
+    if (Number.isFinite(legacyOverlayEnd) && Number.isFinite(legacyOverlayStart) && legacyOverlayEnd - legacyOverlayStart < 5) {
+      if (legacyOverlayEnd >= 100) {
+        legacyOverlayStart = Math.max(legacyOverlayEnd - 5, 0);
       } else {
-        heroOverlayEnd = Math.min(heroOverlayStart + 5, 100);
+        legacyOverlayEnd = Math.min(legacyOverlayStart + 5, 100);
       }
     }
+    const heroMaskOpacity = Number.isFinite(maskOpacityRaw)
+      ? Math.min(Math.max(maskOpacityRaw, 0), 100)
+      : Number.isFinite(overlayOpacity)
+      ? Math.min(Math.max(overlayOpacity, 0), 100)
+      : DEFAULT_HERO_SETTINGS.maskOpacity;
+    const heroMaskWidth = Number.isFinite(maskWidthRaw)
+      ? Math.min(Math.max(maskWidthRaw, 0), 100)
+      : Number.isFinite(legacyOverlayStart)
+      ? legacyOverlayStart
+      : DEFAULT_HERO_SETTINGS.maskWidth;
+    const maskGradientFallback = Number.isFinite(legacyOverlayEnd) && Number.isFinite(legacyOverlayStart)
+      ? Math.max(0, legacyOverlayEnd - legacyOverlayStart)
+      : DEFAULT_HERO_SETTINGS.maskGradient;
+    const heroMaskGradient = Number.isFinite(maskGradientRaw)
+      ? Math.min(Math.max(maskGradientRaw, 0), 100)
+      : maskGradientFallback;
+    const heroMaskMotion = post.heroMaskMotion === true;
+    const cappedMaskGradient = Math.min(heroMaskGradient, Math.max(0, 100 - heroMaskWidth));
     return {
       id,
       title: post.title || '無題の投稿',
@@ -482,11 +505,14 @@
       isFeatured,
       hidden,
       order,
-      heroOverlayOpacity: Number.isFinite(overlayOpacity)
-        ? Math.min(Math.max(overlayOpacity, 0), 100)
-        : DEFAULT_HERO_SETTINGS.overlayOpacity,
-      heroOverlayStart,
-      heroOverlayEnd,
+      heroMaskOpacity,
+      heroMaskWidth,
+      heroMaskGradient: cappedMaskGradient,
+      heroMaskColor: normalizeHexColor(
+        post.heroMaskColor,
+        themeObject.background || DEFAULT_HERO_SETTINGS.maskColor
+      ),
+      heroMaskMotion,
       heroImagePosition: Number.isFinite(heroImagePosition)
         ? Math.min(Math.max(heroImagePosition, 0), 100)
         : DEFAULT_HERO_SETTINGS.imagePosition,
@@ -558,5 +584,6 @@
     summarizeContent,
     normalizeSummaryHistory,
     DEFAULT_HERO_SETTINGS,
+    hexToRgb,
   };
 })();
