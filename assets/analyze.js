@@ -923,6 +923,10 @@
     if (editor) {
       editor.dataset.analysisMode = mode;
     }
+    if (mode !== 'frame') {
+      rightCanvas.style.pointerEvents = '';
+      frameCanvas.style.pointerEvents = '';
+    }
     modeButtons.forEach((button) => {
       const isActive = button.dataset.analysisMode === mode;
       button.classList.toggle('is-active', isActive);
@@ -1039,6 +1043,31 @@
       renderAnnotationState(annotation, element);
     }
     updateRecognizedText();
+  };
+
+  const resetFramePointerTargets = () => {
+    rightCanvas.style.pointerEvents = '';
+    frameCanvas.style.pointerEvents = '';
+  };
+
+  const updateFramePointerTargets = (event) => {
+    if (currentMode !== 'frame') {
+      resetFramePointerTargets();
+      return;
+    }
+    const rect = rightCanvas.getBoundingClientRect();
+    const point = {
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top,
+    };
+    const target = getAnnotationForPoint(point);
+    if (target) {
+      rightCanvas.style.pointerEvents = 'auto';
+      frameCanvas.style.pointerEvents = 'none';
+    } else {
+      rightCanvas.style.pointerEvents = 'none';
+      frameCanvas.style.pointerEvents = 'auto';
+    }
   };
 
   const updateEditButtons = () => {
@@ -1230,6 +1259,10 @@
       analyzeLeftHandwriting();
     });
   }
+
+  stack.addEventListener('pointermove', updateFramePointerTargets);
+  stack.addEventListener('pointerdown', updateFramePointerTargets);
+  stack.addEventListener('pointerleave', resetFramePointerTargets);
 
   const renderMirrorLayer = () => {
     const ctx = mirrorCanvas.getContext('2d');
