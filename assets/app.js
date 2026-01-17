@@ -242,6 +242,7 @@ function renderListGrid() {
       const imagePos = post.imagePosition ?? 50;
       const imageScale = post.cardImageScale ?? post.imageScale ?? 1;
       const articleLink = `article.html?id=${encodeURIComponent(post.id)}`;
+      const tags = post.tags || [];
       return `
         <article class="gallery-card" style="--accent:${theme.accent};--accent-2:${theme.accent2};">
           <a class="gallery-link" href="${articleLink}">
@@ -254,6 +255,7 @@ function renderListGrid() {
               <p class="meta"><span>${escapeHtml(post.date)}</span><span>•</span><span>${escapeHtml(post.read)}</span></p>
               <h3>${escapeHtml(post.title)}</h3>
               <p class="muted-text">${escapeHtml(post.excerpt)}</p>
+              ${tags.length ? `<div class="tag-row">${tags.map((tag) => `<span class="chip">#${escapeHtml(tag)}</span>`).join('')}</div>` : ''}
             </div>
           </a>
           <div class="gallery-actions">

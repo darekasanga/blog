@@ -448,6 +448,7 @@
     previewHero.style.setProperty('--hero-image-fit', heroImageFit);
     previewHero.style.setProperty('--hero-image-motion', heroImageMotion);
     previewHero.style.setProperty('--hero-background-color', heroBackgroundColor);
+    syncHeroImageMotionButtons(heroImageMotion);
     if (previewHeroTitle) previewHeroTitle.textContent = previewTitle?.textContent || '無題の投稿';
     if (previewHeroLead) previewHeroLead.textContent = previewExcerpt?.textContent || '本文からAIが要約します。';
     if (previewHeroKicker) {
@@ -515,6 +516,7 @@
   function applyHeroImageMotionSample(button) {
     if (!button || !heroImageMotionInput) return;
     heroImageMotionInput.value = button.dataset.heroImageMotion || DEFAULT_HERO_SETTINGS.imageMotion;
+    syncHeroImageMotionButtons(heroImageMotionInput.value);
     updateHeroPreview();
   }
 
@@ -523,6 +525,14 @@
       applyHeroImageMotionSample(button);
     });
   });
+
+  function syncHeroImageMotionButtons(activeMotion) {
+    heroImageMotionButtons.forEach((button) => {
+      const isActive = button.dataset.heroImageMotion === activeMotion;
+      button.classList.toggle('is-active', isActive);
+      button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    });
+  }
 
   function updatePreview() {
     if (!previewTitle || !previewDate || !previewRead || !previewExcerpt || !previewThumb) return;
