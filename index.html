@@ -36,13 +36,15 @@
       </div>
       <div class="inner hero-grid">
         <div>
-          <p class="kicker hero-kicker" id="hero-kicker">
-            <span id="hero-kicker-label">最新記事</span>
-            <span class="hero-date" id="hero-date"></span>
-          </p>
+          <div class="kicker hero-kicker" id="hero-kicker">
+            <div class="hero-kicker-row">
+              <span id="hero-kicker-label">最新記事</span>
+              <span class="hero-date" id="hero-date"></span>
+            </div>
+            <div class="tag-row hero-tags" id="hero-tags" aria-live="polite"></div>
+          </div>
           <h1 id="hero-title">最新記事を読み込み中</h1>
           <p class="lead" id="hero-lead">記事の内容を読み込んでいます。</p>
-          <div class="tag-row hero-tags" id="hero-tags" aria-live="polite"></div>
           <div class="hero-actions">
             <a class="btn primary" href="#article-list" id="hero-list-link">記事を読む</a>
           </div>
@@ -53,8 +55,8 @@
     <section id="featured" class="section">
       <div class="inner section-header">
         <div>
-          <p class="kicker">Featured</p>
-          <h2>注目の記事</h2>
+          <p class="kicker">注目記事</p>
+          <h2>注目記事</h2>
         </div>
         <div class="slider-actions" aria-label="カルーセル操作">
           <button class="btn icon" type="button" data-action="prev" aria-label="前へ">&#x2039;</button>
@@ -71,8 +73,8 @@
       <div class="inner">
         <div class="section-header">
           <div>
-            <p class="kicker">記事一覧</p>
-            <h2>最新記事を一覧でチェック</h2>
+            <p class="kicker">新着記事</p>
+            <h2>新着記事を一覧でチェック</h2>
           </div>
         </div>
         <div id="list-grid" class="article-list" aria-live="polite"></div>
