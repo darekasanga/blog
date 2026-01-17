@@ -131,7 +131,7 @@
     maskOpacity: 70,
     maskGradient: 20,
     maskColor: '#0b0c10',
-    maskMotion: false,
+    maskMotion: true,
     imagePosition: 50,
     imagePositionX: 50,
     imageFit: 'cover',

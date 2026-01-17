@@ -36,9 +36,13 @@
       </div>
       <div class="inner hero-grid">
         <div>
-          <p class="kicker" id="hero-kicker">最新記事</p>
+          <p class="kicker hero-kicker" id="hero-kicker">
+            <span id="hero-kicker-label">最新記事</span>
+            <span class="hero-date" id="hero-date"></span>
+          </p>
           <h1 id="hero-title">最新記事を読み込み中</h1>
           <p class="lead" id="hero-lead">記事の内容を読み込んでいます。</p>
+          <div class="tag-row hero-tags" id="hero-tags" aria-live="polite"></div>
           <div class="hero-actions">
             <a class="btn primary" href="#article-list" id="hero-list-link">記事を読む</a>
           </div>
