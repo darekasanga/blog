@@ -103,9 +103,9 @@ function renderCards() {
             <span>•</span>
             <span>${escapeHtml(post.read)}</span>
           </div>
+          <div class="tag-row">${(post.tags || []).map((tag) => `<span class="chip">#${escapeHtml(tag)}</span>`).join('')}</div>
           <h3>${escapeHtml(post.title)}</h3>
           <p>${escapeHtml(post.excerpt)}</p>
-          <div class="tag-row">${(post.tags || []).map((tag) => `<span class="chip">#${escapeHtml(tag)}</span>`).join('')}</div>
           <div class="actions">
             <a class="btn primary full" href="article.html?id=${encodeURIComponent(post.id)}">記事を読む</a>
           </div>
@@ -253,9 +253,9 @@ function renderListGrid() {
             }
             <div class="gallery-body">
               <p class="meta"><span>${escapeHtml(post.date)}</span><span>•</span><span>${escapeHtml(post.read)}</span></p>
+              ${tags.length ? `<div class="tag-row">${tags.map((tag) => `<span class="chip">#${escapeHtml(tag)}</span>`).join('')}</div>` : ''}
               <h3>${escapeHtml(post.title)}</h3>
               <p class="muted-text">${escapeHtml(post.excerpt)}</p>
-              ${tags.length ? `<div class="tag-row">${tags.map((tag) => `<span class="chip">#${escapeHtml(tag)}</span>`).join('')}</div>` : ''}
             </div>
           </a>
           <div class="gallery-actions">
