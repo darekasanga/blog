@@ -260,8 +260,8 @@ textarea {
   --hero-image-scale: 1;
   --hero-image-fit: cover;
   --hero-image-motion: hero-image-rise;
-  --hero-image-motion-duration: 1.1s;
-  --hero-image-motion-ease: cubic-bezier(0.25, 0.8, 0.25, 1);
+  --hero-image-motion-duration: 1.4s;
+  --hero-image-motion-ease: cubic-bezier(0.2, 0.9, 0.2, 1);
   background-color: var(--hero-background-color, var(--bg));
   background-image: linear-gradient(140deg, rgba(108, 99, 255, 0.2), rgba(15, 17, 25, 0.85));
 }
@@ -398,7 +398,7 @@ textarea {
 @keyframes hero-image-rise {
   0% {
     opacity: 0;
-    transform: translateY(18px) scale(calc(var(--hero-image-scale) * 1.06));
+    transform: translateY(32px) scale(calc(var(--hero-image-scale) * 1.12));
   }
   100% {
     opacity: 1;
@@ -408,8 +408,8 @@ textarea {
 
 @keyframes hero-image-zoom-out {
   0% {
-    opacity: 0.35;
-    transform: scale(calc(var(--hero-image-scale) * 1.18));
+    opacity: 0.25;
+    transform: scale(calc(var(--hero-image-scale) * 1.32));
   }
   100% {
     opacity: 1;
@@ -420,7 +420,7 @@ textarea {
 @keyframes hero-image-slide {
   0% {
     opacity: 0;
-    transform: translateX(8%) scale(calc(var(--hero-image-scale) * 1.02));
+    transform: translateX(14%) scale(calc(var(--hero-image-scale) * 1.08));
   }
   100% {
     opacity: 1;
@@ -431,7 +431,7 @@ textarea {
 @keyframes hero-image-tilt {
   0% {
     opacity: 0;
-    transform: rotate(-1.2deg) scale(calc(var(--hero-image-scale) * 1.04));
+    transform: rotate(-3deg) scale(calc(var(--hero-image-scale) * 1.1));
   }
   100% {
     opacity: 1;
@@ -442,8 +442,8 @@ textarea {
 @keyframes hero-image-soft-reveal {
   0% {
     opacity: 0;
-    filter: blur(6px);
-    transform: scale(calc(var(--hero-image-scale) * 1.06));
+    filter: blur(12px);
+    transform: scale(calc(var(--hero-image-scale) * 1.14));
   }
   100% {
     opacity: 1;
