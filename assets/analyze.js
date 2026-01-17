@@ -86,6 +86,7 @@
   let rightHasInk = false;
   let annotations = [];
   let activeAnnotationId = null;
+  let activeReviewAnnotation = null;
   const defaultHandwritingStatus = handwritingStatus?.textContent || '';
 
   const createId = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -994,20 +995,22 @@
 
   createPenDrawer(
     rightCanvas,
-    () => ['handwriting', 'eraser'].includes(currentMode),
+    () => ['handwriting', 'eraser', 'frame'].includes(currentMode),
     (event) => {
-      if (currentMode === 'handwriting') {
+      if (['handwriting', 'frame'].includes(currentMode)) {
         const point = getCanvasPoint(event, rightCanvas);
         const target = getAnnotationForPoint(point);
         if (!target) {
-          updateHandwritingStatus('青ペンは文字枠の中に書いてください。');
+          updateHandwritingStatus('赤枠の中に文字を書いてください。');
           return null;
         }
         markAnnotationForReview(target);
+        activeReviewAnnotation = target;
         const stackRect = stack.getBoundingClientRect();
         return {
-          color: '#38bdf8',
+          color: currentMode === 'frame' ? '#ef4444' : '#38bdf8',
           lineWidth: 3,
+          allowedPointerTypes: ['pen', 'mouse', 'touch'],
           clipRect: {
             x: target.x * stackRect.width,
             y: target.y * stackRect.height,
@@ -1030,8 +1033,10 @@
       updatePlaceholder();
     },
     () => {
-      if (currentMode === 'handwriting') {
-        updateHandwritingStatus('青ペンで清書した文字は解読ボタンで再解析します。');
+      if (['handwriting', 'frame'].includes(currentMode) && activeReviewAnnotation) {
+        reanalyzeAnnotation(activeReviewAnnotation);
+        activeReviewAnnotation = null;
+        updateHandwritingStatus('赤枠内の文字を再解析しました。');
       }
     },
   );
