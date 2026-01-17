@@ -134,6 +134,11 @@
     'hero-image-slide',
     'hero-image-tilt',
     'hero-image-soft-reveal',
+    'hero-image-surge',
+    'hero-image-panorama',
+    'hero-image-spiral',
+    'hero-image-glide-up',
+    'hero-image-depth-pop',
   ]);
   const HERO_MASK_EASINGS = new Set([
     'ease-in-out',
