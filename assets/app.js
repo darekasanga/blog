@@ -29,6 +29,7 @@ const heroImage = document.getElementById('hero-image');
 const heroTags = document.getElementById('hero-tags');
 const siteTitleTargets = document.querySelectorAll('[data-site-title]');
 const footerDescriptionTargets = document.querySelectorAll('[data-footer-description]');
+const HERO_IMAGE_MOTION_CLASS = 'hero-image-motion';
 let siteThemeKey = readSiteTheme();
 let siteTheme = applyThemeToDocument(siteThemeKey);
 const sortedVisiblePosts = () =>
@@ -133,12 +134,13 @@ function updateHeroContent() {
     const maskFadeEnd = Math.min(100, maskWidth + maskGradient);
     const maskColor = latest?.heroMaskColor || theme.background || DEFAULT_HERO_SETTINGS.maskColor;
     const maskRgb = hexToRgb(maskColor);
-    const maskMotion = latest?.heroMaskMotion ? 'running' : 'paused';
+    const maskMotion = 'paused';
     const maskAnimation = latest?.heroMaskAnimation || DEFAULT_HERO_SETTINGS.maskAnimation;
     const maskDuration = Number.isFinite(latest?.heroMaskDuration)
       ? latest.heroMaskDuration
       : DEFAULT_HERO_SETTINGS.maskDuration;
     const maskEase = latest?.heroMaskEase || DEFAULT_HERO_SETTINGS.maskEase;
+    const imageMotion = latest?.heroImageMotion || DEFAULT_HERO_SETTINGS.imageMotion;
     const imagePosition = Number.isFinite(latest?.heroImagePosition)
       ? latest.heroImagePosition
       : Number.isFinite(latest?.imagePosition)
@@ -166,6 +168,7 @@ function updateHeroContent() {
     heroSection.style.setProperty('--hero-image-position', `${imagePosition}%`);
     heroSection.style.setProperty('--hero-image-scale', imageScale);
     heroSection.style.setProperty('--hero-image-fit', heroImageFit);
+    heroSection.style.setProperty('--hero-image-motion', imageMotion);
     heroSection.style.setProperty('--hero-background-color', heroBackgroundColor);
   }
   if (!latest) {
@@ -178,7 +181,7 @@ function updateHeroContent() {
       heroTags.hidden = true;
     }
     if (heroSection) {
-      heroSection.classList.remove('has-image');
+      heroSection.classList.remove('has-image', HERO_IMAGE_MOTION_CLASS);
     }
     if (heroImage) {
       heroImage.src = '';
@@ -207,8 +210,11 @@ function updateHeroContent() {
         heroImage.src = latest.image;
         heroImage.alt = `${latest.title}の画像`;
       }
+      heroSection.classList.remove(HERO_IMAGE_MOTION_CLASS);
+      void heroSection.offsetWidth;
+      heroSection.classList.add(HERO_IMAGE_MOTION_CLASS);
     } else {
-      heroSection.classList.remove('has-image');
+      heroSection.classList.remove('has-image', HERO_IMAGE_MOTION_CLASS);
       if (heroImage) {
         heroImage.src = '';
         heroImage.alt = '';

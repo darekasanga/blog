@@ -79,6 +79,8 @@
   const heroMaskDurationInput = document.getElementById('hero-mask-duration');
   const heroMaskEaseInput = document.getElementById('hero-mask-ease');
   const heroMaskSampleButtons = document.querySelectorAll('[data-hero-mask-sample]');
+  const heroImageMotionInput = document.getElementById('hero-image-motion');
+  const heroImageMotionButtons = document.querySelectorAll('[data-hero-image-motion]');
   const heroPositionInput = document.getElementById('hero-position');
   const heroPositionLabel = document.getElementById('hero-position-label');
   const heroPositionXInput = document.getElementById('hero-position-x');
@@ -343,6 +345,7 @@
     const imagePositionX = Number.isFinite(positionXInput) ? Math.min(Math.max(positionXInput, 0), 100) : DEFAULT_HERO_SETTINGS.imagePositionX;
     const heroImageScale = normalizeScale(Number(heroImageScaleEl?.value));
     const heroImageFit = normalizeHeroImageFit(heroImageFitEl?.value);
+    const heroImageMotion = heroImageMotionInput?.value || DEFAULT_HERO_SETTINGS.imageMotion;
     const heroBackgroundColor = resolveHeroBackgroundColor(heroBackgroundColorInput?.value);
     const heroMaskColor = resolveHeroMaskColor(heroMaskColorInput?.value);
     const heroMaskMotion = Boolean(heroMaskMotionInput?.checked);
@@ -366,6 +369,7 @@
       imagePositionX,
       heroImageScale,
       heroImageFit,
+      heroImageMotion,
       heroBackgroundColor,
     };
   }
@@ -403,6 +407,13 @@
     previewHero.classList.toggle('is-compact', previewHeight < 160);
   }
 
+  function triggerHeroImageMotion(target) {
+    if (!target) return;
+    target.classList.remove('hero-image-motion');
+    void target.offsetWidth;
+    target.classList.add('hero-image-motion');
+  }
+
   function updateHeroPreview() {
     if (!previewHero) return;
     const {
@@ -419,6 +430,7 @@
       imagePositionX,
       heroImageScale,
       heroImageFit,
+      heroImageMotion,
       heroBackgroundColor,
     } = resolveHeroPreviewSettings();
     const maskRgb = hexToRgb(maskColor);
@@ -434,6 +446,7 @@
     previewHero.style.setProperty('--hero-image-position', `${imagePosition}%`);
     previewHero.style.setProperty('--hero-image-scale', heroImageScale);
     previewHero.style.setProperty('--hero-image-fit', heroImageFit);
+    previewHero.style.setProperty('--hero-image-motion', heroImageMotion);
     previewHero.style.setProperty('--hero-background-color', heroBackgroundColor);
     if (previewHeroTitle) previewHeroTitle.textContent = previewTitle?.textContent || '無題の投稿';
     if (previewHeroLead) previewHeroLead.textContent = previewExcerpt?.textContent || '本文からAIが要約します。';
@@ -454,8 +467,9 @@
         previewHeroImage.src = resizedImageData;
         previewHeroImage.alt = `${previewHeroTitle?.textContent || '無題の投稿'}の画像`;
       }
+      triggerHeroImageMotion(previewHero);
     } else {
-      previewHero.classList.remove('has-image');
+      previewHero.classList.remove('has-image', 'hero-image-motion');
       if (previewHeroImage) {
         previewHeroImage.src = '';
         previewHeroImage.alt = '';
@@ -495,6 +509,18 @@
   heroMaskSampleButtons.forEach((button) => {
     button.addEventListener('click', () => {
       applyHeroMaskSample(button);
+    });
+  });
+
+  function applyHeroImageMotionSample(button) {
+    if (!button || !heroImageMotionInput) return;
+    heroImageMotionInput.value = button.dataset.heroImageMotion || DEFAULT_HERO_SETTINGS.imageMotion;
+    updateHeroPreview();
+  }
+
+  heroImageMotionButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      applyHeroImageMotionSample(button);
     });
   });
 
@@ -779,6 +805,7 @@
     if (heroMaskAnimationInput) heroMaskAnimationInput.value = DEFAULT_HERO_SETTINGS.maskAnimation;
     if (heroMaskDurationInput) heroMaskDurationInput.value = String(DEFAULT_HERO_SETTINGS.maskDuration);
     if (heroMaskEaseInput) heroMaskEaseInput.value = DEFAULT_HERO_SETTINGS.maskEase;
+    if (heroImageMotionInput) heroImageMotionInput.value = DEFAULT_HERO_SETTINGS.imageMotion;
     if (heroPositionInput) heroPositionInput.value = String(DEFAULT_HERO_SETTINGS.imagePosition);
     if (heroPositionXInput) heroPositionXInput.value = String(DEFAULT_HERO_SETTINGS.imagePositionX);
     if (heroImageFitEl) heroImageFitEl.value = DEFAULT_HERO_SETTINGS.imageFit;
@@ -839,6 +866,9 @@
     }
     if (heroMaskEaseInput) {
       heroMaskEaseInput.value = target.heroMaskEase || DEFAULT_HERO_SETTINGS.maskEase;
+    }
+    if (heroImageMotionInput) {
+      heroImageMotionInput.value = target.heroImageMotion || DEFAULT_HERO_SETTINGS.imageMotion;
     }
     if (heroPositionInput) heroPositionInput.value = String(target.heroImagePosition ?? DEFAULT_HERO_SETTINGS.imagePosition);
     if (heroPositionXInput) heroPositionXInput.value = String(target.heroImagePositionX ?? DEFAULT_HERO_SETTINGS.imagePositionX);
@@ -998,6 +1028,7 @@
         cardImageScale,
         heroImageScale,
         heroImageFit: heroSettings.heroImageFit,
+        heroImageMotion: heroSettings.heroImageMotion,
         theme,
         heroMaskOpacity: heroSettings.maskOpacity,
         heroMaskWidth: heroSettings.maskWidth,

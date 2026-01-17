@@ -106,24 +106,15 @@
               <label for="hero-mask-gradient" style="margin-top: 12px;">グラデーション</label>
               <input id="hero-mask-gradient" type="range" min="0" max="100" value="20" />
               <p class="muted-text" style="margin: 6px 0 0;">現在: <strong id="hero-mask-gradient-label">20%</strong></p>
-              <label for="hero-mask-motion" style="margin-top: 12px;">モーション</label>
-              <input id="hero-mask-motion" type="checkbox" />
-              <p class="muted-text" style="margin: 6px 0 0;">マスキングの動きを有効にします。</p>
-              <input id="hero-mask-animation" type="hidden" value="hero-mask-drift" />
-              <input id="hero-mask-duration" type="hidden" value="8" />
-              <input id="hero-mask-ease" type="hidden" value="ease-in-out" />
-              <p class="muted-text" style="margin: 6px 0 8px;">マスキングが動くサンプルから選択できます。</p>
-              <div class="mask-sample-grid" role="group" aria-label="マスキングモーションのサンプル">
-                <button class="chip mask-sample-button" type="button" data-hero-mask-sample data-mask-width="55" data-mask-opacity="65" data-mask-gradient="30" data-mask-color="#0b0c10" data-mask-animation="hero-mask-drift" data-mask-duration="8" data-mask-ease="ease-in-out">Flow 01</button>
-                <button class="chip mask-sample-button" type="button" data-hero-mask-sample data-mask-width="70" data-mask-opacity="60" data-mask-gradient="20" data-mask-color="#14152b" data-mask-animation="hero-mask-sweep" data-mask-duration="7" data-mask-ease="cubic-bezier(0.6, 0, 0.2, 1)">Flow 02</button>
-                <button class="chip mask-sample-button" type="button" data-hero-mask-sample data-mask-width="42" data-mask-opacity="75" data-mask-gradient="38" data-mask-color="#0f1119" data-mask-animation="hero-mask-sweep-reverse" data-mask-duration="9" data-mask-ease="cubic-bezier(0.4, 0, 0.2, 1)">Flow 03</button>
-                <button class="chip mask-sample-button" type="button" data-hero-mask-sample data-mask-width="50" data-mask-opacity="55" data-mask-gradient="28" data-mask-color="#111827" data-mask-animation="hero-mask-glide" data-mask-duration="10" data-mask-ease="ease-in-out">Flow 04</button>
-                <button class="chip mask-sample-button" type="button" data-hero-mask-sample data-mask-width="65" data-mask-opacity="80" data-mask-gradient="15" data-mask-color="#0b0c10" data-mask-animation="hero-mask-pulse" data-mask-duration="8" data-mask-ease="ease-in-out">Flow 05</button>
-                <button class="chip mask-sample-button" type="button" data-hero-mask-sample data-mask-width="48" data-mask-opacity="70" data-mask-gradient="26" data-mask-color="#0f172a" data-mask-animation="hero-mask-wave" data-mask-duration="9" data-mask-ease="cubic-bezier(0.5, 0, 0.2, 1)">Flow 06</button>
-                <button class="chip mask-sample-button" type="button" data-hero-mask-sample data-mask-width="60" data-mask-opacity="58" data-mask-gradient="24" data-mask-color="#121b2b" data-mask-animation="hero-mask-sweep" data-mask-duration="6" data-mask-ease="cubic-bezier(0.4, 0, 0.1, 1)">Flow 07</button>
-                <button class="chip mask-sample-button" type="button" data-hero-mask-sample data-mask-width="44" data-mask-opacity="72" data-mask-gradient="32" data-mask-color="#0b1120" data-mask-animation="hero-mask-glide" data-mask-duration="11" data-mask-ease="ease-in-out">Flow 08</button>
-                <button class="chip mask-sample-button" type="button" data-hero-mask-sample data-mask-width="68" data-mask-opacity="62" data-mask-gradient="18" data-mask-color="#0c0f1a" data-mask-animation="hero-mask-sweep-reverse" data-mask-duration="7" data-mask-ease="cubic-bezier(0.5, 0, 0.2, 1)">Flow 09</button>
-                <button class="chip mask-sample-button" type="button" data-hero-mask-sample data-mask-width="52" data-mask-opacity="78" data-mask-gradient="22" data-mask-color="#0b0c10" data-mask-animation="hero-mask-pulse" data-mask-duration="9" data-mask-ease="ease-in-out">Flow 10</button>
+              <label for="hero-image-motion" style="margin-top: 12px;">最新記事のモーション</label>
+              <input id="hero-image-motion" type="hidden" value="hero-image-rise" />
+              <p class="muted-text" style="margin: 6px 0 8px;">最新記事の画像が表示・更新されるタイミングで動きます。</p>
+              <div class="motion-sample-grid" role="group" aria-label="最新記事画像モーションのサンプル">
+                <button class="chip motion-sample-button" type="button" data-hero-image-motion="hero-image-rise">Flow 01</button>
+                <button class="chip motion-sample-button" type="button" data-hero-image-motion="hero-image-zoom-out">Flow 02</button>
+                <button class="chip motion-sample-button" type="button" data-hero-image-motion="hero-image-slide">Flow 03</button>
+                <button class="chip motion-sample-button" type="button" data-hero-image-motion="hero-image-tilt">Flow 04</button>
+                <button class="chip motion-sample-button" type="button" data-hero-image-motion="hero-image-soft-reveal">Flow 05</button>
               </div>
               <label for="hero-position" style="margin-top: 12px;">縦位置</label>
               <input id="hero-position" type="range" min="0" max="100" value="50" />

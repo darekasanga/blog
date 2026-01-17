@@ -128,6 +128,13 @@
     'hero-mask-pulse',
     'hero-mask-wave',
   ]);
+  const HERO_IMAGE_MOTIONS = new Set([
+    'hero-image-rise',
+    'hero-image-zoom-out',
+    'hero-image-slide',
+    'hero-image-tilt',
+    'hero-image-soft-reveal',
+  ]);
   const HERO_MASK_EASINGS = new Set([
     'ease-in-out',
     'cubic-bezier(0.6, 0, 0.2, 1)',
@@ -146,13 +153,14 @@
     maskOpacity: 70,
     maskGradient: 20,
     maskColor: '#0b0c10',
-    maskMotion: true,
+    maskMotion: false,
     maskAnimation: 'hero-mask-drift',
     maskDuration: 8,
     maskEase: 'ease-in-out',
     imagePosition: 50,
     imagePositionX: 50,
     imageFit: 'cover',
+    imageMotion: 'hero-image-rise',
   };
   const storage = (() => {
     const memory = new Map();
@@ -414,6 +422,14 @@
     return DEFAULT_HERO_SETTINGS.maskEase;
   }
 
+  function normalizeHeroImageMotion(value) {
+    const trimmed = String(value || '').trim();
+    if (HERO_IMAGE_MOTIONS.has(trimmed)) {
+      return trimmed;
+    }
+    return DEFAULT_HERO_SETTINGS.imageMotion;
+  }
+
   function normalizeHeroMaskDuration(value) {
     const parsed = Number(value);
     if (!Number.isFinite(parsed) || parsed <= 0) {
@@ -530,6 +546,7 @@
     const heroMaskAnimation = normalizeHeroMaskAnimation(post.heroMaskAnimation);
     const heroMaskDuration = normalizeHeroMaskDuration(post.heroMaskDuration);
     const heroMaskEase = normalizeHeroMaskEase(post.heroMaskEase);
+    const heroImageMotion = normalizeHeroImageMotion(post.heroImageMotion);
     const cappedMaskGradient = Math.min(heroMaskGradient, Math.max(0, 100 - heroMaskWidth));
     return {
       id,
@@ -561,6 +578,7 @@
       heroMaskAnimation,
       heroMaskDuration,
       heroMaskEase,
+      heroImageMotion,
       heroImagePosition: Number.isFinite(heroImagePosition)
         ? Math.min(Math.max(heroImagePosition, 0), 100)
         : DEFAULT_HERO_SETTINGS.imagePosition,
