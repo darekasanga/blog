@@ -316,6 +316,7 @@
     };
 
     wrapper.addEventListener('pointerdown', (event) => {
+      if (currentMode !== 'frame') return;
       if (event.target.closest('button')) return;
       dragState.active = true;
       dragState.moved = false;
