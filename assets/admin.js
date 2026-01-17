@@ -75,6 +75,7 @@
   const heroMaskGradientInput = document.getElementById('hero-mask-gradient');
   const heroMaskGradientLabel = document.getElementById('hero-mask-gradient-label');
   const heroMaskMotionInput = document.getElementById('hero-mask-motion');
+  const heroMaskSampleButtons = document.querySelectorAll('[data-hero-mask-sample]');
   const heroPositionInput = document.getElementById('hero-position');
   const heroPositionLabel = document.getElementById('hero-position-label');
   const heroPositionXInput = document.getElementById('hero-position-x');
@@ -443,6 +444,32 @@
       }
     }
   }
+
+  function applyHeroMaskSample(button) {
+    if (!button) return;
+    if (heroMaskWidthInput && button.dataset.maskWidth) {
+      heroMaskWidthInput.value = button.dataset.maskWidth;
+    }
+    if (heroMaskOpacityInput && button.dataset.maskOpacity) {
+      heroMaskOpacityInput.value = button.dataset.maskOpacity;
+    }
+    if (heroMaskGradientInput && button.dataset.maskGradient) {
+      heroMaskGradientInput.value = button.dataset.maskGradient;
+    }
+    if (heroMaskColorInput && button.dataset.maskColor) {
+      heroMaskColorInput.value = button.dataset.maskColor;
+    }
+    if (heroMaskMotionInput) {
+      heroMaskMotionInput.checked = true;
+    }
+    updateHeroPreview();
+  }
+
+  heroMaskSampleButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      applyHeroMaskSample(button);
+    });
+  });
 
   function updatePreview() {
     if (!previewTitle || !previewDate || !previewRead || !previewExcerpt || !previewThumb) return;

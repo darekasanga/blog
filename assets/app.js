@@ -17,7 +17,8 @@ const buttons = document.querySelectorAll('[data-action]');
 const listGrid = document.getElementById('list-grid');
 const siteThemePicker = document.getElementById('site-theme-picker');
 const heroSection = document.getElementById('hero-section');
-const heroKicker = document.getElementById('hero-kicker');
+const heroKickerLabel = document.getElementById('hero-kicker-label');
+const heroDate = document.getElementById('hero-date');
 const featuredSection = document.getElementById('featured');
 const listSection = document.getElementById('article-list');
 const heroListLink = document.getElementById('hero-list-link');
@@ -25,6 +26,7 @@ const footerListLink = document.getElementById('footer-list-link');
 const heroTitle = document.getElementById('hero-title');
 const heroLead = document.getElementById('hero-lead');
 const heroImage = document.getElementById('hero-image');
+const heroTags = document.getElementById('hero-tags');
 const siteTitleTargets = document.querySelectorAll('[data-site-title]');
 const footerDescriptionTargets = document.querySelectorAll('[data-footer-description]');
 let siteThemeKey = readSiteTheme();
@@ -102,10 +104,10 @@ function renderCards() {
           </div>
           <h3>${escapeHtml(post.title)}</h3>
           <p>${escapeHtml(post.excerpt)}</p>
+          <div class="tag-row">${(post.tags || []).map((tag) => `<span class="chip">#${escapeHtml(tag)}</span>`).join('')}</div>
           <div class="actions">
             <a class="btn primary full" href="article.html?id=${encodeURIComponent(post.id)}">記事を読む</a>
           </div>
-          <div class="tag-row">${(post.tags || []).map((tag) => `<span class="chip">#${escapeHtml(tag)}</span>`).join('')}</div>
         </article>
       `
     )
@@ -159,9 +161,14 @@ function updateHeroContent() {
     heroSection.style.setProperty('--hero-background-color', heroBackgroundColor);
   }
   if (!latest) {
-    if (heroKicker) heroKicker.textContent = '最新記事';
+    if (heroKickerLabel) heroKickerLabel.textContent = '最新記事';
+    if (heroDate) heroDate.textContent = '';
     if (heroTitle) heroTitle.textContent = 'まだ記事がありません';
     if (heroLead) heroLead.textContent = '記事投稿ページから最初の記事を登録してください。';
+    if (heroTags) {
+      heroTags.innerHTML = '';
+      heroTags.hidden = true;
+    }
     if (heroSection) {
       heroSection.classList.remove('has-image');
     }
@@ -176,9 +183,15 @@ function updateHeroContent() {
     return;
   }
 
-  if (heroKicker) heroKicker.textContent = `最新記事 ${latest.date}`;
+  if (heroKickerLabel) heroKickerLabel.textContent = '最新記事';
+  if (heroDate) heroDate.textContent = latest.date;
   if (heroTitle) heroTitle.textContent = latest.title;
   if (heroLead) heroLead.textContent = latest.excerpt || '最新記事の概要がまだありません。';
+  if (heroTags) {
+    const tags = latest.tags || [];
+    heroTags.innerHTML = tags.map((tag) => `<span class="chip">#${escapeHtml(tag)}</span>`).join('');
+    heroTags.hidden = !tags.length;
+  }
   if (heroSection) {
     if (latest.image) {
       heroSection.classList.add('has-image');
