@@ -134,6 +134,11 @@ function updateHeroContent() {
     const maskColor = latest?.heroMaskColor || theme.background || DEFAULT_HERO_SETTINGS.maskColor;
     const maskRgb = hexToRgb(maskColor);
     const maskMotion = latest?.heroMaskMotion ? 'running' : 'paused';
+    const maskAnimation = latest?.heroMaskAnimation || DEFAULT_HERO_SETTINGS.maskAnimation;
+    const maskDuration = Number.isFinite(latest?.heroMaskDuration)
+      ? latest.heroMaskDuration
+      : DEFAULT_HERO_SETTINGS.maskDuration;
+    const maskEase = latest?.heroMaskEase || DEFAULT_HERO_SETTINGS.maskEase;
     const imagePosition = Number.isFinite(latest?.heroImagePosition)
       ? latest.heroImagePosition
       : Number.isFinite(latest?.imagePosition)
@@ -154,6 +159,9 @@ function updateHeroContent() {
     heroSection.style.setProperty('--hero-mask-fade-end', `${maskFadeEnd}%`);
     heroSection.style.setProperty('--hero-mask-color', `${maskRgb.r}, ${maskRgb.g}, ${maskRgb.b}`);
     heroSection.style.setProperty('--hero-mask-motion', maskMotion);
+    heroSection.style.setProperty('--hero-mask-animation', maskAnimation);
+    heroSection.style.setProperty('--hero-mask-duration', `${maskDuration}s`);
+    heroSection.style.setProperty('--hero-mask-ease', maskEase);
     heroSection.style.setProperty('--hero-image-position-x', `${imagePositionX}%`);
     heroSection.style.setProperty('--hero-image-position', `${imagePosition}%`);
     heroSection.style.setProperty('--hero-image-scale', imageScale);
