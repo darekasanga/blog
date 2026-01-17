@@ -75,6 +75,9 @@
   const heroMaskGradientInput = document.getElementById('hero-mask-gradient');
   const heroMaskGradientLabel = document.getElementById('hero-mask-gradient-label');
   const heroMaskMotionInput = document.getElementById('hero-mask-motion');
+  const heroMaskAnimationInput = document.getElementById('hero-mask-animation');
+  const heroMaskDurationInput = document.getElementById('hero-mask-duration');
+  const heroMaskEaseInput = document.getElementById('hero-mask-ease');
   const heroMaskSampleButtons = document.querySelectorAll('[data-hero-mask-sample]');
   const heroPositionInput = document.getElementById('hero-position');
   const heroPositionLabel = document.getElementById('hero-position-label');
@@ -343,6 +346,12 @@
     const heroBackgroundColor = resolveHeroBackgroundColor(heroBackgroundColorInput?.value);
     const heroMaskColor = resolveHeroMaskColor(heroMaskColorInput?.value);
     const heroMaskMotion = Boolean(heroMaskMotionInput?.checked);
+    const heroMaskAnimation = heroMaskAnimationInput?.value || DEFAULT_HERO_SETTINGS.maskAnimation;
+    const heroMaskDurationValue = Number(heroMaskDurationInput?.value);
+    const heroMaskDuration = Number.isFinite(heroMaskDurationValue) && heroMaskDurationValue > 0
+      ? heroMaskDurationValue
+      : DEFAULT_HERO_SETTINGS.maskDuration;
+    const heroMaskEase = heroMaskEaseInput?.value || DEFAULT_HERO_SETTINGS.maskEase;
     return {
       maskOpacity,
       maskWidth,
@@ -350,6 +359,9 @@
       maskFadeEnd: Math.min(100, maskWidth + cappedMaskGradient),
       maskColor: heroMaskColor,
       maskMotion: heroMaskMotion,
+      maskAnimation: heroMaskAnimation,
+      maskDuration: heroMaskDuration,
+      maskEase: heroMaskEase,
       imagePosition,
       imagePositionX,
       heroImageScale,
@@ -400,6 +412,9 @@
       maskFadeEnd,
       maskColor,
       maskMotion,
+      maskAnimation,
+      maskDuration,
+      maskEase,
       imagePosition,
       imagePositionX,
       heroImageScale,
@@ -412,6 +427,9 @@
     previewHero.style.setProperty('--hero-mask-fade-end', `${maskFadeEnd}%`);
     previewHero.style.setProperty('--hero-mask-color', `${maskRgb.r}, ${maskRgb.g}, ${maskRgb.b}`);
     previewHero.style.setProperty('--hero-mask-motion', maskMotion ? 'running' : 'paused');
+    previewHero.style.setProperty('--hero-mask-animation', maskAnimation);
+    previewHero.style.setProperty('--hero-mask-duration', `${maskDuration}s`);
+    previewHero.style.setProperty('--hero-mask-ease', maskEase);
     previewHero.style.setProperty('--hero-image-position-x', `${imagePositionX}%`);
     previewHero.style.setProperty('--hero-image-position', `${imagePosition}%`);
     previewHero.style.setProperty('--hero-image-scale', heroImageScale);
@@ -458,6 +476,15 @@
     }
     if (heroMaskColorInput && button.dataset.maskColor) {
       heroMaskColorInput.value = button.dataset.maskColor;
+    }
+    if (heroMaskAnimationInput && button.dataset.maskAnimation) {
+      heroMaskAnimationInput.value = button.dataset.maskAnimation;
+    }
+    if (heroMaskDurationInput && button.dataset.maskDuration) {
+      heroMaskDurationInput.value = button.dataset.maskDuration;
+    }
+    if (heroMaskEaseInput && button.dataset.maskEase) {
+      heroMaskEaseInput.value = button.dataset.maskEase;
     }
     if (heroMaskMotionInput) {
       heroMaskMotionInput.checked = true;
@@ -749,6 +776,9 @@
     if (heroMaskColorInput) heroMaskColorInput.value = resolveHeroMaskColor(selectedTheme?.background);
     if (heroMaskGradientInput) heroMaskGradientInput.value = String(DEFAULT_HERO_SETTINGS.maskGradient);
     if (heroMaskMotionInput) heroMaskMotionInput.checked = DEFAULT_HERO_SETTINGS.maskMotion;
+    if (heroMaskAnimationInput) heroMaskAnimationInput.value = DEFAULT_HERO_SETTINGS.maskAnimation;
+    if (heroMaskDurationInput) heroMaskDurationInput.value = String(DEFAULT_HERO_SETTINGS.maskDuration);
+    if (heroMaskEaseInput) heroMaskEaseInput.value = DEFAULT_HERO_SETTINGS.maskEase;
     if (heroPositionInput) heroPositionInput.value = String(DEFAULT_HERO_SETTINGS.imagePosition);
     if (heroPositionXInput) heroPositionXInput.value = String(DEFAULT_HERO_SETTINGS.imagePositionX);
     if (heroImageFitEl) heroImageFitEl.value = DEFAULT_HERO_SETTINGS.imageFit;
@@ -801,6 +831,15 @@
     if (heroMaskColorInput) heroMaskColorInput.value = resolveHeroMaskColor(target.heroMaskColor);
     if (heroMaskGradientInput) heroMaskGradientInput.value = String(target.heroMaskGradient ?? DEFAULT_HERO_SETTINGS.maskGradient);
     if (heroMaskMotionInput) heroMaskMotionInput.checked = Boolean(target.heroMaskMotion);
+    if (heroMaskAnimationInput) {
+      heroMaskAnimationInput.value = target.heroMaskAnimation || DEFAULT_HERO_SETTINGS.maskAnimation;
+    }
+    if (heroMaskDurationInput) {
+      heroMaskDurationInput.value = String(target.heroMaskDuration ?? DEFAULT_HERO_SETTINGS.maskDuration);
+    }
+    if (heroMaskEaseInput) {
+      heroMaskEaseInput.value = target.heroMaskEase || DEFAULT_HERO_SETTINGS.maskEase;
+    }
     if (heroPositionInput) heroPositionInput.value = String(target.heroImagePosition ?? DEFAULT_HERO_SETTINGS.imagePosition);
     if (heroPositionXInput) heroPositionXInput.value = String(target.heroImagePositionX ?? DEFAULT_HERO_SETTINGS.imagePositionX);
     if (heroImageFitEl) heroImageFitEl.value = normalizeHeroImageFit(target.heroImageFit);
@@ -965,6 +1004,9 @@
         heroMaskGradient: heroSettings.maskGradient,
         heroMaskColor: heroSettings.maskColor,
         heroMaskMotion: heroSettings.maskMotion,
+        heroMaskAnimation: heroSettings.maskAnimation,
+        heroMaskDuration: heroSettings.maskDuration,
+        heroMaskEase: heroSettings.maskEase,
         heroImagePosition: heroSettings.imagePosition,
         heroImagePositionX: heroSettings.imagePositionX,
         heroBackgroundColor: heroSettings.heroBackgroundColor,

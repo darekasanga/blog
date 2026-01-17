@@ -252,6 +252,9 @@ textarea {
   --hero-mask-fade-end: 80%;
   --hero-mask-color: 11, 12, 16;
   --hero-mask-motion: paused;
+  --hero-mask-animation: hero-mask-drift;
+  --hero-mask-duration: 8s;
+  --hero-mask-ease: ease-in-out;
   --hero-image-position-x: 50%;
   --hero-image-position: 50%;
   --hero-image-scale: 1;
@@ -273,7 +276,10 @@ textarea {
   );
   background-size: 120% 100%;
   background-position: 0% 0%;
-  animation: hero-mask-drift 8s ease-in-out infinite;
+  animation-name: var(--hero-mask-animation, hero-mask-drift);
+  animation-duration: var(--hero-mask-duration, 8s);
+  animation-timing-function: var(--hero-mask-ease, ease-in-out);
+  animation-iteration-count: infinite;
   animation-play-state: var(--hero-mask-motion, paused);
   pointer-events: none;
   opacity: 1;
@@ -287,6 +293,67 @@ textarea {
   }
   50% {
     background-position: 6% 0%;
+  }
+}
+
+@keyframes hero-mask-sweep {
+  0%,
+  100% {
+    background-position: 0% 0%;
+  }
+  45% {
+    background-position: 16% 0%;
+  }
+  60% {
+    background-position: 8% 0%;
+  }
+}
+
+@keyframes hero-mask-sweep-reverse {
+  0%,
+  100% {
+    background-position: 18% 0%;
+  }
+  50% {
+    background-position: 2% 0%;
+  }
+}
+
+@keyframes hero-mask-glide {
+  0%,
+  100% {
+    background-position: 0% 0%;
+  }
+  40% {
+    background-position: 10% 6%;
+  }
+  70% {
+    background-position: 4% 2%;
+  }
+}
+
+@keyframes hero-mask-pulse {
+  0%,
+  100% {
+    background-size: 120% 100%;
+    background-position: 0% 0%;
+  }
+  50% {
+    background-size: 160% 100%;
+    background-position: 12% 0%;
+  }
+}
+
+@keyframes hero-mask-wave {
+  0%,
+  100% {
+    background-position: 0% 0%;
+  }
+  30% {
+    background-position: 8% 0%;
+  }
+  60% {
+    background-position: 14% 4%;
   }
 }
 

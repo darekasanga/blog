@@ -120,6 +120,21 @@
   const DEFAULT_FOCUS = { start: 20, end: 80 };
   const DEFAULT_SCALE = 1;
   const CHARS_PER_MINUTE = 500;
+  const HERO_MASK_ANIMATIONS = new Set([
+    'hero-mask-drift',
+    'hero-mask-sweep',
+    'hero-mask-sweep-reverse',
+    'hero-mask-glide',
+    'hero-mask-pulse',
+    'hero-mask-wave',
+  ]);
+  const HERO_MASK_EASINGS = new Set([
+    'ease-in-out',
+    'cubic-bezier(0.6, 0, 0.2, 1)',
+    'cubic-bezier(0.4, 0, 0.2, 1)',
+    'cubic-bezier(0.5, 0, 0.2, 1)',
+    'cubic-bezier(0.4, 0, 0.1, 1)',
+  ]);
   const DEFAULT_SITE_SETTINGS = {
     showHero: true,
     showFeatured: true,
@@ -132,6 +147,9 @@
     maskGradient: 20,
     maskColor: '#0b0c10',
     maskMotion: true,
+    maskAnimation: 'hero-mask-drift',
+    maskDuration: 8,
+    maskEase: 'ease-in-out',
     imagePosition: 50,
     imagePositionX: 50,
     imageFit: 'cover',
@@ -380,6 +398,30 @@
     return Math.min(Math.max(value, 0.5), 2);
   }
 
+  function normalizeHeroMaskAnimation(value) {
+    const trimmed = String(value || '').trim();
+    if (HERO_MASK_ANIMATIONS.has(trimmed)) {
+      return trimmed;
+    }
+    return DEFAULT_HERO_SETTINGS.maskAnimation;
+  }
+
+  function normalizeHeroMaskEase(value) {
+    const trimmed = String(value || '').trim();
+    if (HERO_MASK_EASINGS.has(trimmed)) {
+      return trimmed;
+    }
+    return DEFAULT_HERO_SETTINGS.maskEase;
+  }
+
+  function normalizeHeroMaskDuration(value) {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      return DEFAULT_HERO_SETTINGS.maskDuration;
+    }
+    return Math.min(Math.max(parsed, 4), 16);
+  }
+
   function normalizeHexColor(input = '', fallback = '') {
     if (typeof input !== 'string') return fallback;
     const trimmed = input.trim();
@@ -485,6 +527,9 @@
       ? Math.min(Math.max(maskGradientRaw, 0), 100)
       : maskGradientFallback;
     const heroMaskMotion = post.heroMaskMotion === true;
+    const heroMaskAnimation = normalizeHeroMaskAnimation(post.heroMaskAnimation);
+    const heroMaskDuration = normalizeHeroMaskDuration(post.heroMaskDuration);
+    const heroMaskEase = normalizeHeroMaskEase(post.heroMaskEase);
     const cappedMaskGradient = Math.min(heroMaskGradient, Math.max(0, 100 - heroMaskWidth));
     return {
       id,
@@ -513,6 +558,9 @@
         themeObject.background || DEFAULT_HERO_SETTINGS.maskColor
       ),
       heroMaskMotion,
+      heroMaskAnimation,
+      heroMaskDuration,
+      heroMaskEase,
       heroImagePosition: Number.isFinite(heroImagePosition)
         ? Math.min(Math.max(heroImagePosition, 0), 100)
         : DEFAULT_HERO_SETTINGS.imagePosition,
