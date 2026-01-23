@@ -95,6 +95,38 @@ textarea {
   resize: vertical;
 }
 
+.content-editor {
+  width: 100%;
+  min-height: 160px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--fg);
+  font: inherit;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.content-editor:empty::before {
+  content: attr(data-placeholder);
+  color: var(--muted);
+}
+
+.content-editor:focus-visible {
+  outline: 2px solid rgba(120, 160, 255, 0.7);
+  outline-offset: 2px;
+}
+
+.content-editor blockquote {
+  margin: 8px 0;
+  padding: 6px 12px;
+  border-left: 2px solid var(--border);
+  background: var(--panel);
+  border-radius: 10px;
+}
+
 .site-header {
   position: sticky;
   top: 0;
@@ -1856,6 +1888,34 @@ body[data-admin-mode='edit'] #preview-thumb.is-selecting .focus-range {
   accent-color: var(--accent);
 }
 
+.editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.toolbar-button {
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--fg);
+  border-radius: 12px;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.toolbar-button:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.toolbar-button:focus-visible {
+  outline: 2px solid rgba(120, 160, 255, 0.7);
+  outline-offset: 2px;
+}
+
 .order-controls {
   display: flex;
   align-items: center;
@@ -1981,6 +2041,39 @@ body[data-admin-mode='edit'] #preview-thumb.is-selecting .focus-range {
 
 .article-body p {
   margin: 0;
+}
+
+.article-body ul,
+.article-body ol {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.article-body li {
+  margin: 4px 0;
+}
+
+.article-body blockquote {
+  margin: 0;
+  padding: 8px 12px;
+  border-left: 2px solid var(--border);
+  background: var(--panel);
+  border-radius: 10px;
+  color: var(--fg);
+}
+
+.article-body hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  opacity: 0.6;
+}
+
+.article-body code {
+  background: var(--panel);
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-family: 'SFMono-Regular', 'SFMono', 'Menlo', 'Consolas', 'Liberation Mono', monospace;
+  font-size: 0.95em;
 }
 
 .article-actions {
