@@ -50,6 +50,10 @@
   const dateEl = document.getElementById('date');
   const readEl = document.getElementById('read');
   const contentEl = document.getElementById('content');
+  const contentGuideToggle = document.getElementById('content-guide-toggle');
+  const contentGuide = document.getElementById('content-guide');
+  const contentGuideBody = document.getElementById('content-guide-body');
+  const editorToolbar = document.querySelector('[data-editor-toolbar]');
   const tagsEl = document.getElementById('tags');
   const focusStartEl = document.getElementById('focus-start');
   const focusEndEl = document.getElementById('focus-end');
@@ -534,12 +538,171 @@
     });
   }
 
+  function getContentGuideMarker(line) {
+    const trimmed = line.trim();
+    if (/^(-{3,}|\*{3,}|_{3,})$/.test(trimmed)) {
+      return { mark: '─', type: 'rule' };
+    }
+    if (/^\s*>+/.test(line)) {
+      return { mark: '❝', type: 'quote' };
+    }
+    const numberMatch = line.match(/^\s*(\d+)[.)]\s+/);
+    if (numberMatch) {
+      return { mark: `${numberMatch[1]}.`, type: 'number' };
+    }
+    if (/^\s*([-*•])\s+/.test(line)) {
+      return { mark: '•', type: 'bullet' };
+    }
+    return { mark: '', type: '' };
+  }
+
+  function getContentPlainText() {
+    if (!contentEl) return '';
+    return contentEl.innerText.replace(/\u00a0/g, ' ');
+  }
+
+  function getContentHtml() {
+    if (!contentEl) return '';
+    return contentEl.innerHTML;
+  }
+
+  function setEditorContent(value = '') {
+    if (!contentEl) return;
+    const trimmed = String(value || '');
+    if (trimmed && /<[^>]+>/.test(trimmed)) {
+      contentEl.innerHTML = trimmed;
+      return;
+    }
+    const lines = trimmed.split('\n');
+    contentEl.innerHTML = '';
+    lines.forEach((line, index) => {
+      if (index > 0) {
+        contentEl.appendChild(document.createElement('br'));
+      }
+      if (line) {
+        contentEl.appendChild(document.createTextNode(line));
+      }
+    });
+  }
+
+  function refreshContentState() {
+    updateReadTime();
+    updatePreview();
+    updateContentGuide();
+  }
+
+  function wrapSelectionWithTag(tagName) {
+    if (!contentEl) return;
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
+    const range = selection.getRangeAt(0);
+    if (!contentEl.contains(range.commonAncestorContainer)) return;
+    const text = range.toString();
+    const element = document.createElement(tagName);
+    element.textContent = text;
+    range.deleteContents();
+    range.insertNode(element);
+    const nextRange = document.createRange();
+    if (text) {
+      nextRange.setStartAfter(element);
+      nextRange.collapse(true);
+    } else {
+      nextRange.selectNodeContents(element);
+      nextRange.collapse(false);
+    }
+    selection.removeAllRanges();
+    selection.addRange(nextRange);
+    contentEl.focus();
+  }
+
+  function applyEditorAction(action) {
+    if (!contentEl) return;
+    switch (action) {
+      case 'bold':
+        document.execCommand('bold');
+        break;
+      case 'italic':
+        document.execCommand('italic');
+        break;
+      case 'code':
+        wrapSelectionWithTag('code');
+        break;
+      case 'bullet':
+        document.execCommand('insertUnorderedList');
+        break;
+      case 'number':
+        document.execCommand('insertOrderedList');
+        break;
+      case 'quote':
+        document.execCommand('formatBlock', false, 'blockquote');
+        break;
+      case 'rule':
+        document.execCommand('insertHorizontalRule');
+        break;
+      case 'newline':
+        document.execCommand('insertLineBreak');
+        break;
+      default:
+        break;
+    }
+    refreshContentState();
+  }
+
+  function updateContentGuide() {
+    if (!contentGuideBody || !contentEl) return;
+    const text = getContentPlainText();
+    const lines = text.split('\n');
+    contentGuideBody.innerHTML = '';
+
+    (lines.length ? lines : ['']).forEach((line) => {
+      const { mark, type } = getContentGuideMarker(line);
+      const lineEl = document.createElement('div');
+      lineEl.className = 'content-guide__line';
+
+      const lead = document.createElement('span');
+      lead.className = 'content-guide__lead';
+      if (type) {
+        lead.classList.add(`content-guide__lead--${type}`);
+      }
+      lead.textContent = mark || ' ';
+
+      const textSpan = document.createElement('span');
+      textSpan.className = 'content-guide__text';
+      const visibleLine = line.replace(/\t/g, '⇥').replace(/ /g, '·');
+      if (type === 'rule') {
+        textSpan.textContent = '──────────';
+      } else if (!visibleLine) {
+        textSpan.textContent = '∅';
+        textSpan.classList.add('content-guide__text--empty');
+      } else {
+        textSpan.textContent = visibleLine;
+      }
+
+      const eol = document.createElement('span');
+      eol.className = 'content-guide__eol';
+      eol.textContent = '↵';
+
+      lineEl.append(lead, textSpan, eol);
+      contentGuideBody.appendChild(lineEl);
+    });
+  }
+
+  function syncContentGuideVisibility() {
+    if (!contentGuide || !contentGuideToggle) return;
+    const isVisible = contentGuideToggle.checked;
+    contentGuide.hidden = !isVisible;
+    contentGuideToggle.setAttribute('aria-expanded', isVisible ? 'true' : 'false');
+    if (isVisible) {
+      updateContentGuide();
+    }
+  }
+
   function updatePreview() {
     if (!previewTitle || !previewDate || !previewRead || !previewExcerpt || !previewThumb) return;
     previewTitle.textContent = titleEl?.value || '無題の投稿';
     previewDate.textContent = dateEl?.value || today;
     previewRead.textContent = readEl?.value || '5 min';
-    const summary = summarizeContent(contentEl?.value || '');
+    const summary = summarizeContent(getContentPlainText());
     previewExcerpt.textContent = summary || '本文からAIが要約します。';
     const tags = window.BlogData.normalizeTags((tagsEl?.value || '').split(','));
     previewTags.innerHTML = tags.map((tag) => `<span class="chip">#${window.BlogData.escapeHtml(tag)}</span>`).join('');
@@ -637,7 +800,7 @@
 
   function updateReadTime() {
     if (!readEl || !previewRead) return;
-    const minutes = estimateReadMinutes(`${titleEl?.value || ''}\n${contentEl?.value || ''}`);
+    const minutes = estimateReadMinutes(`${titleEl?.value || ''}\n${getContentPlainText()}`);
     const label = formatReadTime(minutes);
     readEl.value = label;
     previewRead.textContent = label;
@@ -821,8 +984,11 @@
     if (heroImageFitEl) heroImageFitEl.value = DEFAULT_HERO_SETTINGS.imageFit;
     applyArticleTheme(siteThemeKey);
     if (heroBackgroundColorInput) heroBackgroundColorInput.value = resolveHeroBackgroundColor(selectedTheme?.background);
+    setEditorContent('');
     updatePreview();
     updateReadTime();
+    updateContentGuide();
+    syncContentGuideVisibility();
   }
 
   function showResultMessage(message, tone = 'success') {
@@ -851,7 +1017,8 @@
     if (titleEl) titleEl.value = target.title;
     if (dateEl) dateEl.value = target.date;
     if (readEl) readEl.value = target.read;
-    if (contentEl) contentEl.value = target.content || '';
+    setEditorContent(target.content || '');
+    updateContentGuide();
     resizedImageData = target.image || '';
     if (tagsEl) tagsEl.value = (target.tags || []).join(', ');
     const focus = normalizeFocus(target.imageFocus, target.imagePosition);
@@ -915,6 +1082,9 @@
     el.addEventListener('input', () => {
       updateReadTime();
       updatePreview();
+      if (el === contentEl) {
+        updateContentGuide();
+      }
     });
   });
 
@@ -987,6 +1157,18 @@
     });
   }
 
+  if (contentGuideToggle) {
+    contentGuideToggle.addEventListener('change', syncContentGuideVisibility);
+  }
+
+  if (editorToolbar) {
+    editorToolbar.addEventListener('click', (event) => {
+      const button = event.target.closest('button[data-editor-action]');
+      if (!button) return;
+      applyEditorAction(button.dataset.editorAction);
+    });
+  }
+
   if (cancelEditButton) {
     cancelEditButton.addEventListener('click', resetForm);
   }
@@ -1010,8 +1192,8 @@
     const title = previewTitle?.textContent.trim() || '';
     const date = previewDate?.textContent.trim() || '';
     const read = previewRead?.textContent.trim() || '';
-    const content = contentEl?.value.trim() || '';
-    const excerpt = summarizeContent(content);
+    const content = getContentHtml().trim();
+    const excerpt = summarizeContent(getContentPlainText());
     const existing = editingId ? posts.find((post) => post.id === editingId) : null;
     const image = resizedImageData || existing?.image || '';
     const tags = window.BlogData.normalizeTags((tagsEl?.value || '').split(','));
@@ -1075,6 +1257,8 @@
   }
   updateReadTime();
   updatePreview();
+  updateContentGuide();
+  syncContentGuideVisibility();
   syncHomeSettingsForm();
 
   window.addEventListener('resize', () => {
