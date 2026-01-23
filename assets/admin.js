@@ -559,7 +559,9 @@
     if (!contentGuideBody || !contentEl) return;
     const text = contentEl.value || '';
     const lines = text.split('\n');
-    contentGuideBody.innerHTML = '';
+    while (contentGuideBody.firstChild) {
+      contentGuideBody.removeChild(contentGuideBody.firstChild);
+    }
 
     (lines.length ? lines : ['']).forEach((line) => {
       const { mark, type } = getContentGuideMarker(line);
