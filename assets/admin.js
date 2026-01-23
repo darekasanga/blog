@@ -563,7 +563,7 @@
       contentGuideBody.removeChild(contentGuideBody.firstChild);
     }
 
-    (lines.length ? lines : ['']).forEach((line) => {
+    lines.forEach((line) => {
       const { mark, type } = getContentGuideMarker(line);
       const lineEl = document.createElement('div');
       lineEl.className = 'content-guide__line';
