@@ -545,9 +545,9 @@
     if (/^\s*>+/.test(line)) {
       return { mark: '❝', type: 'quote' };
     }
-    const numberMatch = line.match(/^\s*(\d+)[.)]\s+/);
+    const numberMatch = line.match(/^\s*(\d+)([.)])\s+/);
     if (numberMatch) {
-      return { mark: `${numberMatch[1]}.`, type: 'number' };
+      return { mark: `${numberMatch[1]}${numberMatch[2]}`, type: 'number' };
     }
     if (/^\s*([-*•])\s+/.test(line)) {
       return { mark: '•', type: 'bullet' };
