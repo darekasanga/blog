@@ -1895,6 +1895,11 @@ body[data-admin-mode='edit'] #preview-thumb.is-selecting .focus-range {
   margin-bottom: 12px;
 }
 
+.preview-panel .editor-toolbar {
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
 .toolbar-button {
   border: 1px solid var(--border);
   background: var(--panel);
@@ -2504,11 +2509,6 @@ body[data-admin-mode='edit'] .preview-panel {
   position: sticky;
   top: 120px;
   width: auto;
-  max-height: calc(100vh - 160px);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-  touch-action: pan-y;
   align-self: flex-start;
   z-index: 30;
 }
