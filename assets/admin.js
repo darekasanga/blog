@@ -50,6 +50,9 @@
   const dateEl = document.getElementById('date');
   const readEl = document.getElementById('read');
   const contentEl = document.getElementById('content');
+  const contentGuideToggle = document.getElementById('content-guide-toggle');
+  const contentGuide = document.getElementById('content-guide');
+  const contentGuideBody = document.getElementById('content-guide-body');
   const tagsEl = document.getElementById('tags');
   const focusStartEl = document.getElementById('focus-start');
   const focusEndEl = document.getElementById('focus-end');
@@ -534,6 +537,74 @@
     });
   }
 
+  function getContentGuideMarker(line) {
+    const trimmed = line.trim();
+    if (/^(-{3,}|\*{3,}|_{3,})$/.test(trimmed)) {
+      return { mark: '─', type: 'rule' };
+    }
+    if (/^\s*>+/.test(line)) {
+      return { mark: '❝', type: 'quote' };
+    }
+    const numberMatch = line.match(/^\s*(\d+)([.)])\s+/);
+    if (numberMatch) {
+      return { mark: `${numberMatch[1]}${numberMatch[2]}`, type: 'number' };
+    }
+    if (/^\s*([-*•])\s+/.test(line)) {
+      return { mark: '•', type: 'bullet' };
+    }
+    return { mark: '', type: '' };
+  }
+
+  function updateContentGuide() {
+    if (!contentGuideBody || !contentEl) return;
+    const text = contentEl.value || '';
+    const lines = text.split('\n');
+    while (contentGuideBody.firstChild) {
+      contentGuideBody.removeChild(contentGuideBody.firstChild);
+    }
+
+    lines.forEach((line) => {
+      const { mark, type } = getContentGuideMarker(line);
+      const lineEl = document.createElement('div');
+      lineEl.className = 'content-guide__line';
+
+      const lead = document.createElement('span');
+      lead.className = 'content-guide__lead';
+      if (type) {
+        lead.classList.add(`content-guide__lead--${type}`);
+      }
+      lead.textContent = mark || ' ';
+
+      const textSpan = document.createElement('span');
+      textSpan.className = 'content-guide__text';
+      const visibleLine = line.replace(/\t/g, '⇥').replace(/ /g, '·');
+      if (type === 'rule') {
+        textSpan.textContent = '──────────';
+      } else if (!visibleLine) {
+        textSpan.textContent = '∅';
+        textSpan.classList.add('content-guide__text--empty');
+      } else {
+        textSpan.textContent = visibleLine;
+      }
+
+      const eol = document.createElement('span');
+      eol.className = 'content-guide__eol';
+      eol.textContent = '↵';
+
+      lineEl.append(lead, textSpan, eol);
+      contentGuideBody.appendChild(lineEl);
+    });
+  }
+
+  function syncContentGuideVisibility() {
+    if (!contentGuide || !contentGuideToggle) return;
+    const isVisible = contentGuideToggle.checked;
+    contentGuide.hidden = !isVisible;
+    if (isVisible) {
+      updateContentGuide();
+    }
+  }
+
   function updatePreview() {
     if (!previewTitle || !previewDate || !previewRead || !previewExcerpt || !previewThumb) return;
     previewTitle.textContent = titleEl?.value || '無題の投稿';
@@ -823,6 +894,8 @@
     if (heroBackgroundColorInput) heroBackgroundColorInput.value = resolveHeroBackgroundColor(selectedTheme?.background);
     updatePreview();
     updateReadTime();
+    updateContentGuide();
+    syncContentGuideVisibility();
   }
 
   function showResultMessage(message, tone = 'success') {
@@ -852,6 +925,7 @@
     if (dateEl) dateEl.value = target.date;
     if (readEl) readEl.value = target.read;
     if (contentEl) contentEl.value = target.content || '';
+    updateContentGuide();
     resizedImageData = target.image || '';
     if (tagsEl) tagsEl.value = (target.tags || []).join(', ');
     const focus = normalizeFocus(target.imageFocus, target.imagePosition);
@@ -915,6 +989,9 @@
     el.addEventListener('input', () => {
       updateReadTime();
       updatePreview();
+      if (el === contentEl) {
+        updateContentGuide();
+      }
     });
   });
 
@@ -985,6 +1062,10 @@
         updatePreview();
       }
     });
+  }
+
+  if (contentGuideToggle) {
+    contentGuideToggle.addEventListener('change', syncContentGuideVisibility);
   }
 
   if (cancelEditButton) {
@@ -1075,6 +1156,8 @@
   }
   updateReadTime();
   updatePreview();
+  updateContentGuide();
+  syncContentGuideVisibility();
   syncHomeSettingsForm();
 
   window.addEventListener('resize', () => {
