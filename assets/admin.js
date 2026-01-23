@@ -600,7 +600,6 @@
     if (!contentGuide || !contentGuideToggle) return;
     const isVisible = contentGuideToggle.checked;
     contentGuide.hidden = !isVisible;
-    contentGuideToggle.setAttribute('aria-expanded', isVisible ? 'true' : 'false');
     if (isVisible) {
       updateContentGuide();
     }
