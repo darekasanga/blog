@@ -50,6 +50,10 @@
   const dateEl = document.getElementById('date');
   const readEl = document.getElementById('read');
   const contentEl = document.getElementById('content');
+  const contentGuideToggle = document.getElementById('content-guide-toggle');
+  const contentGuide = document.getElementById('content-guide');
+  const contentGuideBody = document.getElementById('content-guide-body');
+  const editorToolbar = document.querySelector('[data-editor-toolbar]');
   const tagsEl = document.getElementById('tags');
   const focusStartEl = document.getElementById('focus-start');
   const focusEndEl = document.getElementById('focus-end');
@@ -534,6 +538,175 @@
     });
   }
 
+  function getContentGuideMarker(line) {
+    const trimmed = line.trim();
+    if (/^(-{3,}|\*{3,}|_{3,})$/.test(trimmed)) {
+      return { mark: '─', type: 'rule' };
+    }
+    if (/^\s*>+/.test(line)) {
+      return { mark: '❝', type: 'quote' };
+    }
+    const numberMatch = line.match(/^\s*(\d+)[.)]\s+/);
+    if (numberMatch) {
+      return { mark: `${numberMatch[1]}.`, type: 'number' };
+    }
+    if (/^\s*([-*•])\s+/.test(line)) {
+      return { mark: '•', type: 'bullet' };
+    }
+    return { mark: '', type: '' };
+  }
+
+  function updateContentValue(nextValue, selectionStart, selectionEnd) {
+    if (!contentEl) return;
+    contentEl.value = nextValue;
+    contentEl.focus();
+    if (selectionStart !== undefined && selectionEnd !== undefined) {
+      contentEl.setSelectionRange(selectionStart, selectionEnd);
+    }
+    updateReadTime();
+    updatePreview();
+    updateContentGuide();
+  }
+
+  function getSelectedLineRange(value, selectionStart, selectionEnd) {
+    const start = value.lastIndexOf('\n', selectionStart - 1) + 1;
+    const end = value.indexOf('\n', selectionEnd);
+    return {
+      start,
+      end: end === -1 ? value.length : end,
+    };
+  }
+
+  function prefixSelectedLines(prefixer) {
+    if (!contentEl) return;
+    const value = contentEl.value;
+    const { selectionStart, selectionEnd } = contentEl;
+    const range = getSelectedLineRange(value, selectionStart, selectionEnd);
+    const head = value.slice(0, range.start);
+    const body = value.slice(range.start, range.end);
+    const tail = value.slice(range.end);
+    const lines = body.split('\n');
+    const nextLines = lines.map(prefixer);
+    const nextBody = nextLines.join('\n');
+    const nextValue = `${head}${nextBody}${tail}`;
+    const delta = nextBody.length - body.length;
+    updateContentValue(nextValue, selectionStart + delta, selectionEnd + delta);
+  }
+
+  function wrapSelection({ prefix, suffix }) {
+    if (!contentEl) return;
+    const value = contentEl.value;
+    const { selectionStart, selectionEnd } = contentEl;
+    const selected = value.slice(selectionStart, selectionEnd);
+    const nextValue = `${value.slice(0, selectionStart)}${prefix}${selected}${suffix}${value.slice(selectionEnd)}`;
+    const caretStart = selectionStart + prefix.length;
+    const caretEnd = selectionEnd + prefix.length;
+    updateContentValue(nextValue, caretStart, caretEnd);
+  }
+
+  function insertAtCursor(text) {
+    if (!contentEl) return;
+    const value = contentEl.value;
+    const { selectionStart, selectionEnd } = contentEl;
+    const nextValue = `${value.slice(0, selectionStart)}${text}${value.slice(selectionEnd)}`;
+    const caret = selectionStart + text.length;
+    updateContentValue(nextValue, caret, caret);
+  }
+
+  function applyEditorAction(action) {
+    if (!contentEl) return;
+    switch (action) {
+      case 'bold':
+        wrapSelection({ prefix: '**', suffix: '**' });
+        break;
+      case 'italic':
+        wrapSelection({ prefix: '_', suffix: '_' });
+        break;
+      case 'code':
+        wrapSelection({ prefix: '`', suffix: '`' });
+        break;
+      case 'bullet':
+        prefixSelectedLines((line) => {
+          if (/^\s*([-*•])\s+/.test(line)) return line;
+          return line ? `- ${line}` : '- ';
+        });
+        break;
+      case 'number': {
+        let index = 1;
+        prefixSelectedLines((line) => {
+          if (/^\s*\d+[.)]\s+/.test(line)) return line;
+          const prefix = `${index}. `;
+          index += 1;
+          return line ? `${prefix}${line}` : prefix;
+        });
+        break;
+      }
+      case 'quote':
+        prefixSelectedLines((line) => {
+          if (/^\s*>+/.test(line)) return line;
+          return line ? `> ${line}` : '> ';
+        });
+        break;
+      case 'rule':
+        insertAtCursor('\n---\n');
+        break;
+      case 'newline':
+        insertAtCursor('\n');
+        break;
+      default:
+        break;
+    }
+  }
+
+  function updateContentGuide() {
+    if (!contentGuideBody || !contentEl) return;
+    const text = contentEl.value || '';
+    const lines = text.split('\n');
+    contentGuideBody.innerHTML = '';
+
+    (lines.length ? lines : ['']).forEach((line) => {
+      const { mark, type } = getContentGuideMarker(line);
+      const lineEl = document.createElement('div');
+      lineEl.className = 'content-guide__line';
+
+      const lead = document.createElement('span');
+      lead.className = 'content-guide__lead';
+      if (type) {
+        lead.classList.add(`content-guide__lead--${type}`);
+      }
+      lead.textContent = mark || ' ';
+
+      const textSpan = document.createElement('span');
+      textSpan.className = 'content-guide__text';
+      const visibleLine = line.replace(/\t/g, '⇥').replace(/ /g, '·');
+      if (type === 'rule') {
+        textSpan.textContent = '──────────';
+      } else if (!visibleLine) {
+        textSpan.textContent = '∅';
+        textSpan.classList.add('content-guide__text--empty');
+      } else {
+        textSpan.textContent = visibleLine;
+      }
+
+      const eol = document.createElement('span');
+      eol.className = 'content-guide__eol';
+      eol.textContent = '↵';
+
+      lineEl.append(lead, textSpan, eol);
+      contentGuideBody.appendChild(lineEl);
+    });
+  }
+
+  function syncContentGuideVisibility() {
+    if (!contentGuide || !contentGuideToggle) return;
+    const isVisible = contentGuideToggle.checked;
+    contentGuide.hidden = !isVisible;
+    contentGuideToggle.setAttribute('aria-expanded', isVisible ? 'true' : 'false');
+    if (isVisible) {
+      updateContentGuide();
+    }
+  }
+
   function updatePreview() {
     if (!previewTitle || !previewDate || !previewRead || !previewExcerpt || !previewThumb) return;
     previewTitle.textContent = titleEl?.value || '無題の投稿';
@@ -823,6 +996,8 @@
     if (heroBackgroundColorInput) heroBackgroundColorInput.value = resolveHeroBackgroundColor(selectedTheme?.background);
     updatePreview();
     updateReadTime();
+    updateContentGuide();
+    syncContentGuideVisibility();
   }
 
   function showResultMessage(message, tone = 'success') {
@@ -852,6 +1027,7 @@
     if (dateEl) dateEl.value = target.date;
     if (readEl) readEl.value = target.read;
     if (contentEl) contentEl.value = target.content || '';
+    updateContentGuide();
     resizedImageData = target.image || '';
     if (tagsEl) tagsEl.value = (target.tags || []).join(', ');
     const focus = normalizeFocus(target.imageFocus, target.imagePosition);
@@ -915,6 +1091,9 @@
     el.addEventListener('input', () => {
       updateReadTime();
       updatePreview();
+      if (el === contentEl) {
+        updateContentGuide();
+      }
     });
   });
 
@@ -984,6 +1163,18 @@
         resizedImageData = editingId ? posts.find((p) => p.id === editingId)?.image || '' : '';
         updatePreview();
       }
+    });
+  }
+
+  if (contentGuideToggle) {
+    contentGuideToggle.addEventListener('change', syncContentGuideVisibility);
+  }
+
+  if (editorToolbar) {
+    editorToolbar.addEventListener('click', (event) => {
+      const button = event.target.closest('button[data-editor-action]');
+      if (!button) return;
+      applyEditorAction(button.dataset.editorAction);
     });
   }
 
@@ -1075,6 +1266,8 @@
   }
   updateReadTime();
   updatePreview();
+  updateContentGuide();
+  syncContentGuideVisibility();
   syncHomeSettingsForm();
 
   window.addEventListener('resize', () => {
