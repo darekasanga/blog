@@ -1167,6 +1167,11 @@
         if (action === 'font') {
           contentEl.dataset.pendingFont = target.value;
           applyEditorAction('font');
+        } else if (action === 'heading') {
+          if (target.value) {
+            document.execCommand('formatBlock', false, target.value);
+            refreshContentState();
+          }
         } else if (action === 'font-size') {
           contentEl.dataset.pendingFontSize = target.value;
           applyEditorAction('font-size');

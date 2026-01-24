@@ -132,24 +132,55 @@ textarea {
 .content-editor .bubble,
 .article-body .bubble {
   display: inline-block;
-  padding: 8px 12px;
+  padding: 10px 14px;
   border-radius: 18px;
-  margin: 4px 0;
+  margin: 6px 0;
   max-width: 80%;
   line-height: 1.6;
+  position: relative;
 }
 
 .content-editor .bubble--self,
 .article-body .bubble--self {
-  background: color-mix(in srgb, var(--accent) 25%, var(--panel));
+  margin-left: auto;
+  background: color-mix(in srgb, var(--accent) 35%, var(--panel));
   color: var(--fg);
+}
+
+.content-editor .bubble--self::after,
+.article-body .bubble--self::after {
+  content: '';
+  position: absolute;
+  right: -6px;
+  bottom: 8px;
+  width: 12px;
+  height: 12px;
+  background: color-mix(in srgb, var(--accent) 35%, var(--panel));
+  transform: rotate(45deg);
+  border-radius: 2px;
 }
 
 .content-editor .bubble--other,
 .article-body .bubble--other {
+  margin-right: auto;
   background: color-mix(in srgb, var(--panel) 85%, #ffffff 15%);
   color: var(--fg);
   border: 1px solid var(--border);
+}
+
+.content-editor .bubble--other::after,
+.article-body .bubble--other::after {
+  content: '';
+  position: absolute;
+  left: -6px;
+  bottom: 8px;
+  width: 12px;
+  height: 12px;
+  background: color-mix(in srgb, var(--panel) 85%, #ffffff 15%);
+  border-left: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  transform: rotate(45deg);
+  border-radius: 2px;
 }
 
 .site-header {
@@ -1922,8 +1953,14 @@ body[data-admin-mode='edit'] #preview-thumb.is-selecting .focus-range {
 }
 
 .preview-panel .editor-toolbar {
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--border);
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+
+.preview-panel .editor-toolbar__title {
+  display: block;
+  margin-bottom: 6px;
 }
 
 .editor-toolbar__title {
@@ -2559,6 +2596,11 @@ body[data-admin-mode='edit'] .preview-panel {
   position: sticky;
   top: 120px;
   width: auto;
+  max-height: calc(100vh - 160px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
   align-self: flex-start;
   z-index: 30;
 }
