@@ -65,7 +65,7 @@
             </div>
             <div class="field">
               <label for="content">本文</label>
-              <textarea id="content" name="content" rows="6" placeholder="本文を入力。改行も反映されます。" required></textarea>
+              <div id="content" class="content-editor" role="textbox" aria-multiline="true" contenteditable="true" data-placeholder="本文を入力。改行も反映されます。"></div>
             </div>
             <div class="field">
               <label for="image">記事画像</label>
@@ -153,6 +153,49 @@
           </form>
 
           <div class="info-card preview-panel">
+            <div class="editor-toolbar" data-editor-toolbar role="toolbar" aria-label="本文編集ツール">
+              <span class="editor-toolbar__title">本文編集ツール</span>
+              <select class="toolbar-select" data-editor-action="heading" aria-label="見出し">
+                <option value="" selected>見出し</option>
+                <option value="h1">H1</option>
+                <option value="h2">H2</option>
+                <option value="h3">H3</option>
+                <option value="h4">H4</option>
+                <option value="h5">H5</option>
+                <option value="h6">H6</option>
+              </select>
+              <select class="toolbar-select" data-editor-action="font" aria-label="フォント">
+                <option value="" selected>フォント</option>
+                <option value="sans-serif">サンセリフ</option>
+                <option value="serif">セリフ</option>
+                <option value="monospace">等幅</option>
+              </select>
+              <select class="toolbar-select" data-editor-action="font-size" aria-label="フォントサイズ">
+                <option value="" selected>サイズ</option>
+                <option value="2">12px</option>
+                <option value="3">14px</option>
+                <option value="4">16px</option>
+                <option value="5">18px</option>
+                <option value="6">20px</option>
+                <option value="7">24px</option>
+              </select>
+              <input class="toolbar-color" type="color" data-editor-action="font-color" aria-label="フォント色" />
+              <button class="toolbar-button" type="button" data-editor-action="bold">太字</button>
+              <button class="toolbar-button" type="button" data-editor-action="italic">斜体</button>
+              <button class="toolbar-button" type="button" data-editor-action="underline">下線</button>
+              <button class="toolbar-button" type="button" data-editor-action="code">コード</button>
+              <button class="toolbar-button" type="button" data-editor-action="bullet">箇条書き</button>
+              <button class="toolbar-button" type="button" data-editor-action="number">番号</button>
+              <button class="toolbar-button" type="button" data-editor-action="quote">引用</button>
+              <button class="toolbar-button" type="button" data-editor-action="bubble-self">吹き出し（自分）</button>
+              <button class="toolbar-button" type="button" data-editor-action="bubble-other">吹き出し（相手）</button>
+              <button class="toolbar-button" type="button" data-editor-action="emoji">絵文字</button>
+              <button class="toolbar-button" type="button" data-editor-action="align-left">左寄せ</button>
+              <button class="toolbar-button" type="button" data-editor-action="align-center">中央寄せ</button>
+              <button class="toolbar-button" type="button" data-editor-action="align-right">右寄せ</button>
+              <button class="toolbar-button" type="button" data-editor-action="rule">罫線</button>
+              <button class="toolbar-button" type="button" data-editor-action="newline">改行</button>
+            </div>
             <p class="kicker">プレビュー</p>
             <section class="hero preview-hero" id="preview-hero" aria-label="最新記事プレビュー">
               <div class="hero-media" aria-hidden="true">

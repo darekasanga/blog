@@ -457,8 +457,17 @@
     return fallback;
   }
 
+  function stripHtmlContent(content = '') {
+    return String(content || '')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/(p|div|li|blockquote)>/gi, '\n')
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
   function summarizeContent(content = '', limit = 120) {
-    const normalized = String(content || '').replace(/\s+/g, ' ').trim();
+    const normalized = stripHtmlContent(content);
     if (!normalized.length) return '';
     const sentenceMatch = normalized.match(/^(.+?[。！？!?]|.+$)/);
     let summary = sentenceMatch ? sentenceMatch[1].trim() : normalized;
@@ -493,7 +502,7 @@
     const content = post.content || post.excerpt || '本文がまだ登録されていません。';
     const excerpt = summarizeContent(content);
     const summaryHistory = normalizeSummaryHistory(post.summaryHistory, excerpt);
-    const textForRead = `${content}\n${post.title || ''}`;
+    const textForRead = `${stripHtmlContent(content)}\n${post.title || ''}`;
     const read = post.read || formatReadTime(estimateReadMinutes(textForRead));
     const imageFocus = normalizeFocus(post.imageFocus, post.imagePosition);
     const focusCenter = Math.round((imageFocus.start + imageFocus.end) / 2);
