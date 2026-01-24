@@ -50,6 +50,7 @@
   const dateEl = document.getElementById('date');
   const readEl = document.getElementById('read');
   const contentEl = document.getElementById('content');
+  const editorToolbars = document.querySelectorAll('[data-editor-toolbar]');
   const tagsEl = document.getElementById('tags');
   const focusStartEl = document.getElementById('focus-start');
   const focusEndEl = document.getElementById('focus-end');
@@ -534,12 +535,192 @@
     });
   }
 
+  function getContentPlainText() {
+    if (!contentEl) return '';
+    return contentEl.innerText.replace(/\u00a0/g, ' ');
+  }
+
+  function getContentHtml() {
+    if (!contentEl) return '';
+    return contentEl.innerHTML;
+  }
+
+  function setEditorContent(value = '') {
+    if (!contentEl) return;
+    const trimmed = String(value || '');
+    if (trimmed && /<[^>]+>/.test(trimmed)) {
+      contentEl.innerHTML = trimmed;
+      return;
+    }
+    const lines = trimmed.split('\n');
+    contentEl.innerHTML = '';
+    lines.forEach((line, index) => {
+      if (index > 0) {
+        contentEl.appendChild(document.createElement('br'));
+      }
+      if (line) {
+        contentEl.appendChild(document.createTextNode(line));
+      }
+    });
+  }
+
+  function refreshContentState() {
+    updateReadTime();
+    updatePreview();
+  }
+
+  function wrapSelectionWithTag(tagName) {
+    if (!contentEl) return;
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
+    const range = selection.getRangeAt(0);
+    if (!contentEl.contains(range.commonAncestorContainer)) return;
+    const text = range.toString();
+    const element = document.createElement(tagName);
+    element.textContent = text;
+    range.deleteContents();
+    range.insertNode(element);
+    const nextRange = document.createRange();
+    if (text) {
+      nextRange.setStartAfter(element);
+      nextRange.collapse(true);
+    } else {
+      nextRange.selectNodeContents(element);
+      nextRange.collapse(false);
+    }
+    selection.removeAllRanges();
+    selection.addRange(nextRange);
+    contentEl.focus();
+  }
+
+  function wrapSelectionWithSpan(className) {
+    if (!contentEl) return;
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
+    const range = selection.getRangeAt(0);
+    if (!contentEl.contains(range.commonAncestorContainer)) return;
+    const text = range.toString();
+    const span = document.createElement('span');
+    span.className = className;
+    span.textContent = text || ' ';
+    range.deleteContents();
+    range.insertNode(span);
+    const nextRange = document.createRange();
+    if (text) {
+      nextRange.setStartAfter(span);
+      nextRange.collapse(true);
+    } else {
+      nextRange.selectNodeContents(span);
+      nextRange.collapse(false);
+    }
+    selection.removeAllRanges();
+    selection.addRange(nextRange);
+    contentEl.focus();
+  }
+
+  function applyTextFrame(frameClass) {
+    if (!contentEl) return;
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
+    const range = selection.getRangeAt(0);
+    if (!contentEl.contains(range.commonAncestorContainer)) return;
+    const container =
+      range.commonAncestorContainer.nodeType === Node.ELEMENT_NODE
+        ? range.commonAncestorContainer
+        : range.commonAncestorContainer.parentElement;
+    const existingFrame = container?.closest?.('.text-frame');
+    if (existingFrame) {
+      existingFrame.className = `text-frame ${frameClass}`;
+      return;
+    }
+    wrapSelectionWithSpan(`text-frame ${frameClass}`);
+  }
+
+  function insertEmoji() {
+    if (!contentEl) return;
+    const emoji = window.prompt('挿入する絵文字を入力してください', '😊');
+    if (!emoji) return;
+    document.execCommand('insertText', false, emoji);
+  }
+
+  function applyEditorAction(action) {
+    if (!contentEl) return;
+    switch (action) {
+      case 'bold':
+        document.execCommand('bold');
+        break;
+      case 'italic':
+        document.execCommand('italic');
+        break;
+      case 'underline':
+        document.execCommand('underline');
+        break;
+      case 'code':
+        wrapSelectionWithTag('code');
+        break;
+      case 'bullet':
+        document.execCommand('insertUnorderedList');
+        break;
+      case 'number':
+        document.execCommand('insertOrderedList');
+        break;
+      case 'quote':
+        document.execCommand('formatBlock', false, 'blockquote');
+        break;
+      case 'bubble-self':
+        wrapSelectionWithSpan('bubble bubble--self');
+        break;
+      case 'bubble-other':
+        wrapSelectionWithSpan('bubble bubble--other');
+        break;
+      case 'emoji':
+        insertEmoji();
+        break;
+      case 'align-left':
+        document.execCommand('justifyLeft');
+        break;
+      case 'align-center':
+        document.execCommand('justifyCenter');
+        break;
+      case 'align-right':
+        document.execCommand('justifyRight');
+        break;
+      case 'rule':
+        document.execCommand('insertHorizontalRule');
+        break;
+      case 'newline':
+        document.execCommand('insertLineBreak');
+        break;
+      case 'font':
+        if (contentEl.dataset.pendingFont) {
+          document.execCommand('fontName', false, contentEl.dataset.pendingFont);
+          delete contentEl.dataset.pendingFont;
+        }
+        break;
+      case 'font-size':
+        if (contentEl.dataset.pendingFontSize) {
+          document.execCommand('fontSize', false, contentEl.dataset.pendingFontSize);
+          delete contentEl.dataset.pendingFontSize;
+        }
+        break;
+      case 'font-color':
+        if (contentEl.dataset.pendingFontColor) {
+          document.execCommand('foreColor', false, contentEl.dataset.pendingFontColor);
+          delete contentEl.dataset.pendingFontColor;
+        }
+        break;
+      default:
+        break;
+    }
+    refreshContentState();
+  }
+
   function updatePreview() {
     if (!previewTitle || !previewDate || !previewRead || !previewExcerpt || !previewThumb) return;
     previewTitle.textContent = titleEl?.value || '無題の投稿';
     previewDate.textContent = dateEl?.value || today;
     previewRead.textContent = readEl?.value || '5 min';
-    const summary = summarizeContent(contentEl?.value || '');
+    const summary = summarizeContent(getContentPlainText());
     previewExcerpt.textContent = summary || '本文からAIが要約します。';
     const tags = window.BlogData.normalizeTags((tagsEl?.value || '').split(','));
     previewTags.innerHTML = tags.map((tag) => `<span class="chip">#${window.BlogData.escapeHtml(tag)}</span>`).join('');
@@ -637,7 +818,7 @@
 
   function updateReadTime() {
     if (!readEl || !previewRead) return;
-    const minutes = estimateReadMinutes(`${titleEl?.value || ''}\n${contentEl?.value || ''}`);
+    const minutes = estimateReadMinutes(`${titleEl?.value || ''}\n${getContentPlainText()}`);
     const label = formatReadTime(minutes);
     readEl.value = label;
     previewRead.textContent = label;
@@ -821,6 +1002,7 @@
     if (heroImageFitEl) heroImageFitEl.value = DEFAULT_HERO_SETTINGS.imageFit;
     applyArticleTheme(siteThemeKey);
     if (heroBackgroundColorInput) heroBackgroundColorInput.value = resolveHeroBackgroundColor(selectedTheme?.background);
+    setEditorContent('');
     updatePreview();
     updateReadTime();
   }
@@ -851,7 +1033,7 @@
     if (titleEl) titleEl.value = target.title;
     if (dateEl) dateEl.value = target.date;
     if (readEl) readEl.value = target.read;
-    if (contentEl) contentEl.value = target.content || '';
+    setEditorContent(target.content || '');
     resizedImageData = target.image || '';
     if (tagsEl) tagsEl.value = (target.tags || []).join(', ');
     const focus = normalizeFocus(target.imageFocus, target.imagePosition);
@@ -987,6 +1169,46 @@
     });
   }
 
+  if (editorToolbars.length) {
+    editorToolbars.forEach((toolbar) => {
+      toolbar.addEventListener('click', (event) => {
+        const button = event.target.closest('button[data-editor-action]');
+        if (!button) return;
+        applyEditorAction(button.dataset.editorAction);
+      });
+      toolbar.addEventListener('change', (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) return;
+        const action = target.dataset.editorAction;
+        if (!action) return;
+        if (!contentEl) return;
+        if (action === 'font') {
+          contentEl.dataset.pendingFont = target.value;
+          applyEditorAction('font');
+        } else if (action === 'heading') {
+          if (target.value) {
+            document.execCommand('formatBlock', false, target.value);
+            refreshContentState();
+          }
+        } else if (action === 'text-frame') {
+          if (target.value) {
+            applyTextFrame(target.value);
+            refreshContentState();
+          }
+        } else if (action === 'font-size') {
+          contentEl.dataset.pendingFontSize = target.value;
+          applyEditorAction('font-size');
+        } else if (action === 'font-color') {
+          contentEl.dataset.pendingFontColor = target.value;
+          applyEditorAction('font-color');
+        }
+        if (target.tagName === 'SELECT') {
+          target.selectedIndex = 0;
+        }
+      });
+    });
+  }
+
   if (cancelEditButton) {
     cancelEditButton.addEventListener('click', resetForm);
   }
@@ -1010,8 +1232,8 @@
     const title = previewTitle?.textContent.trim() || '';
     const date = previewDate?.textContent.trim() || '';
     const read = previewRead?.textContent.trim() || '';
-    const content = contentEl?.value.trim() || '';
-    const excerpt = summarizeContent(content);
+    const content = getContentHtml().trim();
+    const excerpt = summarizeContent(getContentPlainText());
     const existing = editingId ? posts.find((post) => post.id === editingId) : null;
     const image = resizedImageData || existing?.image || '';
     const tags = window.BlogData.normalizeTags((tagsEl?.value || '').split(','));
