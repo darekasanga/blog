@@ -182,7 +182,19 @@
 
     function renderContent(text) {
       bodyEl.innerHTML = '';
-      const lines = (text || '').split('\n').filter((line) => line.trim().length > 0);
+      const raw = String(text || '');
+      if (raw.includes('<')) {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(raw, 'text/html');
+        if (doc.body && doc.body.childElementCount > 0) {
+          bodyEl.innerHTML = doc.body.innerHTML;
+          if (bodyEl.textContent.trim().length > 0) {
+            return;
+          }
+        }
+      }
+
+      const lines = raw.split('\n').filter((line) => line.trim().length > 0);
       if (!lines.length) {
         const p = document.createElement('p');
         p.textContent = '本文がまだ登録されていません。';
